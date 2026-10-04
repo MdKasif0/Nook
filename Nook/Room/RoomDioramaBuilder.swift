@@ -70,13 +70,14 @@ final class RoomDioramaBuilder {
     // MARK: - 1. Architecture (Stepped Floor, Background Walls & Chunky Top Beams)
     
     private static func buildArchitecture(in root: SCNNode) {
-        let oakMat = Materials.honeyOak
+        let floorMat = Materials.hardwoodFloor
         let plasterMat = Materials.ivoryPlaster
         let beamMat = Materials.honeyOak
+        let slatMat = Materials.verticalWoodSlat
         
         // Upper Main Floor Platform (Y = 0.14, covering workspace and daybed)
         let upperFloorGeo = SCNBox(width: 4.4, height: 0.28, length: 2.8, chamferRadius: 0.02)
-        upperFloorGeo.materials = [oakMat]
+        upperFloorGeo.materials = [floorMat]
         let upperFloorNode = SCNNode(geometry: upperFloorGeo)
         upperFloorNode.position = SCNVector3(-0.10, 0.0, -0.90)
         upperFloorNode.name = "floor_upper_platform"
@@ -84,7 +85,7 @@ final class RoomDioramaBuilder {
         
         // Lower Sunken Floor Platform (Y = 0.0, foreground lounge)
         let lowerFloorGeo = SCNBox(width: 4.4, height: 0.14, length: 1.6, chamferRadius: 0.02)
-        lowerFloorGeo.materials = [oakMat]
+        lowerFloorGeo.materials = [floorMat]
         let lowerFloorNode = SCNNode(geometry: lowerFloorGeo)
         lowerFloorNode.position = SCNVector3(-0.10, -0.07, 1.25)
         lowerFloorNode.name = "floor_lower_lounge"
@@ -96,9 +97,10 @@ final class RoomDioramaBuilder {
         let stepHeights: [CGFloat] = [0.045, 0.09, 0.135]
         for (i, h) in stepHeights.enumerated() {
             let stepGeo = SCNBox(width: stepWidth, height: 0.045, length: stepDepth, chamferRadius: 0.01)
-            stepGeo.materials = [oakMat]
+            stepGeo.materials = [floorMat]
             let stepNode = SCNNode(geometry: stepGeo)
             stepNode.position = SCNVector3(-0.25, h - 0.022, 0.50 + CGFloat(2 - i) * 0.15)
+            stepNode.name = "stairs_step_\(i)"
             root.addChildNode(stepNode)
         }
         
@@ -108,6 +110,20 @@ final class RoomDioramaBuilder {
         let leftWallNode = SCNNode(geometry: leftWallGeo)
         leftWallNode.position = SCNVector3(-2.27, wallHeight / 2, -0.25)
         leftWallNode.name = "room_left_wall"
+        
+        // Vertical wood wainscot paneling on left wall behind desk (up to height 1.95m)
+        let leftWainscotGeo = SCNBox(width: 0.02, height: 1.95, length: 3.86, chamferRadius: 0.005)
+        leftWainscotGeo.materials = [slatMat]
+        let leftWainscotNode = SCNNode(geometry: leftWainscotGeo)
+        leftWainscotNode.position = SCNVector3(0.075, -wallHeight / 2 + 1.95 / 2, 0)
+        leftWallNode.addChildNode(leftWainscotNode)
+        
+        // Horizontal chair rail trim moulding at Y = 1.95
+        let chairRail = SCNBox(width: 0.04, height: 0.04, length: 3.88, chamferRadius: 0.008)
+        chairRail.materials = [beamMat]
+        let crNode = SCNNode(geometry: chairRail)
+        crNode.position = SCNVector3(0.08, -wallHeight / 2 + 1.95, 0)
+        leftWallNode.addChildNode(crNode)
         root.addChildNode(leftWallNode)
         
         // Right Background Wall (Z = -2.2, running along X from -2.2 to +2.1 with window cutout)
@@ -118,11 +134,12 @@ final class RoomDioramaBuilder {
         rwlNode.position = SCNVector3(-1.60, wallHeight / 2, -2.27)
         root.addChildNode(rwlNode)
         
-        // Bottom portion below window (X from -1.0 to +2.1)
+        // Bottom portion below window (Vertical Oak Wainscoting matching reference photo!)
         let rightWallBottom = SCNBox(width: 3.15, height: 1.25, length: 0.14, chamferRadius: 0.01)
-        rightWallBottom.materials = [plasterMat]
+        rightWallBottom.materials = [slatMat]
         let rwbNode = SCNNode(geometry: rightWallBottom)
         rwbNode.position = SCNVector3(0.55, 0.625, -2.27)
+        rwbNode.name = "window_wall_wainscoting"
         root.addChildNode(rwbNode)
         
         // Top portion above window
