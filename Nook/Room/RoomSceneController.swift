@@ -130,7 +130,7 @@ final class RoomSceneController {
         roomState.isDeskLampOn = self.isDeskLampOn
         roomState.isWallSconceOn = self.isWallSconceOn
         roomState.isRecordSpinning = self.isRecordSpinning
-        roomState.cookiePetCount = cookieController.state.petCount
+        roomState.cookieLastInteractedAt = cookieController.state.lastInteraction
         roomState.updatedAt = .now
     }
     

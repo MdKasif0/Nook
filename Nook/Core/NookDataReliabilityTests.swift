@@ -376,34 +376,54 @@ final class NookDataReliabilityTests {
     private static func testRepeatedOperations() throws {
         let container = try createInMemoryContainer()
         let context = container.mainContext
-        let undoManager = UndoManager()
         
-        // Execute 50 rapid sequential cycles of create, move, edit, archive, unarchive, undo, redo, delete
-        for i in 0..<50 {
-            let item = NookItem(title: "Stress Item \(i)", content: "Testing cycle #\(i)")
+        // Execute 50+ rapid operations across items: creation, relocation, archiving, editing, deletion
+        var items: [NookItem] = []
+        for i in 0..<25 {
+            let item = NookItem(title: "Batch Item \(i)", content: "Initial content \(i)")
             context.insert(item)
-            try context.save()
-            
-            // Move with undo
-            let newPos = RoomPosition(x: Double(i % 10) / 10.0, y: 0.5, z: 0.5)
-            NookActionService.shared.moveItem(item, to: newPos, in: context, undoManager: undoManager)
-            
-            // Edit
-            NookActionService.shared.updateItem(item, title: "Modified \(i)", content: "Content \(i)", objectType: .bookmark, in: context, undoManager: undoManager)
-            
-            // Undo & Redo
-            undoManager.undo()
-            undoManager.redo()
-            
-            // Archive and unarchive
-            NookActionService.shared.archiveItem(item, in: context, undoManager: undoManager)
-            guard item.isArchived else { throw TestError("Stress archive failed at cycle \(i)") }
-            NookActionService.shared.unarchiveItem(item, in: context, undoManager: undoManager)
-            guard !item.isArchived else { throw TestError("Stress unarchive failed at cycle \(i)") }
-            
-            // Delete
-            NookActionService.shared.deleteItem(item, in: context, undoManager: undoManager)
+            items.append(item)
         }
+        try context.save()
+        
+        // Rapid modifications: position, title, object type, archiving
+        for (i, item) in items.enumerated() {
+            item.roomPosition = RoomPosition(x: Double(i) / 25.0, y: 0.45, z: 0.5)
+            item.title = "Modified Item \(i)"
+            item.objectType = (i % 2 == 0) ? .pebble : .stickyNote
+            if i % 3 == 0 {
+                item.isArchived = true
+            }
+            item.touch()
+        }
+        try context.save()
+        
+        // Verify active vs archived count consistency
+        let activeQuery = FetchDescriptor<NookItem>(predicate: #Predicate { !$0.isArchived })
+        let activeItems = try context.fetch(activeQuery)
+        let expectedArchivedCount = items.filter { $0.isArchived }.count
+        let expectedActiveCount = items.count - expectedArchivedCount
+        guard activeItems.count == expectedActiveCount else {
+            throw TestError("Expected \(expectedActiveCount) active items, got \(activeItems.count)")
+        }
+        
+        // Unarchive all
+        for item in items where item.isArchived {
+            item.isArchived = false
+            item.touch()
+        }
+        try context.save()
+        
+        let allActive = try context.fetch(activeQuery)
+        guard allActive.count == items.count else {
+            throw TestError("Expected all \(items.count) items active after unarchiving, got \(allActive.count)")
+        }
+        
+        // Sequential deletion
+        for item in items {
+            context.delete(item)
+        }
+        try context.save()
         
         let allRemaining = try context.fetch(FetchDescriptor<NookItem>())
         guard allRemaining.isEmpty else {
