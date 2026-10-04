@@ -451,6 +451,7 @@ struct RoomView: View {
                                 item.isArchived = true
                                 sceneController.selectedItemID = nil
                                 try? modelContext.save()
+                                RoomEventBus.shared.publish(.itemCompleted(title: item.title))
                             }
                         } label: {
                             Image(systemName: "archivebox")
@@ -465,8 +466,10 @@ struct RoomView: View {
                         Button {
                             withAnimation(NookDesign.Animation.standard) {
                                 sceneController.selectedItemID = nil
+                                let deletedTitle = item.title
                                 modelContext.delete(item)
                                 try? modelContext.save()
+                                RoomEventBus.shared.publish(.itemDeleted(title: deletedTitle))
                             }
                         } label: {
                             Image(systemName: "trash")
