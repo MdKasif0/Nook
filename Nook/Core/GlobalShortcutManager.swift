@@ -120,7 +120,7 @@ final class GlobalShortcutManager {
         appState.isShowingNewThoughtSheet = true
     }
     
-    deinit {
+    isolated deinit {
         if let localMonitor {
             NSEvent.removeMonitor(localMonitor)
         }

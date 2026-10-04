@@ -18,6 +18,9 @@ enum NookDesign {
         /// Tertiary background — warm stone.
         static let backgroundTertiary = Color(hex: 0xE8E2D8)
         
+        /// Tactile paper tone — crisp, warm off-white.
+        static let paper = Color(hex: 0xFDFBF7)
+        
         /// Surface — for cards, panels, elevated surfaces.
         static let surface = Color(hex: 0xF2EFE8)
         

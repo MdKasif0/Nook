@@ -139,18 +139,7 @@ struct QuickCaptureView: View {
         }
         .padding(NookDesign.Spacing.lg)
         .frame(width: 440)
-        .background(
-            // Tactile Warm Paper Material
-            NookDesign.Colors.paper
-                .overlay(
-                    // Subtle paper fiber grain gradient
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.2), Color.black.opacity(0.02)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        )
+        .background(NookDesign.Colors.paper)
         .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous)
