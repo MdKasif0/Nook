@@ -218,31 +218,6 @@ final class RoomSceneController {
     // MARK: - Cookie Petting & Interaction
     
     func petCookie() {
-        guard let cookieNode = scene.rootNode.childNode(withName: "cookie_character", recursively: true) else { return }
-        
-        isPettingCookie = true
-        
-        // Happy bounce & purr wiggle
-        let purrWiggle = SCNAction.sequence([
-            SCNAction.moveBy(x: 0, y: 0.04, z: 0, duration: 0.18),
-            SCNAction.rotateBy(x: 0, y: 0.15, z: 0, duration: 0.12),
-            SCNAction.rotateBy(x: 0, y: -0.30, z: 0, duration: 0.12),
-            SCNAction.rotateBy(x: 0, y: 0.15, z: 0, duration: 0.12),
-            SCNAction.moveBy(x: 0, y: -0.04, z: 0, duration: 0.18)
-        ])
-        
-        cookieNode.runAction(purrWiggle) { [weak self] in
-            Task { @MainActor in
-                self?.isPettingCookie = false
-            }
-        }
-        
-        let messages = [
-            "Cookie is purring softly...",
-            "Cookie nudged your hand warmly.",
-            "Cookie curls tighter into a cozy ball.",
-            "Cookie appreciates the gentle company."
-        ]
-        cookieMessage = messages.randomElement()
+        RoomEventBus.shared.publish(.cookiePetted)
     }
 }
