@@ -7,17 +7,18 @@ import SwiftUI
 struct NewItemSheet: View {
     
     var preselectedType: NookItemType?
-    let onSave: (String, String, NookItemType) -> Void
+    let onSave: (String, String, NookItemType, NookObjectType) -> Void
     
     @Environment(\.dismiss) private var dismiss
     
     @State private var title: String = ""
     @State private var content: String = ""
     @State private var selectedType: NookItemType = .thought
+    @State private var selectedObjectType: NookObjectType = .pebble
     
     init(
         preselectedType: NookItemType? = nil,
-        onSave: @escaping (String, String, NookItemType) -> Void
+        onSave: @escaping (String, String, NookItemType, NookObjectType) -> Void
     ) {
         self.preselectedType = preselectedType
         self.onSave = onSave
@@ -30,7 +31,7 @@ struct NewItemSheet: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("New \(selectedType.displayName)")
+                Text("New Thought")
                     .font(NookDesign.Typography.subheading)
                     .foregroundStyle(NookDesign.Colors.textPrimary)
                 Spacer()
@@ -49,18 +50,7 @@ struct NewItemSheet: View {
                 .foregroundStyle(NookDesign.Colors.surfaceBorder)
             
             // Form
-            VStack(spacing: NookDesign.Spacing.lg) {
-                // Type picker (only when no preselection)
-                if preselectedType == nil {
-                    Picker("Type", selection: $selectedType) {
-                        ForEach(NookItemType.allCases) { type in
-                            Label(type.displayName, systemImage: type.iconName)
-                                .tag(type)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                
+            VStack(alignment: .leading, spacing: NookDesign.Spacing.lg) {
                 // Title
                 TextField("Title", text: $title)
                     .textFieldStyle(.roundedBorder)
@@ -69,7 +59,7 @@ struct NewItemSheet: View {
                 // Content
                 TextEditor(text: $content)
                     .font(NookDesign.Typography.body)
-                    .frame(minHeight: 60, maxHeight: 120)
+                    .frame(minHeight: 50, maxHeight: 100)
                     .scrollContentBackground(.hidden)
                     .padding(NookDesign.Spacing.sm)
                     .background(NookDesign.Colors.backgroundSecondary)
@@ -78,6 +68,15 @@ struct NewItemSheet: View {
                         RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous)
                             .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
                     )
+                
+                // Physical Object Picker
+                VStack(alignment: .leading, spacing: NookDesign.Spacing.xs) {
+                    Text("Physical Object:")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textSecondary)
+                    
+                    ObjectPickerView(selectedObjectType: $selectedObjectType)
+                }
             }
             .padding(NookDesign.Spacing.xl)
             
@@ -93,16 +92,16 @@ struct NewItemSheet: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 
-                Button("Save") {
+                Button("Place in Room") {
                     guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    onSave(title, content, selectedType)
+                    onSave(title, content, selectedType, selectedObjectType)
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(NookDesign.Spacing.xl)
         }
-        .frame(width: 380)
+        .frame(width: 440)
         .background(NookDesign.Colors.backgroundPrimary)
     }
 }

@@ -12,6 +12,8 @@ struct NookApp: App {
     
     @State private var appState = AppState()
     
+    @Environment(\.openWindow) private var openWindow
+    
     var body: some Scene {
         // MARK: - Main Room Window
         WindowGroup("Nook", id: NookWindow.main.id) {
@@ -28,6 +30,14 @@ struct NookApp: App {
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 960, height: 640)
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Quick Thought") {
+                    openWindow(id: NookWindow.quickCapture.id)
+                }
+                .keyboardShortcut(" ", modifiers: [.command, .shift])
+            }
+        }
         
         // MARK: - Quick Capture Window
         WindowGroup("Quick Thought", id: NookWindow.quickCapture.id) {
@@ -37,7 +47,7 @@ struct NookApp: App {
         .modelContainer(persistenceController.container)
         .windowStyle(.titleBar)
         .windowResizability(.contentSize)
-        .defaultSize(width: 400, height: 240)
+        .defaultSize(width: 440, height: 260)
         
         // MARK: - Settings
         Settings {
@@ -53,3 +63,4 @@ struct NookApp: App {
         }
     }
 }
+
