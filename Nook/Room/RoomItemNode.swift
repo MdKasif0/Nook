@@ -283,7 +283,7 @@ final class RoomItemNode: SCNNode {
     private func updateHoverState() {
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0.2
-        SCNTransaction.animationTimingMode = .easeOut
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
         
         if isHovered && !isItemSelected {
             visualNode.position.y = 0.03
@@ -299,7 +299,7 @@ final class RoomItemNode: SCNNode {
     private func updateSelectedState() {
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0.25
-        SCNTransaction.animationTimingMode = .easeOut
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
         
         if isItemSelected {
             visualNode.position.y = 0.08
