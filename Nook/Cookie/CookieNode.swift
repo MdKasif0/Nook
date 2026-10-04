@@ -485,8 +485,10 @@ final class CookieNode: SCNNode {
             SCNAction.moveBy(x: 0, y: -0.015, z: 0, duration: 0.18)
         ])
         rightArmNode.runAction(rub) { [weak self] in
-            self?.restPaws()
-            self?.resetHead()
+            Task { @MainActor in
+                self?.restPaws()
+                self?.resetHead()
+            }
         }
     }
     
