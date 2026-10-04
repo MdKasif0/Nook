@@ -99,6 +99,41 @@ final class RoomSceneController {
         }
     }
     
+    // MARK: - Room State Persistence
+    
+    private var hasConfiguredFromSavedState: Bool = false
+    
+    /// Restores persistent environment settings and prop coordinates from SwiftData.
+    func applySavedRoomState(_ roomState: RoomState) {
+        guard !hasConfiguredFromSavedState else { return }
+        hasConfiguredFromSavedState = true
+        
+        self.timeOfDay = roomState.timeOfDay
+        self.isDeskLampOn = roomState.isDeskLampOn
+        self.isWallSconceOn = roomState.isWallSconceOn
+        self.isRecordSpinning = roomState.isRecordSpinning
+        
+        // Restore custom prop positions if any
+        if let data = roomState.customPropPositionsJSON,
+           let props = try? JSONDecoder().decode([String: [Double]].self, from: data) {
+            for (propName, coords) in props where coords.count >= 3 {
+                if let node = scene.rootNode.childNode(withName: propName, recursively: true) {
+                    node.position = SCNVector3(coords[0], coords[1], coords[2])
+                }
+            }
+        }
+    }
+    
+    /// Syncs current controller properties back to persistent RoomState.
+    func syncToRoomState(_ roomState: RoomState) {
+        roomState.timeOfDay = self.timeOfDay
+        roomState.isDeskLampOn = self.isDeskLampOn
+        roomState.isWallSconceOn = self.isWallSconceOn
+        roomState.isRecordSpinning = self.isRecordSpinning
+        roomState.cookiePetCount = cookieController.state.petCount
+        roomState.updatedAt = .now
+    }
+    
     // MARK: - Dimensions for Desk Surface Item Placement
     
     static let deskWidthSpan: CGFloat = 1.65

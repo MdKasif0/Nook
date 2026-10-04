@@ -3,16 +3,17 @@ import SwiftData
 
 /// A spotlight-style floating Command Palette triggered via ⌘K.
 ///
-/// Searches locally through title, content, and item type.
-/// Displays physical object manifestations and allows instant navigation to the 3D room.
+/// Features:
+/// - Fast in-memory tokenized local search using `LocalSearchIndex`.
+/// - Instant multi-token prefix matching across title, content, item type, and object type.
+/// - Weighted relevance scoring.
+/// - Complete local-first operation without any search server or network requests.
+/// - Full searchability across both active thoughts and archived thoughts.
 struct SearchPaletteView: View {
     
     @Environment(AppState.self) private var appState
-    @Query(
-        filter: #Predicate<NookItem> { !$0.isArchived },
-        sort: \NookItem.createdAt,
-        order: .reverse
-    )
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \NookItem.updatedAt, order: .reverse)
     private var allItems: [NookItem]
     
     let onSelectItem: (UUID) -> Void
@@ -22,25 +23,18 @@ struct SearchPaletteView: View {
     @State private var selectedIndex: Int = 0
     @FocusState private var isFieldFocused: Bool
     
-    // Filtered results
-    private var filteredItems: [NookItem] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return Array(allItems.prefix(8))
-        }
-        
-        return allItems.filter { item in
-            item.title.localizedCaseInsensitiveContains(trimmed) ||
-            item.content.localizedCaseInsensitiveContains(trimmed) ||
-            item.objectType.displayName.localizedCaseInsensitiveContains(trimmed) ||
-            item.itemType.rawValue.localizedCaseInsensitiveContains(trimmed)
-        }
+    // In-memory tokenized search engine
+    private let searchIndex = LocalSearchIndex()
+    
+    // Search Results calculated via local inverted index
+    private var searchResults: [LocalSearchIndex.SearchResult] {
+        searchIndex.search(query: query, includeArchived: true, limit: 30)
     }
     
     var body: some View {
         ZStack {
             // Semi-transparent backdrop to dismiss
-            Color.black.opacity(0.28)
+            Color.black.opacity(0.30)
                 .ignoresSafeArea()
                 .onTapGesture {
                     onClose()
@@ -90,18 +84,18 @@ struct SearchPaletteView: View {
                     .foregroundStyle(NookDesign.Colors.surfaceBorder)
                 
                 // Results List
-                if filteredItems.isEmpty {
+                if searchResults.isEmpty {
                     VStack(spacing: NookDesign.Spacing.xs) {
                         Image(systemName: "tray")
                             .font(.system(size: 20))
                             .foregroundStyle(NookDesign.Colors.textTertiary)
                             .padding(.top, NookDesign.Spacing.lg)
                         
-                        Text("No matching objects found")
+                        Text("No matching thoughts found")
                             .font(NookDesign.Typography.caption)
                             .foregroundStyle(NookDesign.Colors.textSecondary)
                         
-                        Text("Try searching by thought text, note, or object type like \"pebble\"")
+                        Text("Search matches title, content, item category, or physical object type")
                             .font(NookDesign.Typography.caption)
                             .foregroundStyle(NookDesign.Colors.textTertiary)
                             .padding(.bottom, NookDesign.Spacing.lg)
@@ -111,11 +105,11 @@ struct SearchPaletteView: View {
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(spacing: 2) {
-                                ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
-                                    searchResultRow(item: item, isSelected: index == selectedIndex)
+                                ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, result in
+                                    searchResultRow(result: result, isSelected: index == selectedIndex)
                                         .id(index)
                                         .onTapGesture {
-                                            chooseItem(item)
+                                            chooseItem(result.item)
                                         }
                                 }
                             }
@@ -155,7 +149,7 @@ struct SearchPaletteView: View {
                     
                     Spacer()
                     
-                    Text("\(filteredItems.count) \(filteredItems.count == 1 ? "thought" : "thoughts")")
+                    Text("\(searchResults.count) \(searchResults.count == 1 ? "thought" : "thoughts")")
                         .font(NookDesign.Typography.mono)
                         .font(.system(size: 11))
                         .foregroundStyle(NookDesign.Colors.textTertiary)
@@ -176,13 +170,22 @@ struct SearchPaletteView: View {
         .onAppear {
             isFieldFocused = true
             selectedIndex = 0
+            searchIndex.rebuild(with: allItems)
+        }
+        .task(id: allItems) {
+            searchIndex.rebuild(with: allItems)
+        }
+        .onChange(of: query) { _, _ in
+            selectedIndex = 0
         }
     }
     
     // MARK: - Result Row
     
-    private func searchResultRow(item: NookItem, isSelected: Bool) -> some View {
-        HStack(spacing: NookDesign.Spacing.sm) {
+    private func searchResultRow(result: LocalSearchIndex.SearchResult, isSelected: Bool) -> some View {
+        let item = result.item
+        
+        return HStack(spacing: NookDesign.Spacing.sm) {
             // Physical Object Icon Badge
             ZStack {
                 Circle()
@@ -196,11 +199,27 @@ struct SearchPaletteView: View {
             
             // Text Details
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(NookDesign.Typography.body)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundStyle(NookDesign.Colors.textPrimary)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(item.title)
+                        .font(NookDesign.Typography.body)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundStyle(NookDesign.Colors.textPrimary)
+                        .lineLimit(1)
+                    
+                    if result.isArchived {
+                        HStack(spacing: 3) {
+                            Image(systemName: "archivebox")
+                                .font(.system(size: 9))
+                            Text("Archived")
+                                .font(.system(size: 9, weight: .medium))
+                        }
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(NookDesign.Colors.backgroundSecondary)
+                        .clipShape(Capsule())
+                    }
+                }
                 
                 if !item.content.isEmpty {
                     Text(item.content.replacingOccurrences(of: "\n", with: " "))
@@ -237,13 +256,19 @@ struct SearchPaletteView: View {
     }
     
     private func selectCurrent() {
-        guard !filteredItems.isEmpty else { return }
-        let clampedIndex = min(max(0, selectedIndex), filteredItems.count - 1)
-        chooseItem(filteredItems[clampedIndex])
+        guard !searchResults.isEmpty else { return }
+        let clampedIndex = min(max(0, selectedIndex), searchResults.count - 1)
+        chooseItem(searchResults[clampedIndex].item)
     }
     
     private func chooseItem(_ item: NookItem) {
         AudioManager.shared.playObjectSelected()
+        if item.isArchived {
+            // If the user selected an archived item, unarchive it so it reappears in their room!
+            item.isArchived = false
+            item.touch()
+            try? modelContext.save()
+        }
         onSelectItem(item.id)
     }
 }
