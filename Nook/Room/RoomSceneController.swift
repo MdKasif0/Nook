@@ -63,6 +63,11 @@ final class RoomSceneController {
         self.isDeskLampOn = timeOfDay.isDeskLampDefaultOn
     }
     
+    // MARK: - Dimensions for Desk Surface Item Placement
+    
+    static let deskWidthSpan: CGFloat = 1.6
+    static let deskDepthSpan: CGFloat = 0.85
+    
     // MARK: - Item Synchronization
     
     /// Syncs SwiftData items with 3D nodes in the room.
@@ -76,19 +81,27 @@ final class RoomSceneController {
         }
         
         // Add or update items
-        for (index, item) in items.enumerated() {
+        for item in items {
             if let existingNode = itemNodes[item.id] {
-                // Node already exists, update position if needed
-                let targetPos = positionForItem(item, atIndex: index, totalCount: items.count)
-                if existingNode.position.x != targetPos.x || existingNode.position.z != targetPos.z {
-                    SCNTransaction.begin()
-                    SCNTransaction.animationDuration = 0.3
-                    existingNode.position = targetPos
-                    SCNTransaction.commit()
+                // Update object type if edited
+                if existingNode.objectType != item.objectType {
+                    existingNode.updateObjectType(item.objectType)
+                }
+                
+                // Update position if needed (when not currently being dragged)
+                if !existingNode.isBeingDragged {
+                    let targetPos = worldPosition(for: item.roomPosition)
+                    if abs(existingNode.position.x - targetPos.x) > 0.01 || abs(existingNode.position.z - targetPos.z) > 0.01 {
+                        SCNTransaction.begin()
+                        SCNTransaction.animationDuration = 0.35
+                        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
+                        existingNode.position = targetPos
+                        SCNTransaction.commit()
+                    }
                 }
             } else {
                 // Create new 3D item node on the desk
-                let pos = positionForItem(item, atIndex: index, totalCount: items.count)
+                let pos = worldPosition(for: item.roomPosition)
                 let node = RoomItemNode(item: item, position: pos, rotationY: CGFloat(item.rotation * .pi / 180.0))
                 scene.rootNode.addChildNode(node)
                 itemNodes[item.id] = node
@@ -104,25 +117,47 @@ final class RoomSceneController {
         }
     }
     
-    /// Computes the 3D coordinates for an item on the wooden desk surface.
-    private func positionForItem(_ item: NookItem, atIndex index: Int, totalCount: Int) -> SCNVector3 {
+    /// Converts a normalized RoomPosition (0...1) to 3D world coordinates on the desk.
+    func worldPosition(for roomPos: RoomPosition) -> SCNVector3 {
         let deskX = RoomDioramaBuilder.deskPosition.x
         let deskZ = RoomDioramaBuilder.deskPosition.z
         let surfaceY = RoomDioramaBuilder.deskSurfaceY
         
-        // If user customized normalized position, map to desk surface bounds
-        // Desk blotter & writing area: X in [-0.75, 0.45], Z in [-0.35, 0.35]
-        let widthSpan: CGFloat = 1.2
-        let depthSpan: CGFloat = 0.65
-        
-        let offsetX = (CGFloat(item.positionX) - 0.5) * widthSpan
-        let offsetZ = (CGFloat(item.positionY) - 0.5) * depthSpan
+        let offsetX = (CGFloat(roomPos.x) - 0.5) * Self.deskWidthSpan
+        let offsetZ = (CGFloat(roomPos.y) - 0.5) * Self.deskDepthSpan
         
         return SCNVector3(
             deskX + offsetX,
             surfaceY,
             deskZ + offsetZ
         )
+    }
+    
+    /// Converts 3D world coordinates on the desk to a normalized RoomPosition (0...1).
+    func roomPosition(from worldPos: SCNVector3) -> RoomPosition {
+        let deskX = RoomDioramaBuilder.deskPosition.x
+        let deskZ = RoomDioramaBuilder.deskPosition.z
+        
+        let normX = Double((worldPos.x - deskX) / Self.deskWidthSpan + 0.5)
+        let normY = Double((worldPos.z - deskZ) / Self.deskDepthSpan + 0.5)
+        
+        return RoomPosition(
+            x: min(0.95, max(0.05, normX)),
+            y: min(0.95, max(0.05, normY)),
+            z: 0.5
+        )
+    }
+    
+    /// Smoothly animates an item to a new room position.
+    func moveItem(_ id: UUID, to position: RoomPosition) {
+        guard let node = itemNodes[id] else { return }
+        let target = worldPosition(for: position)
+        
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 0.40
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        node.position = target
+        SCNTransaction.commit()
     }
     
     // MARK: - Time of Day & Lighting
