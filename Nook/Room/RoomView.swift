@@ -129,6 +129,31 @@ struct RoomView: View {
                 }
             }
         }
+        .sheet(item: $detailItem) { item in
+            ThoughtDetailSheet(
+                item: item,
+                onEdit: {
+                    beginEditing(item)
+                },
+                onMove: { zone in
+                    moveItem(item, to: zone)
+                },
+                onArchive: {
+                    withAnimation(NookDesign.Animation.standard) {
+                        item.isArchived = true
+                        sceneController.selectedItemID = nil
+                        try? modelContext.save()
+                    }
+                },
+                onDelete: {
+                    withAnimation(NookDesign.Animation.standard) {
+                        sceneController.selectedItemID = nil
+                        modelContext.delete(item)
+                        try? modelContext.save()
+                    }
+                }
+            )
+        }
     }
     
     // MARK: - Subviews
@@ -351,6 +376,25 @@ struct RoomView: View {
                     
                     // Native Action Bar: Open, Edit, Move, Delete, Archive
                     HStack(spacing: NookDesign.Spacing.xs) {
+                        // Open Action
+                        Button {
+                            detailItem = item
+                        } label: {
+                            HStack(spacing: NookDesign.Spacing.xxs) {
+                                Image(systemName: "arrow.up.forward.app")
+                                    .font(.system(size: 11))
+                                Text("Open")
+                                    .font(NookDesign.Typography.caption)
+                            }
+                            .foregroundStyle(NookDesign.Colors.textPrimary)
+                            .padding(.horizontal, NookDesign.Spacing.sm)
+                            .padding(.vertical, NookDesign.Spacing.xxs + 1)
+                            .background(NookDesign.Colors.backgroundSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .help("Open and read thought in full")
+                        
                         // Edit Action
                         Button {
                             beginEditing(item)
