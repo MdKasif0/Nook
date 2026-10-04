@@ -132,49 +132,54 @@ final class CookieNode: SCNNode {
             let cheekGeo = SCNSphere(radius: 0.075)
             cheekGeo.materials = [furMat]
             let cheekNode = SCNNode(geometry: cheekGeo)
+        // Left & Right chubby cheek bulges (softened for adorable chibi cheeks)
+        for (cx, side) in [(-0.075, "left"), (0.075, "right")] {
+            let cheekGeo = SCNSphere(radius: 0.062)
+            cheekGeo.materials = [furMat]
+            let cheekNode = SCNNode(geometry: cheekGeo)
             cheekNode.name = "cheek_\(side)"
-            cheekNode.position = SCNVector3(cx, -0.02, 0.065)
-            cheekNode.scale = SCNVector3(1.0, 0.9, 0.9)
+            cheekNode.position = SCNVector3(cx, -0.032, 0.052)
+            cheekNode.scale = SCNVector3(1.1, 0.85, 0.85)
             headNode.addChildNode(cheekNode)
         }
         
         // --- C. EARS ---
         // Left Ear
         leftEarNode = SCNNode()
-        leftEarNode.position = SCNVector3(-0.09, 0.12, 0.01)
-        leftEarNode.eulerAngles = SCNVector3(-0.10, 0, 0.28)
+        leftEarNode.position = SCNVector3(-0.095, 0.125, 0.01)
+        leftEarNode.eulerAngles = SCNVector3(-0.12, 0, 0.32)
         buildEarGeometry(in: leftEarNode, outerMat: furMat, innerMat: innerEarMat)
         headNode.addChildNode(leftEarNode)
         
         // Right Ear
         rightEarNode = SCNNode()
-        rightEarNode.position = SCNVector3(0.09, 0.12, 0.01)
-        rightEarNode.eulerAngles = SCNVector3(-0.10, 0, -0.28)
+        rightEarNode.position = SCNVector3(0.095, 0.125, 0.01)
+        rightEarNode.eulerAngles = SCNVector3(-0.12, 0, -0.32)
         buildEarGeometry(in: rightEarNode, outerMat: furMat, innerMat: innerEarMat)
         headNode.addChildNode(rightEarNode)
         
         // --- D. EYES WITH SPECULAR HIGHLIGHTS & BLUSH ---
-        for (eyeX, blushX, isLeft) in [(-0.062, -0.095, true), (0.062, 0.095, false)] {
+        for (eyeX, blushX, isLeft) in [(-0.062, -0.092, true), (0.062, 0.092, false)] {
             // Eye container
             let eyeContainer = SCNNode()
-            eyeContainer.position = SCNVector3(eyeX, 0.015, 0.138)
+            eyeContainer.position = SCNVector3(eyeX, 0.012, 0.139)
             
             // Glossy black pupil sphere
-            let eyeSphere = SCNSphere(radius: 0.023)
+            let eyeSphere = SCNSphere(radius: 0.024)
             eyeSphere.materials = [eyeMat]
             let eyeNode = SCNNode(geometry: eyeSphere)
-            eyeNode.scale = SCNVector3(1.0, 1.08, 0.6)
+            eyeNode.scale = SCNVector3(1.0, 1.10, 0.6)
             eyeContainer.addChildNode(eyeNode)
             
             // Specular catchlight reflection highlight (top-right of pupil)
-            let catchlight = SCNSphere(radius: 0.0075)
+            let catchlight = SCNSphere(radius: 0.0078)
             catchlight.materials = [catchlightMat]
             let catchlightNode = SCNNode(geometry: catchlight)
-            catchlightNode.position = SCNVector3(0.006, 0.008, 0.012)
+            catchlightNode.position = SCNVector3(0.006, 0.008, 0.013)
             eyeContainer.addChildNode(catchlightNode)
             
             // Eyelid for blinking / sleeping (retracted by default)
-            let eyelidGeo = SCNSphere(radius: 0.026)
+            let eyelidGeo = SCNSphere(radius: 0.027)
             eyelidGeo.materials = [furMat]
             let eyelidNode = SCNNode(geometry: eyelidGeo)
             eyelidNode.scale = SCNVector3(1.05, 1.05, 0.65)
@@ -191,39 +196,42 @@ final class CookieNode: SCNNode {
             }
             headNode.addChildNode(eyeContainer)
             
-            // Rosy Cheek Blush
-            let blushGeo = SCNPlane(width: 0.048, height: 0.034)
-            blushGeo.cornerRadius = 0.017
+            // Rosy Cheek Blush Discs (vibrant soft pink exactly like reference art)
+            let blushGeo = SCNCylinder(radius: 0.028, height: 0.004)
             blushGeo.materials = [blushMat]
             let blushNode = SCNNode(geometry: blushGeo)
-            blushNode.position = SCNVector3(blushX, -0.022, 0.128)
-            blushNode.eulerAngles.y = isLeft ? -0.32 : 0.32
+            blushNode.position = SCNVector3(blushX, -0.024, 0.124)
+            blushNode.eulerAngles = SCNVector3(1.3, isLeft ? -0.35 : 0.35, 0)
             headNode.addChildNode(blushNode)
         }
         
         // --- E. FELINE :3 MOUTH ---
-        let mouthGeo = SCNTorus(ringRadius: 0.016, pipeRadius: 0.0035)
-        mouthGeo.materials = [mouthMat]
+        let mouthMatRefined = SCNMaterial()
+        mouthMatRefined.diffuse.contents = NSColor(red: 0.18, green: 0.14, blue: 0.12, alpha: 1.0)
+        mouthMatRefined.lightingModel = .constant
         
-        // Left curve of :3
-        let leftLip = SCNNode(geometry: mouthGeo)
-        leftLip.position = SCNVector3(-0.013, -0.018, 0.144)
-        leftLip.eulerAngles = SCNVector3(0.2, 0, 0)
-        leftLip.scale = SCNVector3(1.0, 0.85, 0.5)
+        let lipTorus = SCNTorus(ringRadius: 0.014, pipeRadius: 0.0032)
+        lipTorus.materials = [mouthMatRefined]
+        
+        // Left loop of :3
+        let leftLip = SCNNode(geometry: lipTorus)
+        leftLip.position = SCNVector3(-0.011, -0.016, 0.145)
+        leftLip.eulerAngles = SCNVector3(0.35, 0, 0.22)
+        leftLip.scale = SCNVector3(0.9, 0.75, 0.45)
         headNode.addChildNode(leftLip)
         
-        // Right curve of :3
-        let rightLip = SCNNode(geometry: mouthGeo)
-        rightLip.position = SCNVector3(0.013, -0.018, 0.144)
-        rightLip.eulerAngles = SCNVector3(0.2, 0, 0)
-        rightLip.scale = SCNVector3(1.0, 0.85, 0.5)
+        // Right loop of :3
+        let rightLip = SCNNode(geometry: lipTorus)
+        rightLip.position = SCNVector3(0.011, -0.016, 0.145)
+        rightLip.eulerAngles = SCNVector3(0.35, 0, -0.22)
+        rightLip.scale = SCNVector3(0.9, 0.75, 0.45)
         headNode.addChildNode(rightLip)
         
         // Tiny dark nose point
-        let noseGeo = SCNSphere(radius: 0.0045)
-        noseGeo.materials = [mouthMat]
+        let noseGeo = SCNSphere(radius: 0.004)
+        noseGeo.materials = [mouthMatRefined]
         let noseNode = SCNNode(geometry: noseGeo)
-        noseNode.position = SCNVector3(0, -0.006, 0.148)
+        noseNode.position = SCNVector3(0, -0.005, 0.148)
         headNode.addChildNode(noseNode)
         
         // --- F. FRONT PAWS / ARMS ---
@@ -306,16 +314,16 @@ final class CookieNode: SCNNode {
     }
     
     private func buildArmGeometry(in node: SCNNode, mat: SCNMaterial) {
-        // Chubby little front arm cylinder
-        let armGeo = SCNCylinder(radius: 0.038, height: 0.13)
+        // Chubby little front arm smooth capsule (seamless rounded shoulder and elbow)
+        let armGeo = SCNCapsule(capRadius: 0.035, height: 0.13)
         armGeo.materials = [mat]
-        let armCyl = SCNNode(geometry: armGeo)
-        armCyl.position = SCNVector3(0, -0.05, 0.03)
-        armCyl.eulerAngles.x = 0.35
-        node.addChildNode(armCyl)
+        let armNode = SCNNode(geometry: armGeo)
+        armNode.position = SCNVector3(0, -0.05, 0.03)
+        armNode.eulerAngles.x = 0.35
+        node.addChildNode(armNode)
         
         // Cute rounded paw tip with tiny toe indentations
-        let pawGeo = SCNSphere(radius: 0.042)
+        let pawGeo = SCNSphere(radius: 0.040)
         pawGeo.materials = [mat]
         let pawNode = SCNNode(geometry: pawGeo)
         pawNode.scale = SCNVector3(1.0, 0.8, 1.2)
