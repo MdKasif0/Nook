@@ -29,6 +29,12 @@ final class CookieNode: SCNNode {
     private var leftArmNode: SCNNode!
     private var tailNode: SCNNode!
     private var shadowPlateNode: SCNNode!
+    private var leftSleepArcNode: SCNNode!
+    private var rightSleepArcNode: SCNNode!
+    private var leftEyeSphere: SCNNode!
+    private var rightEyeSphere: SCNNode!
+    private var leftCatchlight: SCNNode!
+    private var rightCatchlight: SCNNode!
     
     // MARK: - State Tracking
     
@@ -72,7 +78,14 @@ final class CookieNode: SCNNode {
         furMat.specular.contents = NSColor(white: 0.12, alpha: 1.0)
         furMat.lightingModel = .lambert
         
-        // 2. Soft pastel pink for inner ears & blush
+        // 2. Warm ginger/caramel tabby patches (matching reference photo)
+        let gingerMat = SCNMaterial()
+        gingerMat.diffuse.contents = NSColor(red: 0.86, green: 0.54, blue: 0.30, alpha: 1.0)
+        gingerMat.roughness.contents = 0.82
+        gingerMat.specular.contents = NSColor(white: 0.10, alpha: 1.0)
+        gingerMat.lightingModel = .lambert
+        
+        // 3. Soft pastel pink for inner ears & blush
         let innerEarMat = SCNMaterial()
         innerEarMat.diffuse.contents = NSColor(red: 0.96, green: 0.74, blue: 0.71, alpha: 1.0)
         innerEarMat.roughness.contents = 0.85
@@ -82,22 +95,23 @@ final class CookieNode: SCNNode {
         blushMat.roughness.contents = 0.90
         blushMat.lightingModel = .constant
         
-        // 3. Deep glossy obsidian black for button eyes
+        // 4. Deep glossy obsidian black for button eyes
         let eyeMat = SCNMaterial()
         eyeMat.diffuse.contents = NSColor(red: 0.08, green: 0.07, blue: 0.07, alpha: 1.0)
         eyeMat.roughness.contents = 0.08
         eyeMat.specular.contents = NSColor.white
         eyeMat.metalness.contents = 0.1
         
-        // 4. Pure white enamel catchlight highlights
+        // 5. Pure white enamel catchlight highlights
         let catchlightMat = SCNMaterial()
         catchlightMat.diffuse.contents = NSColor.white
         catchlightMat.lightingModel = .constant
         
-        // 5. Soft warm charcoal/brown for :3 mouth
+        // 6. Soft warm charcoal/brown for :3 mouth and sleeping eye arcs
         let mouthMat = SCNMaterial()
         mouthMat.diffuse.contents = NSColor(red: 0.22, green: 0.18, blue: 0.16, alpha: 1.0)
         mouthMat.roughness.contents = 0.80
+        mouthMat.lightingModel = .constant
         
         // --- A. TORSO / BODY ---
         let bodyGeo = SCNSphere(radius: 0.15)
@@ -107,7 +121,15 @@ final class CookieNode: SCNNode {
         bodySphereNode.position = SCNVector3(0, 0.12, 0)
         bodyRootNode.addChildNode(bodySphereNode)
         
-        // Chubby tummy bulge
+        // Ginger saddle patch on back
+        let backGingerGeo = SCNSphere(radius: 0.151)
+        backGingerGeo.materials = [gingerMat]
+        let backGingerNode = SCNNode(geometry: backGingerGeo)
+        backGingerNode.scale = SCNVector3(0.98, 0.82, 0.92)
+        backGingerNode.position = SCNVector3(0.01, 0.035, -0.045)
+        bodySphereNode.addChildNode(backGingerNode)
+        
+        // Chubby cream tummy bulge
         let tummyGeo = SCNSphere(radius: 0.13)
         let tummyMat = SCNMaterial()
         tummyMat.diffuse.contents = NSColor(red: 0.985, green: 0.978, blue: 0.960, alpha: 1.0)
@@ -131,6 +153,14 @@ final class CookieNode: SCNNode {
         headBase.scale = SCNVector3(1.18, 1.00, 1.05)
         headNode.addChildNode(headBase)
         
+        // Ginger patch across crown and right side of head
+        let headGingerGeo = SCNSphere(radius: 0.146)
+        headGingerGeo.materials = [gingerMat]
+        let headGingerNode = SCNNode(geometry: headGingerGeo)
+        headGingerNode.scale = SCNVector3(0.72, 0.65, 0.85)
+        headGingerNode.position = SCNVector3(0.035, 0.045, -0.02)
+        headNode.addChildNode(headGingerNode)
+        
         // Left & Right chubby cheek bulges (softened for adorable chibi cheeks)
         for (cx, side) in [(-0.075, "left"), (0.075, "right")] {
             let cheekGeo = SCNSphere(radius: 0.062)
@@ -150,11 +180,11 @@ final class CookieNode: SCNNode {
         buildEarGeometry(in: leftEarNode, outerMat: furMat, innerMat: innerEarMat)
         headNode.addChildNode(leftEarNode)
         
-        // Right Ear
+        // Right Ear (warm ginger ear)
         rightEarNode = SCNNode()
         rightEarNode.position = SCNVector3(0.095, 0.125, 0.01)
         rightEarNode.eulerAngles = SCNVector3(-0.12, 0, -0.32)
-        buildEarGeometry(in: rightEarNode, outerMat: furMat, innerMat: innerEarMat)
+        buildEarGeometry(in: rightEarNode, outerMat: gingerMat, innerMat: innerEarMat)
         headNode.addChildNode(rightEarNode)
         
         // --- D. EYES WITH SPECULAR HIGHLIGHTS & BLUSH ---
@@ -177,7 +207,7 @@ final class CookieNode: SCNNode {
             catchlightNode.position = SCNVector3(0.006, 0.008, 0.013)
             eyeContainer.addChildNode(catchlightNode)
             
-            // Eyelid for blinking / sleeping (retracted by default)
+            // Eyelid for blinking
             let eyelidGeo = SCNSphere(radius: 0.027)
             eyelidGeo.materials = [furMat]
             let eyelidNode = SCNNode(geometry: eyelidGeo)
@@ -186,12 +216,28 @@ final class CookieNode: SCNNode {
             eyelidNode.opacity = 0.0
             eyeContainer.addChildNode(eyelidNode)
             
+            // Peaceful sleeping eye curved arc (sweet `︶` shape)
+            let sleepArcGeo = SCNTorus(ringRadius: 0.018, pipeRadius: 0.0032)
+            sleepArcGeo.materials = [mouthMat]
+            let sleepArcNode = SCNNode(geometry: sleepArcGeo)
+            sleepArcNode.scale = SCNVector3(1.0, 0.55, 0.40)
+            sleepArcNode.position = SCNVector3(0, -0.002, 0.010)
+            sleepArcNode.eulerAngles = SCNVector3(0.25, 0, 0)
+            sleepArcNode.opacity = 0.0
+            eyeContainer.addChildNode(sleepArcNode)
+            
             if isLeft {
                 leftEyeNode = eyeContainer
                 leftEyelidNode = eyelidNode
+                leftEyeSphere = eyeNode
+                leftCatchlight = catchlightNode
+                leftSleepArcNode = sleepArcNode
             } else {
                 rightEyeNode = eyeContainer
                 rightEyelidNode = eyelidNode
+                rightEyeSphere = eyeNode
+                rightCatchlight = catchlightNode
+                rightSleepArcNode = sleepArcNode
             }
             headNode.addChildNode(eyeContainer)
             
@@ -234,7 +280,7 @@ final class CookieNode: SCNNode {
         headNode.addChildNode(noseNode)
         
         // --- F. FRONT PAWS / ARMS ---
-        // Right Arm (can point at desk, like in the reference art!)
+        // Right Arm
         rightArmNode = SCNNode()
         rightArmNode.name = "cookie_right_arm"
         rightArmNode.position = SCNVector3(0.09, 0.12, 0.08)
@@ -242,7 +288,7 @@ final class CookieNode: SCNNode {
         buildArmGeometry(in: rightArmNode, mat: furMat)
         bodyRootNode.addChildNode(rightArmNode)
         
-        // Left Arm (rests on floor)
+        // Left Arm
         leftArmNode = SCNNode()
         leftArmNode.name = "cookie_left_arm"
         leftArmNode.position = SCNVector3(-0.09, 0.12, 0.08)
@@ -251,9 +297,9 @@ final class CookieNode: SCNNode {
         bodyRootNode.addChildNode(leftArmNode)
         
         // --- G. HIND LEGS / SITTING HAUNCHES ---
-        for (hx, _) in [(-0.11, true), (0.11, false)] {
+        for (hx, isRight) in [(-0.11, false), (0.11, true)] {
             let haunchGeo = SCNSphere(radius: 0.09)
-            haunchGeo.materials = [furMat]
+            haunchGeo.materials = [isRight ? gingerMat : furMat]
             let haunch = SCNNode(geometry: haunchGeo)
             haunch.scale = SCNVector3(0.9, 0.8, 1.25)
             haunch.position = SCNVector3(hx, 0.06, 0.02)
@@ -268,11 +314,11 @@ final class CookieNode: SCNNode {
             bodyRootNode.addChildNode(pawPad)
         }
         
-        // --- H. CURLED TAIL ---
+        // --- H. CURLED TAIL (Ginger with white cream tip) ---
         tailNode = SCNNode()
         tailNode.name = "cookie_tail"
         tailNode.position = SCNVector3(0.12, 0.04, -0.09)
-        buildTailGeometry(in: tailNode, mat: furMat)
+        buildTailGeometry(in: tailNode, bodyMat: gingerMat, tipMat: furMat)
         bodyRootNode.addChildNode(tailNode)
         
         // --- I. SOFT CONTACT SHADOW ---
