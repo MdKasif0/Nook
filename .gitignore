@@ -30,3 +30,4 @@ Icon
 # Swift Package Manager
 .build/
 Packages/
+render_room
