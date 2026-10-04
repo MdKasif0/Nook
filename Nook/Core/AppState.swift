@@ -28,7 +28,62 @@ final class AppState {
     /// A focused item ID to highlight and move the camera toward in the 3D room.
     var focusedItemID: UUID? = nil
     
+    // MARK: - Local-First Reliability & Error Handling
+    
+    /// User-friendly error message when SwiftData save fails.
+    var persistenceErrorMessage: String? = nil
+    
+    /// Recovery callback to retry the failed save action without data loss.
+    var persistenceRetryAction: (@MainActor () -> Void)? = nil
+    
+    /// Transient undo toast message (e.g. "Deleted 'My Idea' • ⌘Z").
+    var undoToastMessage: String? = nil
+    
+    /// Undo action trigger from the toast banner.
+    var undoToastAction: (@MainActor () -> Void)? = nil
+    
+    private var undoDismissTask: Task<Void, Never>? = nil
+    
     // MARK: - Actions
+    
+    func reportPersistenceError(message: String = "Something went wrong while saving your Nook.", retry: @escaping @MainActor () -> Void) {
+        withAnimation(NookDesign.Animation.springy) {
+            self.persistenceErrorMessage = message
+            self.persistenceRetryAction = retry
+        }
+    }
+    
+    func clearPersistenceError() {
+        withAnimation(NookDesign.Animation.gentle) {
+            self.persistenceErrorMessage = nil
+            self.persistenceRetryAction = nil
+        }
+    }
+    
+    func showUndoToast(message: String, undo: @escaping @MainActor () -> Void) {
+        undoDismissTask?.cancel()
+        withAnimation(NookDesign.Animation.springy) {
+            self.undoToastMessage = message
+            self.undoToastAction = undo
+        }
+        
+        undoDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(NookDesign.Animation.gentle) {
+                self.undoToastMessage = nil
+                self.undoToastAction = nil
+            }
+        }
+    }
+    
+    func dismissUndoToast() {
+        undoDismissTask?.cancel()
+        withAnimation(NookDesign.Animation.gentle) {
+            self.undoToastMessage = nil
+            self.undoToastAction = nil
+        }
+    }
     
     func openSearch() {
         withAnimation(NookDesign.Animation.springy) {
