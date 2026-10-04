@@ -11,6 +11,7 @@ import QuartzCore
 /// - Adorable feline :3 muzzle
 /// - Chubby paws capable of pointing towards the desk, cleaning paws, and resting
 /// - Smooth head tracking, blinking, breathing, and posture transitions
+@MainActor
 final class CookieNode: SCNNode {
     
     // MARK: - Subnodes for Hierarchy & Animation
@@ -574,7 +575,8 @@ final class CookieNode: SCNNode {
         SCNTransaction.commit()
         
         // Gentle waking stretch after short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
             self?.stretch()
         }
     }
