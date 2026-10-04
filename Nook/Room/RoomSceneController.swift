@@ -295,6 +295,31 @@ final class RoomSceneController {
         board.runAction(SCNAction.sequence([rollForward, rollBack]))
     }
     
+    /// Bounces or wobbles a fixture/prop with gentle tactile animation and subtle sound.
+    func wobbleProp(_ node: SCNNode) {
+        guard !PreferencesManager.shared.reduceMotion else { return }
+        AudioManager.shared.playObjectSelected()
+        
+        let rot1 = SCNAction.rotateBy(x: 0, y: 0.10, z: 0.06, duration: 0.08)
+        let rot2 = SCNAction.rotateBy(x: 0, y: -0.20, z: -0.12, duration: 0.12)
+        let rot3 = SCNAction.rotateBy(x: 0, y: 0.10, z: 0.06, duration: 0.08)
+        node.runAction(SCNAction.sequence([rot1, rot2, rot3]))
+    }
+    
+    /// Bounces a pillow or pouf with gentle tactile squash and stretch.
+    func bounceProp(_ node: SCNNode) {
+        guard !PreferencesManager.shared.reduceMotion else { return }
+        AudioManager.shared.playObjectSelected()
+        
+        let squash = SCNAction.scale(to: 0.94, duration: 0.08)
+        squash.timingMode = .easeOut
+        let stretch = SCNAction.scale(to: 1.05, duration: 0.12)
+        stretch.timingMode = .easeInEaseOut
+        let normal = SCNAction.scale(to: 1.0, duration: 0.10)
+        normal.timingMode = .easeOut
+        node.runAction(SCNAction.sequence([squash, stretch, normal]))
+    }
+    
     // MARK: - Selection & Hover
     
     private func updateItemSelection() {
