@@ -67,6 +67,7 @@ struct NookApp: App {
         Window("Quick Thought", id: NookWindow.quickCapture.id) {
             QuickCaptureView()
                 .environment(appState)
+                .preferredColorScheme(.light)
         }
         .modelContainer(persistenceController.container)
         .windowStyle(.titleBar)
@@ -77,6 +78,7 @@ struct NookApp: App {
         Settings {
             SettingsView()
                 .environment(appState)
+                .preferredColorScheme(.light)
         }
         .modelContainer(persistenceController.container)
         
@@ -85,6 +87,7 @@ struct NookApp: App {
             MenuBarView()
                 .environment(appState)
                 .modelContainer(persistenceController.container)
+                .preferredColorScheme(.light)
         } label: {
             Image(systemName: "house")
                 .help("Nook — Your room")
