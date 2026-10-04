@@ -75,8 +75,8 @@ struct RoomView: View {
                 
                 // Bottom Area: Selected Item Inspector or Cookie Toast
                 HStack(alignment: .bottom) {
-                    // Cookie Toast / Reaction (Bottom Left, near Cookie's area)
-                    if let message = cookieToastMessage {
+                    // Cookie Speech Bubble / Reaction (Bottom Left, near Cookie's area)
+                    if let message = sceneController.cookieController.state.speechBubble ?? cookieToastMessage {
                         cookieToastBubble(message)
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .scale(scale: 0.95)),
@@ -98,14 +98,12 @@ struct RoomView: View {
                 .padding(NookDesign.Spacing.xl)
             }
         }
+        .onAppear {
+            RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
+        }
         .task(id: items) {
             sceneController.syncItems(items)
             seedOnboardingItemIfNeeded()
-        }
-        .onChange(of: sceneController.cookieMessage) { _, newMsg in
-            if let newMsg {
-                showCookieToast(newMsg)
-            }
         }
         .sheet(isPresented: $isShowingNewItemSheet) {
             NewItemSheet { title, content, type, objectType in
@@ -119,6 +117,9 @@ struct RoomView: View {
                 )
                 modelContext.insert(newItem)
                 try? modelContext.save()
+                
+                // Notify Cookie and room of newly materialized object
+                RoomEventBus.shared.publish(.itemCreated(title: title, itemType: type, objectType: objectType, position: position))
                 isShowingNewItemSheet = false
                 
                 // Select the freshly materialized object in the room
@@ -143,13 +144,16 @@ struct RoomView: View {
                         item.isArchived = true
                         sceneController.selectedItemID = nil
                         try? modelContext.save()
+                        RoomEventBus.shared.publish(.itemCompleted(title: item.title))
                     }
                 },
                 onDelete: {
                     withAnimation(NookDesign.Animation.standard) {
                         sceneController.selectedItemID = nil
+                        let deletedTitle = item.title
                         modelContext.delete(item)
                         try? modelContext.save()
+                        RoomEventBus.shared.publish(.itemDeleted(title: deletedTitle))
                     }
                 }
             )
