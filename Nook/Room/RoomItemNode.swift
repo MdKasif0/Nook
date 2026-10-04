@@ -342,26 +342,48 @@ final class RoomItemNode: SCNNode {
     }
     
     private func updateDragState() {
-        SCNTransaction.begin()
-        SCNTransaction.animationDuration = 0.15
-        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
-        
         if isBeingDragged {
             visualNode.removeAction(forKey: "levitate")
-            visualNode.position.y = 0.09
-            visualNode.scale = SCNVector3(1.12, 1.12, 1.12)
-            shadowPlateNode?.scale = SCNVector3(1.4, 1.4, 1.4)
-            shadowPlateNode?.opacity = 0.14
+            SCNTransaction.begin()
+            SCNTransaction.animationDuration = 0.14
+            SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
+            visualNode.position.y = 0.08
+            visualNode.scale = SCNVector3(1.08, 1.08, 1.08)
+            shadowPlateNode?.scale = SCNVector3(1.35, 1.35, 1.35)
+            shadowPlateNode?.opacity = 0.12
+            SCNTransaction.commit()
+            
+            AudioManager.shared.playObjectSelected()
         } else {
-            visualNode.position.y = isItemSelected ? 0.075 : 0.0
-            visualNode.scale = SCNVector3(1.0, 1.0, 1.0)
-            shadowPlateNode?.scale = SCNVector3(1.0, 1.0, 1.0)
-            shadowPlateNode?.opacity = 0.22
+            let targetY: CGFloat = isItemSelected ? 0.075 : 0.0
+            
+            if PreferencesManager.shared.reduceMotion {
+                visualNode.position.y = targetY
+                visualNode.scale = SCNVector3(1.0, 1.0, 1.0)
+                shadowPlateNode?.scale = SCNVector3(1.0, 1.0, 1.0)
+                shadowPlateNode?.opacity = 0.22
+            } else {
+                // Natural gentle settling without cartoon springiness
+                SCNTransaction.begin()
+                SCNTransaction.animationDuration = 0.18
+                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeIn)
+                visualNode.scale = SCNVector3(1.0, 1.0, 1.0)
+                shadowPlateNode?.scale = SCNVector3(1.0, 1.0, 1.0)
+                shadowPlateNode?.opacity = 0.22
+                SCNTransaction.commit()
+                
+                let drop = SCNAction.move(to: SCNVector3(0, targetY - 0.004, 0), duration: 0.14)
+                drop.timingMode = .easeIn
+                let settle = SCNAction.move(to: SCNVector3(0, targetY, 0), duration: 0.10)
+                settle.timingMode = .easeOut
+                visualNode.runAction(SCNAction.sequence([drop, settle]), forKey: "settle")
+            }
+            
+            AudioManager.shared.playObjectPlaced()
+            
             if isItemSelected {
                 updateSelectedState()
             }
         }
-        
-        SCNTransaction.commit()
     }
 }
