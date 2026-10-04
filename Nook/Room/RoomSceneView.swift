@@ -11,6 +11,7 @@ struct RoomSceneView: NSViewRepresentable {
     let controller: RoomSceneController
     let onSelectItem: ((UUID?) -> Void)?
     let onItemMoved: ((UUID, RoomPosition) -> Void)?
+    let onOpenItem: ((UUID) -> Void)?
     let onToggleLamp: (() -> Void)?
     let onPetCookie: (() -> Void)?
     
@@ -24,6 +25,7 @@ struct RoomSceneView: NSViewRepresentable {
         view.autoenablesDefaultLighting = false
         view.rendersContinuously = true
         view.onItemMoved = onItemMoved
+        view.onOpenItem = onOpenItem
         view.delegate = context.coordinator
         
         context.coordinator.parent = self
@@ -36,6 +38,7 @@ struct RoomSceneView: NSViewRepresentable {
         context.coordinator.parent = self
         nsView.controller = controller
         nsView.onItemMoved = onItemMoved
+        nsView.onOpenItem = onOpenItem
     }
     
     func makeCoordinator() -> Coordinator {
@@ -60,6 +63,7 @@ final class NookSCNView: SCNView {
     
     var controller: RoomSceneController
     var onItemMoved: ((UUID, RoomPosition) -> Void)?
+    var onOpenItem: ((UUID) -> Void)?
     
     private var trackingAreaRef: NSTrackingArea?
     
