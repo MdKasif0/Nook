@@ -61,7 +61,7 @@ final class RoomSceneController {
     let cookieController = CookieBehaviorController()
     
     // Performance lifecycle notification observers
-    private var lifecycleObservers: [NSObjectProtocol] = []
+    nonisolated(unsafe) private var lifecycleObservers: [NSObjectProtocol] = []
     
     init() {
         setupScene()
@@ -356,7 +356,9 @@ final class RoomSceneController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.pauseHeavyAnimations()
+            MainActor.assumeIsolated {
+                self?.pauseHeavyAnimations()
+            }
         }
         
         let becomeActive = center.addObserver(
@@ -364,7 +366,9 @@ final class RoomSceneController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.resumeHeavyAnimations()
+            MainActor.assumeIsolated {
+                self?.resumeHeavyAnimations()
+            }
         }
         
         let miniaturize = center.addObserver(
@@ -372,7 +376,9 @@ final class RoomSceneController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.pauseHeavyAnimations()
+            MainActor.assumeIsolated {
+                self?.pauseHeavyAnimations()
+            }
         }
         
         let deminiaturize = center.addObserver(
@@ -380,7 +386,9 @@ final class RoomSceneController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.resumeHeavyAnimations()
+            MainActor.assumeIsolated {
+                self?.resumeHeavyAnimations()
+            }
         }
         
         lifecycleObservers = [resign, becomeActive, miniaturize, deminiaturize]

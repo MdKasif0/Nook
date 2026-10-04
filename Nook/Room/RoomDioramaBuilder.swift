@@ -410,7 +410,7 @@ final class RoomDioramaBuilder {
         deskGroup.addChildNode(sNode)
         
         // Large Computer Monitor displaying cursive "hello ♡" with landscape
-        let (monitorNode, screenLight) = buildComputerMonitor()
+        let (monitorNode, _) = buildComputerMonitor()
         monitorNode.position = SCNVector3(-0.35, deskH, -0.15)
         deskGroup.addChildNode(monitorNode)
         
@@ -837,7 +837,7 @@ final class RoomDioramaBuilder {
         benchGroup.addChildNode(cNode)
         
         // Vintage Portable Suitcase Record Player (Pastel cream/rose body with spinning vinyl)
-        let (recordPlayerNode, recordDiscNode) = buildRecordPlayer(reduceMotion: reduceMotion)
+        let (recordPlayerNode, _) = buildRecordPlayer(reduceMotion: reduceMotion)
         recordPlayerNode.position = SCNVector3(0.08, benchH + 0.09, 0.02)
         benchGroup.addChildNode(recordPlayerNode)
         
