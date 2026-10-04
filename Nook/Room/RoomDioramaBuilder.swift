@@ -1049,7 +1049,7 @@ final class RoomDioramaBuilder {
             particles.particleSizeVariation = 0.008
             particles.particleColor = NSColor(red: 1.0, green: 0.95, blue: 0.85, alpha: 0.40)
             particles.blendMode = .additive
-            particles.lightingModel = .constant
+            particles.isLightingEnabled = false
             
             // Confined to the diagonal sunbeam cone inside the window
             particles.emitterShape = SCNBox(width: 1.4, height: 1.8, length: 1.8, chamferRadius: 0)
