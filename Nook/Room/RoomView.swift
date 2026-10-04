@@ -32,6 +32,7 @@ struct RoomView: View {
     @State private var editTitle = ""
     @State private var editContent = ""
     @State private var editObjectType: NookObjectType = .pebble
+    @State private var isHeaderHovered = false
     
     var selectedItem: NookItem? {
         guard let id = sceneController.selectedItemID else { return nil }
@@ -181,8 +182,6 @@ struct RoomView: View {
             )
         }
     }
-    
-    @State private var isHeaderHovered = false
     
     // MARK: - Subviews
     

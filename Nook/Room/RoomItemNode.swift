@@ -7,6 +7,7 @@ import QuartzCore
 /// Implements Nook's core philosophy: "Thoughts become physical objects."
 /// Renders thoughts as tactile objects: Smooth Pebble (default), Paper Note,
 /// Sticky Note, Small Card, Polaroid, and Bookmark.
+@MainActor
 final class RoomItemNode: SCNNode {
     
     let itemID: UUID
