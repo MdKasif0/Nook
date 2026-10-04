@@ -52,11 +52,11 @@ final class PreferencesManager {
     private init() {
         self.reduceMotion = defaults.bool(forKey: Keys.reduceMotion)
         
-        // Default to true for sound effects and cookie reactions if not set
+        // Sound effects must be OFF by default per user specification
         if defaults.object(forKey: Keys.soundEffects) != nil {
             self.soundEffectsEnabled = defaults.bool(forKey: Keys.soundEffects)
         } else {
-            self.soundEffectsEnabled = true
+            self.soundEffectsEnabled = false
         }
         
         if defaults.object(forKey: Keys.cookieReactions) != nil {

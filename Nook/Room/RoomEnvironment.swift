@@ -26,23 +26,24 @@ enum RoomTimeOfDay: String, CaseIterable, Identifiable, Sendable {
     var sunlightColor: NSColor {
         switch self {
         case .morning:
-            return NSColor(red: 1.0, green: 0.96, blue: 0.88, alpha: 1.0) // Soft warm morning daylight
+            return NSColor(red: 1.0, green: 0.94, blue: 0.86, alpha: 1.0) // Soft warm morning daylight
         case .afternoon:
-            return NSColor(red: 1.0, green: 0.98, blue: 0.92, alpha: 1.0) // Crisp natural daylight
+            return NSColor(red: 1.0, green: 0.98, blue: 0.93, alpha: 1.0) // Neutral warm daylight
         case .sunset:
-            return NSColor(red: 1.0, green: 0.78, blue: 0.58, alpha: 1.0) // Warm amber golden hour
+            return NSColor(red: 1.0, green: 0.74, blue: 0.50, alpha: 1.0) // Warm golden light
         case .night:
-            return NSColor(red: 0.45, green: 0.48, blue: 0.60, alpha: 1.0) // Soft cool moonlight
+            // Strictly warm amber/cream interior light — NO blue nighttime lighting
+            return NSColor(red: 0.96, green: 0.82, blue: 0.64, alpha: 1.0)
         }
     }
     
     /// Directional sunlight intensity.
     var sunlightIntensity: CGFloat {
         switch self {
-        case .morning:   return 1100
-        case .afternoon: return 1200
-        case .sunset:    return 950
-        case .night:     return 220
+        case .morning:   return 1150
+        case .afternoon: return 1250
+        case .sunset:    return 1000
+        case .night:     return 160 // Very soft warm amber moon/ambient filter
         }
     }
     
@@ -50,37 +51,39 @@ enum RoomTimeOfDay: String, CaseIterable, Identifiable, Sendable {
     var ambientColor: NSColor {
         switch self {
         case .morning:
-            return NSColor(red: 0.96, green: 0.94, blue: 0.90, alpha: 1.0)
+            return NSColor(red: 0.96, green: 0.93, blue: 0.88, alpha: 1.0)
         case .afternoon:
-            return NSColor(red: 0.94, green: 0.93, blue: 0.90, alpha: 1.0)
+            return NSColor(red: 0.95, green: 0.94, blue: 0.91, alpha: 1.0)
         case .sunset:
-            return NSColor(red: 0.95, green: 0.88, blue: 0.82, alpha: 1.0)
+            return NSColor(red: 0.96, green: 0.86, blue: 0.78, alpha: 1.0)
         case .night:
-            return NSColor(red: 0.35, green: 0.38, blue: 0.48, alpha: 1.0)
+            // Warm dim amber/cream interior ambient glow — completely non-blue
+            return NSColor(red: 0.58, green: 0.48, blue: 0.38, alpha: 1.0)
         }
     }
     
     /// Ambient light intensity.
     var ambientIntensity: CGFloat {
         switch self {
-        case .morning:   return 500
-        case .afternoon: return 550
+        case .morning:   return 520
+        case .afternoon: return 560
         case .sunset:    return 480
-        case .night:     return 320
+        case .night:     return 360 // Cozy warm ambient fill from lamps
         }
     }
     
-    /// Sky top gradient color for outside the window.
+    /// Sky top gradient color for outside the window (muted, non-saturated).
     var skyTopColor: NSColor {
         switch self {
         case .morning:
-            return NSColor(red: 0.68, green: 0.82, blue: 0.94, alpha: 1.0)
+            return NSColor(red: 0.72, green: 0.80, blue: 0.86, alpha: 1.0) // Soft morning sky
         case .afternoon:
-            return NSColor(red: 0.52, green: 0.75, blue: 0.95, alpha: 1.0)
+            return NSColor(red: 0.60, green: 0.74, blue: 0.85, alpha: 1.0) // Bright gentle daylight
         case .sunset:
-            return NSColor(red: 0.92, green: 0.55, blue: 0.42, alpha: 1.0)
+            return NSColor(red: 0.82, green: 0.58, blue: 0.48, alpha: 1.0) // Warm sunset terracotta
         case .night:
-            return NSColor(red: 0.10, green: 0.12, blue: 0.22, alpha: 1.0)
+            // Dark neutral sky with subtle warmth — NO saturated blue
+            return NSColor(red: 0.13, green: 0.13, blue: 0.14, alpha: 1.0)
         }
     }
     
@@ -88,17 +91,17 @@ enum RoomTimeOfDay: String, CaseIterable, Identifiable, Sendable {
     var skyHorizonColor: NSColor {
         switch self {
         case .morning:
-            return NSColor(red: 0.98, green: 0.92, blue: 0.82, alpha: 1.0)
+            return NSColor(red: 0.95, green: 0.92, blue: 0.86, alpha: 1.0)
         case .afternoon:
-            return NSColor(red: 0.88, green: 0.94, blue: 0.98, alpha: 1.0)
+            return NSColor(red: 0.88, green: 0.92, blue: 0.95, alpha: 1.0)
         case .sunset:
-            return NSColor(red: 0.98, green: 0.80, blue: 0.50, alpha: 1.0)
+            return NSColor(red: 0.95, green: 0.76, blue: 0.56, alpha: 1.0)
         case .night:
-            return NSColor(red: 0.22, green: 0.26, blue: 0.38, alpha: 1.0)
+            return NSColor(red: 0.18, green: 0.17, blue: 0.18, alpha: 1.0)
         }
     }
     
-    /// Whether the cozy desk lamp should be illuminated by default.
+    /// Whether interior cozy lamps (desk lamp & wall sconce) should be on by default.
     var isDeskLampDefaultOn: Bool {
         switch self {
         case .morning, .afternoon: return false
