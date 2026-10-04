@@ -94,7 +94,11 @@ final class NookSCNView: SCNView {
         "floor_succulent",
         "floor_plant",
         "ergonomic_chair",
-        "monstera_plant"
+        "monstera_plant",
+        "nightstand_succulent",
+        "alarm_clock",
+        "cat_figurine",
+        "keepsake_box"
     ]
     
     // Set of interactive fixture names that user can click to toggle

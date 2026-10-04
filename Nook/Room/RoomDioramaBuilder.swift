@@ -629,7 +629,7 @@ final class RoomDioramaBuilder {
         root.addChildNode(shelfGroup)
     }
     
-    // MARK: - 4. Daybed Nook & Cookie
+    // MARK: - 4. Daybed Nook & Corner Bookcase
     
     private static func buildDaybedNook(in root: SCNNode, reduceMotion: Bool) {
         let bedGroup = SCNNode()
@@ -637,74 +637,131 @@ final class RoomDioramaBuilder {
         let linenMat = Materials.linenWhite
         let sageMat = Materials.fabricSage
         
-        // Positioned in back-right corner under the window
-        bedGroup.position = SCNVector3(0.95, 0.14, -1.35)
+        // Bed positioned along the right wall under the window
+        bedGroup.position = SCNVector3(0.20, 0.14, -1.65)
         bedGroup.name = "daybed_nook"
         
-        let bedW: CGFloat = 1.65 // X span
-        let bedL: CGFloat = 1.35 // Z span
+        let bedLength: CGFloat = 1.85 // Length along X (from headboard near bookcase to foot of bed)
+        let bedWidth: CGFloat = 1.05  // Depth along Z (tucked against window wall)
         let bedBaseH: CGFloat = 0.32
         
-        // Built-in Floor-to-Ceiling Oak Bookcase Unit behind the headboard (matching reference photo!)
+        // Built-in Floor-to-Ceiling Oak Bookcase Unit mounted against the back wall
         let bookcase = buildHeadboardBookcase(reduceMotion: reduceMotion)
-        bookcase.position = SCNVector3(-bedW / 2 - 0.20, 0, 0)
-        bedGroup.addChildNode(bookcase)
+        bookcase.position = SCNVector3(-0.80, 0.14, -2.12)
+        root.addChildNode(bookcase)
+        
+        // Bedside 2-Drawer Oak Nightstand between bed and desk
+        let nightstand = buildNightstand()
+        nightstand.position = SCNVector3(-1.25, 0.14, -1.75)
+        root.addChildNode(nightstand)
         
         // Solid Oak Bed Frame Base
-        let bedFrame = SCNBox(width: bedW, height: bedBaseH, length: bedL, chamferRadius: 0.02)
+        let bedFrame = SCNBox(width: bedLength, height: bedBaseH, length: bedWidth, chamferRadius: 0.02)
         bedFrame.materials = [woodMat]
         let bedFrameNode = SCNNode(geometry: bedFrame)
         bedFrameNode.position = SCNVector3(0, bedBaseH / 2, 0)
         bedGroup.addChildNode(bedFrameNode)
         
-        // Solid Oak Headboard integrated with the bookcase
-        let headboard = SCNBox(width: 0.08, height: 0.75, length: bedL, chamferRadius: 0.015)
+        // Solid Oak Headboard at head of bed (X = -bedLength / 2)
+        let headboard = SCNBox(width: 0.06, height: 0.65, length: bedWidth, chamferRadius: 0.015)
         headboard.materials = [woodMat]
         let hbNode = SCNNode(geometry: headboard)
-        hbNode.position = SCNVector3(-bedW / 2 + 0.04, bedBaseH + 0.375, 0)
+        hbNode.position = SCNVector3(-bedLength / 2 + 0.03, bedBaseH + 0.325, 0)
         bedGroup.addChildNode(hbNode)
         
+        // Solid Oak Footboard at foot of bed (X = +bedLength / 2)
+        let footboard = SCNBox(width: 0.06, height: 0.42, length: bedWidth, chamferRadius: 0.015)
+        footboard.materials = [woodMat]
+        let fbNode = SCNNode(geometry: footboard)
+        fbNode.position = SCNVector3(bedLength / 2 - 0.03, bedBaseH + 0.21, 0)
+        bedGroup.addChildNode(fbNode)
+        
         // Plump White Mattress & Sheets
-        let mattress = SCNBox(width: bedW - 0.10, height: 0.22, length: bedL - 0.08, chamferRadius: 0.04)
+        let mattress = SCNBox(width: bedLength - 0.08, height: 0.22, length: bedWidth - 0.08, chamferRadius: 0.04)
         mattress.materials = [linenMat]
         let matNode = SCNNode(geometry: mattress)
-        matNode.position = SCNVector3(0.02, bedBaseH + 0.11, 0)
+        matNode.position = SCNVector3(0, bedBaseH + 0.11, 0)
         bedGroup.addChildNode(matNode)
         
-        // Stacked White Pillows
-        let pillowGeo = SCNBox(width: 0.36, height: 0.12, length: 0.52, chamferRadius: 0.05)
+        // Stacked White Pillows leaning against the headboard
+        let pillowGeo = SCNBox(width: 0.26, height: 0.36, length: 0.42, chamferRadius: 0.05)
         pillowGeo.materials = [linenMat]
-        for pz in [-bedL * 0.22, bedL * 0.22] {
+        for pz in [-bedWidth * 0.22, bedWidth * 0.22] {
             let pNode = SCNNode(geometry: pillowGeo)
-            pNode.position = SCNVector3(-bedW / 2 + 0.28, bedBaseH + 0.25, pz)
-            pNode.eulerAngles.z = -0.15
+            pNode.position = SCNVector3(-bedLength / 2 + 0.26, bedBaseH + 0.28, pz)
+            pNode.eulerAngles.z = 0.20
             bedGroup.addChildNode(pNode)
         }
         
-        // Folded Soft Sage Green Throw Blanket with subtle fringe
-        let blanketGeo = SCNBox(width: 0.75, height: 0.08, length: bedL - 0.06, chamferRadius: 0.035)
+        // Sage throw pillow leaning against white pillows
+        let sagePillowGeo = SCNBox(width: 0.20, height: 0.30, length: 0.32, chamferRadius: 0.04)
+        sagePillowGeo.materials = [sageMat]
+        let spNode = SCNNode(geometry: sagePillowGeo)
+        spNode.position = SCNVector3(-bedLength / 2 + 0.44, bedBaseH + 0.24, -bedWidth * 0.12)
+        spNode.eulerAngles.z = 0.25
+        bedGroup.addChildNode(spNode)
+        
+        // Folded Soft Sage Green Throw Blanket over foot of bed
+        let blanketW = bedLength * 0.50
+        let blanketGeo = SCNBox(width: blanketW, height: 0.08, length: bedWidth - 0.04, chamferRadius: 0.035)
         blanketGeo.materials = [sageMat]
         let blanketNode = SCNNode(geometry: blanketGeo)
-        blanketNode.position = SCNVector3(bedW * 0.22, bedBaseH + 0.23, 0)
+        blanketNode.position = SCNVector3(bedLength / 2 - blanketW / 2 - 0.02, bedBaseH + 0.23, 0)
         bedGroup.addChildNode(blanketNode)
         
-        // Daisy Flower Pillow on the bed
+        // Daisy Flower Pillow on the bed (Signature reference detail!)
         let daisyNode = buildDaisyPillow()
-        daisyNode.position = SCNVector3(-0.15, bedBaseH + 0.24, -0.32)
-        daisyNode.eulerAngles.z = 0.20
+        daisyNode.position = SCNVector3(-bedLength / 2 + 0.62, bedBaseH + 0.24, bedWidth * 0.15)
+        daisyNode.eulerAngles.x = 0.25
+        daisyNode.eulerAngles.z = 0.10
         daisyNode.name = "daisy_pillow_bed"
         bedGroup.addChildNode(daisyNode)
         
         // Cookie the Cat curled up sleeping peacefully on top of the sage blanket
         let catNode = CookieNode()
         catNode.reduceMotion = reduceMotion
-        catNode.position = SCNVector3(0.20, bedBaseH + 0.27, 0.10)
+        catNode.position = SCNVector3(bedLength / 2 - blanketW / 2 + 0.05, bedBaseH + 0.27, -0.05)
         catNode.eulerAngles.y = 0.85 // Angled warmly toward the room
         catNode.name = "cookie_character"
         catNode.sleep() // Sleep curled up as shown in reference photo!
         
         bedGroup.addChildNode(catNode)
         root.addChildNode(bedGroup)
+    }
+    
+    /// Constructs the bedside 2-drawer wooden nightstand between desk and bed.
+    private static func buildNightstand() -> SCNNode {
+        let group = SCNNode()
+        group.name = "bedside_nightstand"
+        let woodMat = Materials.honeyOak
+        let brassMat = Materials.brushedBrass
+        
+        let nw: CGFloat = 0.40 // X width
+        let nl: CGFloat = 0.44 // Z depth
+        let nh: CGFloat = 0.50 // Height
+        
+        let body = SCNBox(width: nw, height: nh, length: nl, chamferRadius: 0.012)
+        body.materials = [woodMat]
+        let bodyNode = SCNNode(geometry: body)
+        bodyNode.position = SCNVector3(0, nh / 2, 0)
+        group.addChildNode(bodyNode)
+        
+        // 2 Drawer brass handles
+        for dy in [nh * 0.32, nh * 0.72] {
+            let handle = SCNBox(width: 0.12, height: 0.016, length: 0.018, chamferRadius: 0.004)
+            handle.materials = [brassMat]
+            let hNode = SCNNode(geometry: handle)
+            hNode.position = SCNVector3(0, dy, nl / 2 + 0.01)
+            group.addChildNode(hNode)
+        }
+        
+        // Tiny miniature potted succulent on top
+        let succ = buildPottedSucculent(potColor: NSColor(red: 0.88, green: 0.85, blue: 0.80, alpha: 1.0))
+        succ.position = SCNVector3(0, nh, 0)
+        succ.name = "nightstand_succulent"
+        group.addChildNode(succ)
+        
+        return group
     }
     
     // MARK: - 5. Audio Lounge (Record Player Bench & Floor Monstera)
@@ -715,11 +772,11 @@ final class RoomDioramaBuilder {
         let sageMat = Materials.fabricSage
         
         // Positioned at foot of bed
-        benchGroup.position = SCNVector3(1.05, 0.14, -0.15)
+        benchGroup.position = SCNVector3(1.50, 0.14, -1.45)
         benchGroup.name = "record_bench_group"
         
-        let benchW: CGFloat = 0.95
-        let benchL: CGFloat = 0.62
+        let benchW: CGFloat = 0.52 // X width
+        let benchL: CGFloat = 0.85 // Z length
         let benchH: CGFloat = 0.28
         
         // Oak Bench Base & Legs
@@ -729,8 +786,8 @@ final class RoomDioramaBuilder {
         bbNode.position = SCNVector3(0, benchH - 0.03, 0)
         benchGroup.addChildNode(bbNode)
         
-        for (lx, lz) in [(-benchW * 0.42, -benchL * 0.42), (benchW * 0.42, -benchL * 0.42), (-benchW * 0.42, benchL * 0.42), (benchW * 0.42, benchL * 0.42)] {
-            let leg = SCNCylinder(radius: 0.024, height: benchH - 0.06)
+        for (lx, lz) in [(-benchW * 0.38, -benchL * 0.38), (benchW * 0.38, -benchL * 0.38), (-benchW * 0.38, benchL * 0.38), (benchW * 0.38, benchL * 0.38)] {
+            let leg = SCNCylinder(radius: 0.022, height: benchH - 0.06)
             leg.materials = [woodMat]
             let legNode = SCNNode(geometry: leg)
             legNode.position = SCNVector3(lx, (benchH - 0.06) / 2, lz)
@@ -746,23 +803,23 @@ final class RoomDioramaBuilder {
         
         // Vintage Portable Suitcase Record Player with Spinning Vinyl Record
         let (recordPlayerNode, _) = buildRecordPlayer(reduceMotion: reduceMotion)
-        recordPlayerNode.position = SCNVector3(-0.08, benchH + 0.09, 0.02)
+        recordPlayerNode.position = SCNVector3(0, benchH + 0.09, -0.16)
         benchGroup.addChildNode(recordPlayerNode)
         
-        // Stack of Vinyl Record Sleeves
+        // Stack of Vinyl Record Sleeves next to record player
         let rsGeo = SCNBox(width: 0.26, height: 0.045, length: 0.26, chamferRadius: 0.006)
         let rsMat = SCNMaterial()
         rsMat.diffuse.contents = NSColor(red: 0.82, green: 0.60, blue: 0.48, alpha: 1.0)
         rsGeo.materials = [rsMat]
         let rsNode = SCNNode(geometry: rsGeo)
-        rsNode.position = SCNVector3(benchW * 0.28, benchH + 0.09 + 0.0225, 0.02)
+        rsNode.position = SCNVector3(0, benchH + 0.09 + 0.0225, 0.22)
         benchGroup.addChildNode(rsNode)
         
         root.addChildNode(benchGroup)
         
         // Large Floor Potted Monstera Deliciosa Plant (Right of bench)
         let monsteraNode = buildMonsteraPlant(reduceMotion: reduceMotion)
-        monsteraNode.position = SCNVector3(1.80, 0.14, -0.15)
+        monsteraNode.position = SCNVector3(1.85, 0.14, -0.75)
         root.addChildNode(monsteraNode)
     }
     
@@ -772,9 +829,9 @@ final class RoomDioramaBuilder {
         let loungeGroup = SCNNode()
         loungeGroup.name = "lower_lounge_group"
         
-        // Skateboard on the floor
+        // Skateboard on the lower floor near the steps
         let skateboardNode = buildSkateboard()
-        skateboardNode.position = SCNVector3(0.15, 0.045, 0.95)
+        skateboardNode.position = SCNVector3(0.18, 0.045, 0.95)
         skateboardNode.eulerAngles.y = -0.35
         skateboardNode.name = "skateboard"
         loungeGroup.addChildNode(skateboardNode)
@@ -784,10 +841,10 @@ final class RoomDioramaBuilder {
         pouf.materials = [Materials.linenWhite]
         let poufNode = SCNNode(geometry: pouf)
         poufNode.scale = SCNVector3(1.15, 0.65, 1.15)
-        poufNode.position = SCNVector3(1.25, 0.22, 1.25)
+        poufNode.position = SCNVector3(1.15, 0.20, 1.25)
         poufNode.name = "boucle_pouf"
         
-        // White daisy flower pillow on pouf
+        // White daisy flower pillow on pouf (Signature detail from reference image!)
         let poufDaisy = buildDaisyPillow()
         poufDaisy.position = SCNVector3(0, 0.32, 0)
         poufDaisy.eulerAngles.x = 0.15
@@ -797,7 +854,7 @@ final class RoomDioramaBuilder {
         
         // Miniature Potted Succulent on step ledge
         let stepPot = buildPottedSucculent(potColor: NSColor(white: 0.94, alpha: 1.0))
-        stepPot.position = SCNVector3(-0.95, 0.14, 0.48)
+        stepPot.position = SCNVector3(-0.55, 0.14, 0.85)
         stepPot.name = "step_succulent"
         loungeGroup.addChildNode(stepPot)
         
@@ -808,7 +865,7 @@ final class RoomDioramaBuilder {
             bMat.diffuse.contents = (i == 0) ? NSColor(red: 0.72, green: 0.52, blue: 0.42, alpha: 1.0) : NSColor(red: 0.52, green: 0.60, blue: 0.52, alpha: 1.0)
             book.materials = [bMat]
             let bNode = SCNNode(geometry: book)
-            bNode.position = SCNVector3(-0.75, 0.14 + CGFloat(i) * 0.038 + 0.018, 0.52)
+            bNode.position = SCNVector3(-0.85, 0.14 + CGFloat(i) * 0.038 + 0.018, 0.45)
             bNode.eulerAngles.y = CGFloat(i) * 0.15
             bNode.name = "step_books"
             loungeGroup.addChildNode(bNode)
@@ -816,14 +873,14 @@ final class RoomDioramaBuilder {
         
         // Tiny Succulent Pot on lower floor ledge in foreground (matching reference photo)
         let floorPot = buildPottedSucculent(potColor: NSColor(red: 0.88, green: 0.86, blue: 0.82, alpha: 1.0))
-        floorPot.position = SCNVector3(-0.70, 0.0, 1.75)
+        floorPot.position = SCNVector3(-0.70, 0.0, 1.65)
         floorPot.name = "floor_succulent"
         loungeGroup.addChildNode(floorPot)
         
         root.addChildNode(loungeGroup)
     }
     
-    /// Constructs the built-in floor-to-ceiling wooden bookcase behind the bed headboard.
+    /// Constructs the built-in floor-to-ceiling wooden bookcase unit on the back wall.
     private static func buildHeadboardBookcase(reduceMotion: Bool) -> SCNNode {
         let bookcaseGroup = SCNNode()
         bookcaseGroup.name = "headboard_bookcase"
@@ -832,88 +889,137 @@ final class RoomDioramaBuilder {
         let brassMat = Materials.brushedBrass
         let slatMat = Materials.verticalWoodSlat
         
-        let unitW: CGFloat = 0.40 // Depth along X
-        let unitL: CGFloat = 1.35 // Length along Z matching bed
+        let unitW: CGFloat = 0.65 // Width along X
+        let unitD: CGFloat = 0.28 // Depth along Z
         let unitH: CGFloat = 3.16 // Height up to ceiling beam
         
         // Vertical wood slat backing
-        let backPanel = SCNBox(width: 0.02, height: unitH, length: unitL, chamferRadius: 0.005)
+        let backPanel = SCNBox(width: unitW, height: unitH, length: 0.02, chamferRadius: 0.005)
         backPanel.materials = [slatMat]
         let bpNode = SCNNode(geometry: backPanel)
-        bpNode.position = SCNVector3(-unitW / 2 + 0.01, unitH / 2, 0)
+        bpNode.position = SCNVector3(0, unitH / 2, -unitD / 2 + 0.01)
         bookcaseGroup.addChildNode(bpNode)
         
         // Two side upright panels
-        for sz in [-unitL / 2 + 0.02, unitL / 2 - 0.02] {
-            let upright = SCNBox(width: unitW, height: unitH, length: 0.04, chamferRadius: 0.008)
+        for sx in [-unitW / 2 + 0.02, unitW / 2 - 0.02] {
+            let upright = SCNBox(width: 0.035, height: unitH, length: unitD, chamferRadius: 0.008)
             upright.materials = [woodMat]
             let uNode = SCNNode(geometry: upright)
-            uNode.position = SCNVector3(0, unitH / 2, sz)
+            uNode.position = SCNVector3(sx, unitH / 2, 0)
             bookcaseGroup.addChildNode(uNode)
         }
         
-        // Shelves at varying heights
+        // Shelves at varying heights (facing forward toward +Z)
         let shelfHeights: [CGFloat] = [1.25, 1.95, 2.65, 3.12]
         for sh in shelfHeights {
-            let shelf = SCNBox(width: unitW, height: 0.035, length: unitL - 0.04, chamferRadius: 0.006)
+            let shelf = SCNBox(width: unitW - 0.04, height: 0.032, length: unitD, chamferRadius: 0.006)
             shelf.materials = [woodMat]
             let sNode = SCNNode(geometry: shelf)
             sNode.position = SCNVector3(0, sh, 0)
             bookcaseGroup.addChildNode(sNode)
         }
         
-        // Middle shelf (Y = 1.95): Stack of books + Brass Alarm Clock + White Cat Figurine
+        // Warm recessed accent lighting under the middle shelf (Y = 1.95)
+        let shelfLight = SCNLight()
+        shelfLight.type = .omni
+        shelfLight.color = NSColor(red: 1.0, green: 0.90, blue: 0.72, alpha: 1.0)
+        shelfLight.intensity = 420
+        shelfLight.castsShadow = false
+        let slNode = SCNNode()
+        slNode.light = shelfLight
+        slNode.position = SCNVector3(0, 1.90, 0.08)
+        bookcaseGroup.addChildNode(slNode)
+        
+        // Middle shelf (Y = 1.95):
+        // Row of books on the left + Vintage Brass Alarm Clock in center + Books stacked horizontally
         let bookColors: [NSColor] = [
             NSColor(red: 0.78, green: 0.48, blue: 0.38, alpha: 1.0),
             NSColor(red: 0.52, green: 0.60, blue: 0.50, alpha: 1.0),
             NSColor(red: 0.88, green: 0.82, blue: 0.70, alpha: 1.0),
             NSColor(red: 0.68, green: 0.58, blue: 0.45, alpha: 1.0)
         ]
-        var bz: CGFloat = -unitL * 0.35
-        for i in 0..<5 {
-            let bh: CGFloat = 0.26 + CGFloat(i % 3) * 0.04
-            let bw: CGFloat = 0.045
-            let book = SCNBox(width: unitW * 0.75, height: bh, length: bw, chamferRadius: 0.004)
+        
+        var bx: CGFloat = -unitW * 0.36
+        for i in 0..<4 {
+            let bh: CGFloat = 0.25 + CGFloat(i % 3) * 0.03
+            let bw: CGFloat = 0.042
+            let book = SCNBox(width: bw, height: bh, length: unitD * 0.72, chamferRadius: 0.004)
             let bMat = SCNMaterial()
             bMat.diffuse.contents = bookColors[i % bookColors.count]
             book.materials = [bMat]
             let bNode = SCNNode(geometry: book)
-            bNode.position = SCNVector3(0, 1.95 + bh / 2 + 0.018, bz)
+            bNode.position = SCNVector3(bx, 1.95 + bh / 2 + 0.016, 0.02)
             bookcaseGroup.addChildNode(bNode)
-            bz += bw + 0.008
+            bx += bw + 0.008
         }
         
         // Vintage Brass Clock on middle shelf
-        let clock = SCNCylinder(radius: 0.062, height: 0.042)
+        let clock = SCNCylinder(radius: 0.055, height: 0.035)
         clock.materials = [brassMat]
         let clockNode = SCNNode(geometry: clock)
         clockNode.eulerAngles.x = .pi / 2
-        clockNode.position = SCNVector3(0, 1.95 + 0.075, 0.12)
+        clockNode.position = SCNVector3(0.02, 1.95 + 0.065, 0.04)
+        clockNode.name = "alarm_clock"
         bookcaseGroup.addChildNode(clockNode)
         
-        // Small White Ceramic Cat figurine on shelf
-        let catFig = SCNSphere(radius: 0.048)
-        let cfMat = SCNMaterial()
-        cfMat.diffuse.contents = NSColor(white: 0.96, alpha: 1.0)
-        catFig.materials = [cfMat]
-        let cfNode = SCNNode(geometry: catFig)
-        cfNode.position = SCNVector3(0, 1.95 + 0.048 + 0.018, 0.36)
-        bookcaseGroup.addChildNode(cfNode)
+        // Stack of small books on right of middle shelf
+        for i in 0..<2 {
+            let book = SCNBox(width: 0.15, height: 0.032, length: 0.18, chamferRadius: 0.004)
+            let bMat = SCNMaterial()
+            bMat.diffuse.contents = (i == 0) ? NSColor(red: 0.60, green: 0.52, blue: 0.44, alpha: 1.0) : NSColor(red: 0.82, green: 0.76, blue: 0.68, alpha: 1.0)
+            book.materials = [bMat]
+            let bNode = SCNNode(geometry: book)
+            bNode.position = SCNVector3(0.18, 1.95 + CGFloat(i) * 0.035 + 0.016, 0.02)
+            bookcaseGroup.addChildNode(bNode)
+        }
         
-        // Upper shelf (Y = 2.65): Wooden keepsake box with lid + books
-        let boxGeo = SCNBox(width: unitW * 0.85, height: 0.16, length: 0.32, chamferRadius: 0.012)
-        boxGeo.materials = [woodMat]
+        // Upper shelf (Y = 2.65):
+        // Kraft Storage Box + Cute White Ceramic Cat Head Figurine
+        let boxGeo = SCNBox(width: 0.28, height: 0.16, length: unitD * 0.82, chamferRadius: 0.012)
+        let boxMat = SCNMaterial()
+        boxMat.diffuse.contents = NSColor(red: 0.82, green: 0.72, blue: 0.58, alpha: 1.0) // Kraft paper
+        boxMat.roughness.contents = 0.9
+        boxGeo.materials = [boxMat]
         let boxNode = SCNNode(geometry: boxGeo)
-        boxNode.position = SCNVector3(0, 2.65 + 0.08 + 0.018, -unitL * 0.22)
+        boxNode.position = SCNVector3(-0.10, 2.65 + 0.08 + 0.016, 0.01)
+        boxNode.name = "keepsake_box"
         bookcaseGroup.addChildNode(boxNode)
         
-        // Ivy cascading from upper shelf down over the side
+        // Small White Ceramic Cat Head Figurine next to box (Signature detail from reference image!)
+        let catFigNode = buildCeramicCatFigurine()
+        catFigNode.position = SCNVector3(0.18, 2.65 + 0.016, 0.04)
+        catFigNode.name = "cat_figurine"
+        bookcaseGroup.addChildNode(catFigNode)
+        
+        // Cascading ivy trailing down from top shelf over the left edge of bookcase
         let vineGeo = SCNNode()
-        vineGeo.position = SCNVector3(unitW / 2 - 0.02, 2.65, 0.15)
+        vineGeo.position = SCNVector3(-unitW / 2 + 0.02, 3.12, 0.08)
         buildCascadingIvy(in: vineGeo, reduceMotion: reduceMotion)
         bookcaseGroup.addChildNode(vineGeo)
         
         return bookcaseGroup
+    }
+    
+    /// Builds the miniature white ceramic cat head figurine seen on the upper shelf.
+    private static func buildCeramicCatFigurine() -> SCNNode {
+        let node = SCNNode()
+        let whiteMat = Materials.satinCeramic
+        let head = SCNSphere(radius: 0.048)
+        head.materials = [whiteMat]
+        let headNode = SCNNode(geometry: head)
+        headNode.position = SCNVector3(0, 0.048, 0)
+        node.addChildNode(headNode)
+        
+        // Cat ears
+        for ex in [-0.028, 0.028] {
+            let ear = SCNCone(topRadius: 0.002, bottomRadius: 0.018, height: 0.035)
+            ear.materials = [whiteMat]
+            let earNode = SCNNode(geometry: ear)
+            earNode.position = SCNVector3(ex, 0.095, 0)
+            node.addChildNode(earNode)
+        }
+        
+        return node
     }
     
     /// Constructs a cute small potted succulent plant for desk/step.
