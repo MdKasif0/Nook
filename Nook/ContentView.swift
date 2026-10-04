@@ -17,6 +17,7 @@ struct ContentView: View {
             DetailView()
         }
         .background(NookDesign.Colors.backgroundPrimary)
+        .preferredColorScheme(.light)
         .onAppear {
             GlobalShortcutManager.shared.setup(appState: appState) {
                 openWindow(id: NookWindow.quickCapture.id)
