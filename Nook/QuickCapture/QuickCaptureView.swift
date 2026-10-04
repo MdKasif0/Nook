@@ -108,6 +108,7 @@ struct QuickCaptureView: View {
         .frame(width: 440)
         .background(NookDesign.Colors.backgroundPrimary)
         .onAppear {
+            NSApp.activate(ignoringOtherApps: true)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isTitleFocused = true
             }
@@ -127,6 +128,12 @@ struct QuickCaptureView: View {
             position: position
         )
         modelContext.insert(item)
+        try? modelContext.save()
+        
+        title = ""
+        content = ""
+        selectedObjectType = .pebble
+        
         dismiss()
     }
 }
