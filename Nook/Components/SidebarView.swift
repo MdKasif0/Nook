@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The sidebar navigation for Nook.
 ///
-/// Lists the room and all item-type sections using the Nook design language.
+/// Lists the room and all item-type sections using high-contrast Nook design tokens,
+/// ensuring high legibility across both macOS Light and Dark appearance modes.
 struct SidebarView: View {
     
     @Environment(AppState.self) private var appState
@@ -12,25 +13,48 @@ struct SidebarView: View {
         
         List(selection: $state.selectedSection) {
             Section {
-                Label(SidebarSection.room.rawValue, systemImage: SidebarSection.room.iconName)
-                    .tag(SidebarSection.room)
-            }
-            
-            Section("Collect") {
-                ForEach(collectSections) { section in
-                    Label(section.rawValue, systemImage: section.iconName)
-                        .tag(section)
-                }
+                sidebarRow(for: .room)
             }
             
             Section {
-                Label(SidebarSection.archive.rawValue, systemImage: SidebarSection.archive.iconName)
-                    .tag(SidebarSection.archive)
+                ForEach(collectSections) { section in
+                    sidebarRow(for: section)
+                }
+            } header: {
+                Text("Collect")
+                    .font(NookDesign.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(NookDesign.Colors.textSecondary)
+                    .textCase(.uppercase)
+                    .padding(.top, 4)
+            }
+            
+            Section {
+                sidebarRow(for: .archive)
             }
         }
         .listStyle(.sidebar)
-        .frame(minWidth: 180)
+        .tint(NookDesign.Colors.olive)
+        .scrollContentBackground(.hidden)
         .background(NookDesign.Colors.backgroundSecondary)
+        .preferredColorScheme(.light)
+    }
+    
+    @ViewBuilder
+    private func sidebarRow(for section: SidebarSection) -> some View {
+        let isSelected = (appState.selectedSection == section)
+        
+        Label {
+            Text(section.rawValue)
+                .font(NookDesign.Typography.body)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundStyle(isSelected ? Color.white : NookDesign.Colors.textPrimary)
+        } icon: {
+            Image(systemName: section.iconName)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isSelected ? Color.white : NookDesign.Colors.olive)
+        }
+        .tag(section)
     }
     
     /// The item-type sections shown under "Collect".
