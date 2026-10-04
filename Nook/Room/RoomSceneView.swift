@@ -72,6 +72,43 @@ final class NookSCNView: SCNView {
     private var dragStartMousePoint: CGPoint = .zero
     private var isDraggingItem: Bool = false
     
+    // Dragging prop state
+    private var draggedPropNode: SCNNode?
+    private var draggedPropBaseY: CGFloat = 0.0
+    private var isDraggingProp: Bool = false
+    
+    // Set of movable prop names that user can pick up and drag
+    private static let movablePropNames: Set<String> = [
+        "cookie_character",
+        "skateboard",
+        "boucle_pouf",
+        "daisy_pillow",
+        "daisy_pillow_bed",
+        "daisy_pillow_pouf",
+        "smiley_mug",
+        "open_notebook",
+        "pencil_cup",
+        "desk_plant",
+        "step_succulent",
+        "step_books",
+        "floor_succulent",
+        "floor_plant",
+        "ergonomic_chair",
+        "monstera_plant"
+    ]
+    
+    // Set of interactive fixture names that user can click to toggle
+    private static let clickableFixtureNames: Set<String> = [
+        "desk_lamp",
+        "wall_sconce",
+        "record_player",
+        "vinyl_record_disc",
+        "monitor_display",
+        "computer_monitor",
+        "open_laptop",
+        "laptop_display"
+    ]
+    
     // Camera gesture state
     private var lastCameraMousePoint: CGPoint = .zero
     private var isDraggingCamera: Bool = false
@@ -123,7 +160,8 @@ final class NookSCNView: SCNView {
         ])
         
         var foundItem: UUID?
-        var foundInteractive = false
+        var foundMovableProp = false
+        var foundClickableFixture = false
         
         for hit in hits {
             var current: SCNNode? = hit.node
@@ -131,21 +169,23 @@ final class NookSCNView: SCNView {
                 if let name = node.name {
                     if name.hasPrefix("item_"), let uuid = UUID(uuidString: String(name.dropFirst(5))) {
                         foundItem = uuid
-                        foundInteractive = true
                         break
-                    } else if name == "desk_lamp" || name == "cookie_character" || name == "wall_sconce" || name == "record_player" || name == "vinyl_record_disc" || name == "monitor_display" || name == "computer_monitor" || name == "skateboard" {
-                        foundInteractive = true
+                    } else if Self.movablePropNames.contains(name) {
+                        foundMovableProp = true
+                        break
+                    } else if Self.clickableFixtureNames.contains(name) {
+                        foundClickableFixture = true
                         break
                     }
                 }
                 current = node.parent
             }
-            if foundInteractive { break }
+            if foundItem != nil || foundMovableProp || foundClickableFixture { break }
         }
         
-        if foundItem != nil {
+        if foundItem != nil || foundMovableProp {
             NSCursor.openHand.set()
-        } else if foundInteractive {
+        } else if foundClickableFixture {
             NSCursor.pointingHand.set()
         } else {
             NSCursor.arrow.set()
@@ -170,21 +210,26 @@ final class NookSCNView: SCNView {
             SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue
         ])
         
-        var hitNode: RoomItemNode?
+        var hitItemNode: RoomItemNode?
+        var hitMovableProp: SCNNode?
+        
         for hit in hits {
             var current: SCNNode? = hit.node
             while let node = current {
                 if let itemNode = node as? RoomItemNode {
-                    hitNode = itemNode
+                    hitItemNode = itemNode
+                    break
+                }
+                if let name = node.name, Self.movablePropNames.contains(name) {
+                    hitMovableProp = node
                     break
                 }
                 current = node.parent
             }
-            if hitNode != nil { break }
+            if hitItemNode != nil || hitMovableProp != nil { break }
         }
         
-        if let itemNode = hitNode {
-            // Check double click immediately to open thought
+        if let itemNode = hitItemNode {
             if event.clickCount == 2 {
                 controller.selectedItemID = itemNode.itemID
                 onOpenItem?(itemNode.itemID)
@@ -192,38 +237,44 @@ final class NookSCNView: SCNView {
                 self.isDraggingItem = false
                 return
             }
-            
-            // Initiating click on an item (may become drag if moved)
             self.draggedItemNode = itemNode
+            self.draggedPropNode = nil
             self.dragStartMousePoint = location
             self.isDraggingItem = false
+            self.isDraggingProp = false
+            self.isDraggingCamera = false
+        } else if let propNode = hitMovableProp {
+            self.draggedItemNode = nil
+            self.draggedPropNode = propNode
+            self.draggedPropBaseY = propNode.position.y
+            self.dragStartMousePoint = location
+            self.isDraggingItem = false
+            self.isDraggingProp = false
             self.isDraggingCamera = false
         } else {
-            // Initiating camera drag or background click
             self.draggedItemNode = nil
+            self.draggedPropNode = nil
             self.lastCameraMousePoint = location
             self.isDraggingItem = false
+            self.isDraggingProp = false
             self.isDraggingCamera = false
         }
     }
     
-    // MARK: - Mouse Dragged (Physical Item Drag or Camera Orbit)
+    // MARK: - Mouse Dragged (Physical Item Drag, Prop Drag, or Camera Orbit)
     
     override func mouseDragged(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         
         if let node = draggedItemNode {
-            // Check distance threshold to distinguish click from drag
             let dist = hypot(point.x - dragStartMousePoint.x, point.y - dragStartMousePoint.y)
             if dist > 3.0 {
                 if !isDraggingItem {
                     isDraggingItem = true
                     node.isBeingDragged = true
                 }
-                
                 NSCursor.closedHand.set()
                 
-                // Ray-plane intersection with horizontal desk plane (Y = deskSurfaceY)
                 let near = unprojectPoint(SCNVector3(point.x, point.y, 0))
                 let far = unprojectPoint(SCNVector3(point.x, point.y, 1))
                 let dy = far.y - near.y
@@ -243,6 +294,35 @@ final class NookSCNView: SCNView {
                     
                     node.position.x = clampedX
                     node.position.z = clampedZ
+                }
+            }
+        } else if let propNode = draggedPropNode {
+            let dist = hypot(point.x - dragStartMousePoint.x, point.y - dragStartMousePoint.y)
+            if dist > 3.0 {
+                if !isDraggingProp {
+                    isDraggingProp = true
+                    SCNTransaction.begin()
+                    SCNTransaction.animationDuration = 0.15
+                    propNode.position.y = draggedPropBaseY + 0.08
+                    SCNTransaction.commit()
+                    AudioManager.shared.playObjectSelected()
+                }
+                NSCursor.closedHand.set()
+                
+                let near = unprojectPoint(SCNVector3(point.x, point.y, 0))
+                let far = unprojectPoint(SCNVector3(point.x, point.y, 1))
+                let dy = far.y - near.y
+                
+                if abs(dy) > 0.0001 {
+                    let t = (draggedPropBaseY - near.y) / dy
+                    let worldX = near.x + t * (far.x - near.x)
+                    let worldZ = near.z + t * (far.z - near.z)
+                    
+                    let clampedX = max(-2.05, min(2.05, worldX))
+                    let clampedZ = max(-2.05, min(2.05, worldZ))
+                    
+                    propNode.position.x = clampedX
+                    propNode.position.z = clampedZ
                 }
             }
         } else {
@@ -267,14 +347,9 @@ final class NookSCNView: SCNView {
     
     override func mouseUp(with event: NSEvent) {
         if isDraggingItem, let node = draggedItemNode {
-            // Completed physical drag of item
             node.isBeingDragged = false
             let newPos = controller.roomPosition(from: node.position)
-            
-            // Persist the new position through SwiftData
             onItemMoved?(node.itemID, newPos)
-            
-            // Keep selected
             controller.selectedItemID = node.itemID
             
             self.draggedItemNode = nil
@@ -284,20 +359,59 @@ final class NookSCNView: SCNView {
         }
         
         if let node = draggedItemNode {
-            // User clicked the item without dragging
             controller.selectedItemID = (controller.selectedItemID == node.itemID) ? nil : node.itemID
             self.draggedItemNode = nil
             NSCursor.openHand.set()
             return
         }
         
+        if isDraggingProp, let propNode = draggedPropNode {
+            // Released movable prop: gentle natural damped settling physics
+            AudioManager.shared.playObjectPlaced()
+            
+            let targetY = draggedPropBaseY
+            if PreferencesManager.shared.reduceMotion {
+                propNode.position.y = targetY
+            } else {
+                let drop = SCNAction.move(to: SCNVector3(propNode.position.x, targetY - 0.006, propNode.position.z), duration: 0.12)
+                drop.timingMode = .easeIn
+                let settle = SCNAction.move(to: SCNVector3(propNode.position.x, targetY, propNode.position.z), duration: 0.08)
+                settle.timingMode = .easeOut
+                propNode.runAction(SCNAction.sequence([drop, settle]))
+            }
+            
+            self.draggedPropNode = nil
+            self.isDraggingProp = false
+            NSCursor.openHand.set()
+            return
+        }
+        
+        if let propNode = draggedPropNode {
+            // User clicked the movable prop without dragging
+            if let name = propNode.name {
+                if name == "cookie_character" {
+                    controller.petCookie()
+                } else if name == "skateboard" {
+                    controller.nudgeSkateboard()
+                } else if name == "smiley_mug" {
+                    controller.wobbleProp(propNode)
+                } else if name.hasPrefix("daisy_pillow") || name == "boucle_pouf" {
+                    controller.bounceProp(propNode)
+                } else {
+                    controller.wobbleProp(propNode)
+                }
+            }
+            self.draggedPropNode = nil
+            NSCursor.openHand.set()
+            return
+        }
+        
         if isDraggingCamera {
-            // Finished camera drag
             self.isDraggingCamera = false
             return
         }
         
-        // Handle background or fixture clicks (Lamp, Cookie)
+        // Handle clickable fixtures (Lamp, Sconce, Record Player, Monitor)
         let location = convert(event.locationInWindow, from: nil)
         let hits = hitTest(location, options: [
             SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue
@@ -324,14 +438,6 @@ final class NookSCNView: SCNView {
                         controller.cycleMonitorWallpaper()
                         hitHandled = true
                         break
-                    } else if name == "skateboard" {
-                        controller.nudgeSkateboard()
-                        hitHandled = true
-                        break
-                    } else if name == "cookie_character" {
-                        controller.petCookie()
-                        hitHandled = true
-                        break
                     }
                 }
                 current = node.parent
@@ -340,7 +446,6 @@ final class NookSCNView: SCNView {
         }
         
         if !hitHandled {
-            // Clicked empty background
             controller.selectedItemID = nil
         }
     }
