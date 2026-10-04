@@ -23,11 +23,13 @@ struct SettingsView: View {
     @State private var hasResetLayout = false
     
     var body: some View {
+        @Bindable var preferences = prefs
+        
         TabView {
             // MARK: - General Tab
             Form {
                 Section {
-                    Toggle("Reduce Motion", isOn: $prefs.reduceMotion)
+                    Toggle("Reduce Motion", isOn: $preferences.reduceMotion)
                         .help("Disables continuous 3D idle animations, breathing loops, and walking bobs.")
                     Text("Simplifies camera transitions and disables continuous character breathing and ambient loops.")
                         .font(NookDesign.Typography.caption)
@@ -36,7 +38,7 @@ struct SettingsView: View {
                     Divider()
                         .padding(.vertical, 4)
                     
-                    Toggle("Launch at Login", isOn: $prefs.launchAtLogin)
+                    Toggle("Launch at Login", isOn: $preferences.launchAtLogin)
                         .help("Starts Nook automatically when you log into your Mac.")
                     Text("Keeps your miniature room ready in the background and menu bar.")
                         .font(NookDesign.Typography.caption)
@@ -45,7 +47,7 @@ struct SettingsView: View {
                     Divider()
                         .padding(.vertical, 4)
                     
-                    Toggle("Sound Effects", isOn: $prefs.soundEffectsEnabled)
+                    Toggle("Sound Effects", isOn: $preferences.soundEffectsEnabled)
                         .help("Play subtle, tactile audio clicks when interacting with objects.")
                     Text("Plays gentle tactile clicks when objects are placed, selected, or completed.")
                         .font(NookDesign.Typography.caption)
@@ -64,7 +66,7 @@ struct SettingsView: View {
             // MARK: - Room & Companion Tab
             Form {
                 Section {
-                    Toggle("Cookie reactions", isOn: $prefs.cookieReactionsEnabled)
+                    Toggle("Cookie reactions", isOn: $preferences.cookieReactionsEnabled)
                         .help("Allow Cookie to react when you create, delete, or complete thoughts.")
                     Text("When enabled, Cookie perks up, looks toward newly materialized objects, and wiggles ears.")
                         .font(NookDesign.Typography.caption)
