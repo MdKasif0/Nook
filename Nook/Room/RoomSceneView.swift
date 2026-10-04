@@ -133,7 +133,7 @@ final class NookSCNView: SCNView {
                         foundItem = uuid
                         foundInteractive = true
                         break
-                    } else if name == "desk_lamp" || name == "cookie_character" {
+                    } else if name == "desk_lamp" || name == "cookie_character" || name == "wall_sconce" || name == "record_player" || name == "vinyl_record_disc" || name == "monitor_display" || name == "computer_monitor" || name == "skateboard" {
                         foundInteractive = true
                         break
                     }
@@ -310,6 +310,22 @@ final class NookSCNView: SCNView {
                 if let name = node.name {
                     if name == "desk_lamp" {
                         controller.toggleDeskLamp()
+                        hitHandled = true
+                        break
+                    } else if name == "wall_sconce" {
+                        controller.toggleWallSconce()
+                        hitHandled = true
+                        break
+                    } else if name == "record_player" || name == "vinyl_record_disc" {
+                        controller.toggleRecordPlayer()
+                        hitHandled = true
+                        break
+                    } else if name == "monitor_display" || name == "computer_monitor" {
+                        controller.cycleMonitorWallpaper()
+                        hitHandled = true
+                        break
+                    } else if name == "skateboard" {
+                        controller.nudgeSkateboard()
                         hitHandled = true
                         break
                     } else if name == "cookie_character" {

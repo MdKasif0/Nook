@@ -182,18 +182,20 @@ struct RoomView: View {
         }
     }
     
+    @State private var isHeaderHovered = false
+    
     // MARK: - Subviews
     
-    /// Top floating bar for lighting, atmosphere, and desk status.
+    /// Minimalist floating top island for lighting and room status, leaving breathing room.
     private var roomControlHeader: some View {
-        HStack(spacing: NookDesign.Spacing.md) {
-            // Time of Day Selector
-            HStack(spacing: NookDesign.Spacing.xxs) {
+        HStack(spacing: NookDesign.Spacing.sm) {
+            // Time of Day Selector Capsule
+            HStack(spacing: 2) {
                 ForEach(RoomTimeOfDay.allCases) { tod in
                     Button {
                         sceneController.setTimeOfDay(tod)
                     } label: {
-                        HStack(spacing: NookDesign.Spacing.xs) {
+                        HStack(spacing: 4) {
                             Image(systemName: tod.iconName)
                                 .font(.system(size: 11, weight: .medium))
                             if sceneController.timeOfDay == tod {
@@ -202,85 +204,82 @@ struct RoomView: View {
                                     .fontWeight(.medium)
                             }
                         }
-                        .padding(.horizontal, NookDesign.Spacing.sm)
-                        .padding(.vertical, NookDesign.Spacing.xs)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
                         .foregroundStyle(sceneController.timeOfDay == tod ? NookDesign.Colors.textPrimary : NookDesign.Colors.textSecondary)
                         .background(sceneController.timeOfDay == tod ? NookDesign.Colors.backgroundPrimary : Color.clear)
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .help("Set lighting to \(tod.rawValue)")
+                    .help("Lighting: \(tod.rawValue)")
                 }
             }
-            .padding(NookDesign.Spacing.xxs)
-            .background(NookDesign.Colors.surface.opacity(0.92))
+            .padding(3)
+            .background(NookDesign.Colors.surface.opacity(0.88))
             .clipShape(Capsule())
             .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
-            .nookShadow(NookDesign.Shadow.subtle)
             
-            // Desk Lamp Toggle Button
+            // Desk Lamp Quick Toggle
             Button {
                 sceneController.toggleDeskLamp()
             } label: {
-                HStack(spacing: NookDesign.Spacing.xs) {
-                    Image(systemName: sceneController.isDeskLampOn ? "lamp.desk.fill" : "lamp.desk")
-                        .font(.system(size: 12))
-                        .foregroundStyle(sceneController.isDeskLampOn ? NookDesign.Colors.terracotta : NookDesign.Colors.textSecondary)
-                    
-                    Text("Lamp")
-                        .font(NookDesign.Typography.caption)
-                        .foregroundStyle(NookDesign.Colors.textPrimary)
-                }
-                .padding(.horizontal, NookDesign.Spacing.md)
-                .padding(.vertical, NookDesign.Spacing.xs + 2)
-                .background(NookDesign.Colors.surface.opacity(0.92))
-                .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
-                .nookShadow(NookDesign.Shadow.subtle)
+                Image(systemName: sceneController.isDeskLampOn ? "lamp.desk.fill" : "lamp.desk")
+                    .font(.system(size: 12))
+                    .foregroundStyle(sceneController.isDeskLampOn ? NookDesign.Colors.terracotta : NookDesign.Colors.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(NookDesign.Colors.surface.opacity(0.88))
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
             }
             .buttonStyle(.plain)
             .help(sceneController.isDeskLampOn ? "Turn off desk lamp" : "Turn on desk lamp")
             
-            Spacer()
-            
-            // Room item counter badge
-            HStack(spacing: NookDesign.Spacing.xs) {
-                Image(systemName: "hand.draw")
-                    .font(.system(size: 11))
-                    .foregroundStyle(NookDesign.Colors.woodBrown)
-                
-                Text(items.count == 1 ? "1 physical object" : "\(items.count) physical objects")
-                    .font(NookDesign.Typography.caption)
-                    .foregroundStyle(NookDesign.Colors.textSecondary)
-            }
-            .padding(.horizontal, NookDesign.Spacing.md)
-            .padding(.vertical, NookDesign.Spacing.xs + 2)
-            .background(NookDesign.Colors.surface.opacity(0.92))
-            .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
-            .nookShadow(NookDesign.Shadow.subtle)
-            
-            // Add Item Button
+            // Wall Sconce Quick Toggle
             Button {
-                isShowingNewItemSheet = true
+                sceneController.toggleWallSconce()
             } label: {
-                HStack(spacing: NookDesign.Spacing.xs) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("Place Thought")
-                        .font(NookDesign.Typography.caption)
-                        .fontWeight(.medium)
-                }
-                .foregroundStyle(NookDesign.Colors.backgroundPrimary)
-                .padding(.horizontal, NookDesign.Spacing.md)
-                .padding(.vertical, NookDesign.Spacing.xs + 2)
-                .background(NookDesign.Colors.olive)
-                .clipShape(Capsule())
-                .nookShadow(NookDesign.Shadow.subtle)
+                Image(systemName: sceneController.isWallSconceOn ? "lightbulb.fill" : "lightbulb")
+                    .font(.system(size: 11))
+                    .foregroundStyle(sceneController.isWallSconceOn ? NookDesign.Colors.terracotta : NookDesign.Colors.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(NookDesign.Colors.surface.opacity(0.88))
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
             }
             .buttonStyle(.plain)
-            .help("Add a new thought or note to your room (⌘⇧Space)")
+            .help(sceneController.isWallSconceOn ? "Turn off wall sconce" : "Turn on wall sconce")
+            
+            Spacer()
+            
+            // Minimalist Objects Counter & Quick Add
+            HStack(spacing: 8) {
+                Text("\(items.count) \(items.count == 1 ? "object" : "objects")")
+                    .font(NookDesign.Typography.caption)
+                    .foregroundStyle(NookDesign.Colors.textSecondary)
+                    .padding(.leading, 6)
+                
+                Button {
+                    isShowingNewItemSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(NookDesign.Colors.backgroundPrimary)
+                        .frame(width: 26, height: 26)
+                        .background(NookDesign.Colors.olive)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help("Add thought to room (⌘⇧Space)")
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(NookDesign.Colors.surface.opacity(0.88))
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
         }
+        .opacity(isHeaderHovered ? 1.0 : 0.82)
+        .onHover { isHeaderHovered = $0 }
+        .animation(.easeInOut(duration: 0.2), value: isHeaderHovered)
     }
     
     /// Contextual inspector panel when an object in the 3D room is selected.

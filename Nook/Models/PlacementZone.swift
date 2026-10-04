@@ -9,6 +9,10 @@ enum PlacementZone: String, CaseIterable, Identifiable, Sendable {
     case deskLeft = "Left Blotter"
     case deskRight = "Right Drawers"
     case deskFront = "Front Edge"
+    case recordBench = "Vinyl Bench"
+    case bookshelf = "Bookshelf"
+    case nightstand = "Nightstand"
+    case floorLounge = "Lounge Floor"
     
     var id: String { rawValue }
     
@@ -16,10 +20,14 @@ enum PlacementZone: String, CaseIterable, Identifiable, Sendable {
     
     var iconName: String {
         switch self {
-        case .deskCenter: return "square.inset.filled"
-        case .deskLeft:   return "arrow.left.to.line"
-        case .deskRight:  return "arrow.right.to.line"
-        case .deskFront:  return "arrow.down.to.line"
+        case .deskCenter:  return "square.inset.filled"
+        case .deskLeft:    return "arrow.left.to.line"
+        case .deskRight:   return "arrow.right.to.line"
+        case .deskFront:   return "arrow.down.to.line"
+        case .recordBench: return "opticaldisc"
+        case .bookshelf:   return "books.vertical"
+        case .nightstand:  return "bed.double"
+        case .floorLounge: return "sofa"
         }
     }
     
@@ -29,11 +37,19 @@ enum PlacementZone: String, CaseIterable, Identifiable, Sendable {
         case .deskCenter:
             return RoomPosition(x: 0.50, y: 0.50, z: 0.5)
         case .deskLeft:
-            return RoomPosition(x: 0.30, y: 0.45, z: 0.5)
+            return RoomPosition(x: 0.28, y: 0.42, z: 0.5)
         case .deskRight:
-            return RoomPosition(x: 0.72, y: 0.45, z: 0.5)
+            return RoomPosition(x: 0.74, y: 0.42, z: 0.5)
         case .deskFront:
             return RoomPosition(x: 0.50, y: 0.72, z: 0.5)
+        case .recordBench:
+            return RoomPosition(x: 0.82, y: 0.75, z: 0.5)
+        case .bookshelf:
+            return RoomPosition(x: 0.22, y: 0.20, z: 0.5)
+        case .nightstand:
+            return RoomPosition(x: 0.68, y: 0.25, z: 0.5)
+        case .floorLounge:
+            return RoomPosition(x: 0.52, y: 0.88, z: 0.5)
         }
     }
     
