@@ -27,6 +27,9 @@ final class NookItem {
     /// The category/type of this item.
     var itemTypeRaw: String
     
+    /// The physical object representation in the 3D room.
+    var objectTypeRaw: String = NookObjectType.pebble.rawValue
+    
     /// X position within the room (normalized 0…1).
     var positionX: Double
     
@@ -56,6 +59,12 @@ final class NookItem {
         set { itemTypeRaw = newValue.rawValue }
     }
     
+    /// The typed physical object representation.
+    var objectType: NookObjectType {
+        get { NookObjectType(rawValue: objectTypeRaw) ?? .pebble }
+        set { objectTypeRaw = newValue.rawValue }
+    }
+    
     /// The room position as a `RoomPosition`.
     var roomPosition: RoomPosition {
         get { RoomPosition(x: positionX, y: positionY, z: positionZ) }
@@ -72,8 +81,9 @@ final class NookItem {
         title: String,
         content: String = "",
         itemType: NookItemType = .thought,
+        objectType: NookObjectType = .pebble,
         position: RoomPosition = .random,
-        rotation: Double = 0,
+        rotation: Double? = nil,
         styleTag: String? = nil
     ) {
         self.id = UUID()
@@ -82,10 +92,11 @@ final class NookItem {
         self.createdAt = .now
         self.updatedAt = .now
         self.itemTypeRaw = itemType.rawValue
+        self.objectTypeRaw = objectType.rawValue
         self.positionX = position.x
         self.positionY = position.y
         self.positionZ = position.z
-        self.rotation = rotation
+        self.rotation = rotation ?? objectType.defaultRotation
         self.isArchived = false
         self.styleTag = styleTag
         self.metadataJSON = nil
