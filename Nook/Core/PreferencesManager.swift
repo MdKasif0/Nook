@@ -3,6 +3,7 @@ import ServiceManagement
 import SwiftData
 
 /// Manages application-wide user preferences using UserDefaults and native macOS APIs.
+@MainActor
 @Observable
 final class PreferencesManager {
     static let shared = PreferencesManager()
