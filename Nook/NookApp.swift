@@ -40,7 +40,7 @@ struct NookApp: App {
         }
         
         // MARK: - Quick Capture Window
-        WindowGroup("Quick Thought", id: NookWindow.quickCapture.id) {
+        Window("Quick Thought", id: NookWindow.quickCapture.id) {
             QuickCaptureView()
                 .environment(appState)
         }
