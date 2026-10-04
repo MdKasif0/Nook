@@ -10,7 +10,7 @@ struct ItemRowView: View {
             // Type indicator
             Image(systemName: item.itemType.iconName)
                 .font(.system(size: 12))
-                .foregroundStyle(accentColor)
+                .foregroundStyle(item.itemType.badgeColor)
                 .frame(width: 20)
             
             VStack(alignment: .leading, spacing: NookDesign.Spacing.xxxs) {
@@ -35,14 +35,5 @@ struct ItemRowView: View {
         }
         .padding(.vertical, NookDesign.Spacing.xxs)
     }
-    
-    private var accentColor: Color {
-        switch item.itemType.accentColor {
-        case .sage:       return NookDesign.Colors.sage
-        case .olive:      return NookDesign.Colors.olive
-        case .terracotta: return NookDesign.Colors.terracotta
-        case .woodBrown:  return NookDesign.Colors.woodBrown
-        case .taupe:      return NookDesign.Colors.taupe
-        }
-    }
 }
+
