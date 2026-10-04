@@ -4,6 +4,7 @@ import SwiftData
 
 /// Coordinates the 3D scene state, item node synchronization,
 /// lighting adjustments, camera positioning, and interactions.
+@MainActor
 @Observable
 final class RoomSceneController {
     
@@ -191,8 +192,8 @@ final class RoomSceneController {
             SCNAction.moveBy(x: 0, y: -0.04, z: 0, duration: 0.18)
         ])
         
-        cookieNode.runAction(purrWiggle) { [weak self] in
-            DispatchQueue.main.async {
+        cookieNode.runAction(purrWiggle) {
+            Task { @MainActor [weak self] in
                 self?.isPettingCookie = false
             }
         }
