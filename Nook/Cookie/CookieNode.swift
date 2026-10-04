@@ -376,26 +376,26 @@ final class CookieNode: SCNNode {
         node.addChildNode(pawNode)
     }
     
-    private func buildTailGeometry(in node: SCNNode, mat: SCNMaterial) {
-        // Curving tail segment 1
+    private func buildTailGeometry(in node: SCNNode, bodyMat: SCNMaterial, tipMat: SCNMaterial) {
+        // Curving tail segment 1 (ginger)
         let seg1 = SCNCylinder(radius: 0.026, height: 0.12)
-        seg1.materials = [mat]
+        seg1.materials = [bodyMat]
         let n1 = SCNNode(geometry: seg1)
         n1.position = SCNVector3(0.04, 0.04, 0)
         n1.eulerAngles = SCNVector3(0.2, 0, -0.7)
         node.addChildNode(n1)
         
-        // Curving tail segment 2 (upward tip as in picture)
+        // Curving tail segment 2 (ginger)
         let seg2 = SCNCylinder(radius: 0.022, height: 0.10)
-        seg2.materials = [mat]
+        seg2.materials = [bodyMat]
         let n2 = SCNNode(geometry: seg2)
         n2.position = SCNVector3(0.09, 0.11, 0.01)
         n2.eulerAngles = SCNVector3(0.1, 0, -0.15)
         node.addChildNode(n2)
         
-        // Rounded tip
+        // Rounded white cream tip (matching reference photo)
         let tip = SCNSphere(radius: 0.024)
-        tip.materials = [mat]
+        tip.materials = [tipMat]
         let tipNode = SCNNode(geometry: tip)
         tipNode.position = SCNVector3(0.09, 0.16, 0.01)
         node.addChildNode(tipNode)
@@ -566,26 +566,37 @@ final class CookieNode: SCNNode {
         SCNTransaction.commit()
     }
     
-    /// Puts Cookie into sleep posture: curls down, closes eyes, breathes slowly.
+    /// Puts Cookie into sleep posture: curls down, closes eyes with sweet sleeping arcs, breathes slowly.
     func sleep() {
         isSleeping = true
         restPaws()
         
         SCNTransaction.begin()
-        SCNTransaction.animationDuration = reduceMotion ? 0.0 : 0.8
+        SCNTransaction.animationDuration = reduceMotion ? 0.0 : 0.75
         SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         
-        // Close eyelids
-        leftEyelidNode.position.y = 0.008
-        rightEyelidNode.position.y = 0.008
-        leftEyelidNode.opacity = 1.0
-        rightEyelidNode.opacity = 1.0
+        // Display sweet sleeping eye arcs and hide open pupils
+        leftSleepArcNode?.opacity = 1.0
+        rightSleepArcNode?.opacity = 1.0
+        leftEyeSphere?.opacity = 0.0
+        rightEyeSphere?.opacity = 0.0
+        leftCatchlight?.opacity = 0.0
+        rightCatchlight?.opacity = 0.0
         
-        // Head rests down
-        headNode.position = SCNVector3(0, 0.21, 0.06)
-        headNode.eulerAngles = SCNVector3(0.25, 0.12, 0)
+        // Curled body position: head rests lower and angles into paws
+        bodyRootNode.position.y = -0.01
+        headNode.position = SCNVector3(-0.02, 0.18, 0.08)
+        headNode.eulerAngles = SCNVector3(0.35, 0.32, -0.12)
         
-        // Deeper breathing loop for sleep
+        // Front paws tuck underneath
+        rightArmNode.eulerAngles = SCNVector3(0.55, 0.15, -0.25)
+        leftArmNode.eulerAngles = SCNVector3(0.55, -0.15, 0.25)
+        
+        // Tail wraps snugly around body
+        tailNode.position = SCNVector3(0.08, 0.02, -0.04)
+        tailNode.eulerAngles = SCNVector3(0.12, 0.55, -0.85)
+        
+        // Deeper, slower breathing loop for peaceful sleep
         bodySphereNode.removeAction(forKey: "cookie_breathing")
         if !reduceMotion {
             let breatheIn = SCNAction.scale(to: 1.035, duration: 3.2)
@@ -608,15 +619,22 @@ final class CookieNode: SCNNode {
         SCNTransaction.animationDuration = reduceMotion ? 0.0 : 0.6
         SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
         
-        // Open eyelids
-        leftEyelidNode.position.y = 0.035
-        rightEyelidNode.position.y = 0.035
-        leftEyelidNode.opacity = 0.0
-        rightEyelidNode.opacity = 0.0
+        // Restore open pupils and hide sleeping arcs
+        leftSleepArcNode?.opacity = 0.0
+        rightSleepArcNode?.opacity = 0.0
+        leftEyeSphere?.opacity = 1.0
+        rightEyeSphere?.opacity = 1.0
+        leftCatchlight?.opacity = 1.0
+        rightCatchlight?.opacity = 1.0
         
         // Head returns to normal upright
+        bodyRootNode.position.y = 0.02
         headNode.position = SCNVector3(0, 0.26, 0.03)
         headNode.eulerAngles = defaultHeadRotation
+        
+        // Restore tail to resting posture
+        tailNode.position = SCNVector3(0.12, 0.04, -0.09)
+        tailNode.eulerAngles = SCNVector3(0, 0, 0)
         
         // Restore normal breathing
         bodySphereNode.removeAction(forKey: "cookie_breathing")
