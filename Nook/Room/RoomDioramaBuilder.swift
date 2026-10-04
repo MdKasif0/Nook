@@ -169,28 +169,28 @@ final class RoomDioramaBuilder {
         let glassNode = SCNNode(geometry: glass)
         windowGroup.addChildNode(glassNode)
         
-        // Outdoor Sky & Landscape Plane behind window
-        let skyPlane = SCNPlane(width: 5.5, height: 4.0)
+        // Outdoor Sky & Landscape Plane directly behind window glass
+        let skyPlane = SCNPlane(width: 2.25, height: 1.45)
         let skyMat = SCNMaterial()
         skyMat.diffuse.contents = environment.skyTopColor
         skyMat.lightingModel = .constant
         skyPlane.materials = [skyMat]
         
         let skyNode = SCNNode(geometry: skyPlane)
-        skyNode.position = SCNVector3(-roomWidth / 2 - 0.7, 1.8, 0)
+        skyNode.position = SCNVector3(-0.08, 0, 0)
         skyNode.eulerAngles.y = .pi / 2
         skyNode.name = "outdoor_sky_node"
-        root.addChildNode(skyNode)
+        windowGroup.addChildNode(skyNode)
         
-        // Distant rolling green hills outside
-        let hillGeo = SCNSphere(radius: 2.6)
+        // Distant rolling green hills outside seen through window
+        let hillGeo = SCNSphere(radius: 1.1)
         let hillMat = SCNMaterial()
         hillMat.diffuse.contents = NSColor(red: 0.44, green: 0.62, blue: 0.42, alpha: 1.0) // Soft sage hills
         hillMat.lightingModel = .constant
         hillGeo.materials = [hillMat]
         let hillNode = SCNNode(geometry: hillGeo)
-        hillNode.position = SCNVector3(-roomWidth / 2 - 1.2, -0.6, -0.4)
-        root.addChildNode(hillNode)
+        hillNode.position = SCNVector3(-0.22, -0.75, -0.15)
+        windowGroup.addChildNode(hillNode)
         
         // Cute miniature succulent on the window sill
         let pot = SCNCylinder(radius: 0.045, height: 0.07)
@@ -502,11 +502,11 @@ final class RoomDioramaBuilder {
     
     private static func buildCookieArea(in root: SCNNode, reduceMotion: Bool) {
         let cookieGroup = SCNNode()
-        cookieGroup.position = SCNVector3(-1.1, 0, 1.1)
+        cookieGroup.position = SCNVector3(-0.95, 0, 0.70)
         cookieGroup.name = "cookie_area"
         
         // Braided Circular Woven Rug
-        let rug = SCNCylinder(radius: 0.65, height: 0.02)
+        let rug = SCNCylinder(radius: 0.50, height: 0.02)
         let rugMat = SCNMaterial()
         rugMat.diffuse.contents = NSColor(red: 0.88, green: 0.84, blue: 0.76, alpha: 1.0) // Warm taupe woven fiber
         rugMat.roughness.contents = 0.95
@@ -516,7 +516,7 @@ final class RoomDioramaBuilder {
         cookieGroup.addChildNode(rugNode)
         
         // Outer concentric rug braid
-        let rugRing = SCNTorus(ringRadius: 0.62, pipeRadius: 0.022)
+        let rugRing = SCNTorus(ringRadius: 0.48, pipeRadius: 0.02)
         let ringMat = SCNMaterial()
         ringMat.diffuse.contents = NSColor(red: 0.78, green: 0.74, blue: 0.66, alpha: 1.0)
         rugRing.materials = [ringMat]
