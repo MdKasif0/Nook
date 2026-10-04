@@ -546,6 +546,29 @@ final class RoomDioramaBuilder {
         pegboardNode.position = SCNVector3(-2.19, 2.05, -0.75)
         shelfGroup.addChildNode(pegboardNode)
         
+        // Pinned Polaroid Photos on Pegboard (matching reference photo!)
+        let polaroids: [(CGFloat, CGFloat, NSColor)] = [
+            (-0.18, 0.15, NSColor(red: 0.88, green: 0.82, blue: 0.74, alpha: 1.0)),
+            (-0.16, -0.15, NSColor(red: 0.76, green: 0.82, blue: 0.78, alpha: 1.0)),
+            (0.18, -0.12, NSColor(red: 0.84, green: 0.75, blue: 0.68, alpha: 1.0))
+        ]
+        for (py, pz, col) in polaroids {
+            let pCard = SCNBox(width: 0.005, height: 0.16, length: 0.13, chamferRadius: 0.002)
+            let cardMat = SCNMaterial()
+            cardMat.diffuse.contents = col
+            pCard.materials = [cardMat]
+            let pcNode = SCNNode(geometry: pCard)
+            pcNode.position = SCNVector3(0.015, py, pz)
+            pegboardNode.addChildNode(pcNode)
+            
+            // Tiny wooden pin
+            let pin = SCNSphere(radius: 0.006)
+            pin.materials = [brassMat]
+            let pinNode = SCNNode(geometry: pin)
+            pinNode.position = SCNVector3(0.02, py + 0.065, pz)
+            pegboardNode.addChildNode(pinNode)
+        }
+        
         // Hanging White Studio Headphones on wooden peg
         let headphonePeg = SCNCylinder(radius: 0.012, height: 0.08)
         headphonePeg.materials = [woodMat]
@@ -1093,18 +1116,21 @@ final class RoomDioramaBuilder {
         sunLight.castsShadow = true
         sunLight.shadowRadius = 4.0
         sunLight.shadowSampleCount = 16
-        sunLight.shadowColor = NSColor(white: 0.10, alpha: 0.45)
+        sunLight.shadowColor = NSColor(red: 0.18, green: 0.12, blue: 0.08, alpha: 0.48)
+        sunLight.orthographicScale = 5.6
+        sunLight.zNear = 1.0
+        sunLight.zFar = 18.0
         
         let sunNode = SCNNode()
         sunNode.light = sunLight
         // Positioned outside the right-back window, slanting down into room
-        sunNode.position = SCNVector3(1.2, 5.8, -5.5)
-        sunNode.eulerAngles = SCNVector3(-0.62, 0.25, 0)
+        sunNode.position = SCNVector3(2.6, 5.2, -4.8)
+        sunNode.look(at: SCNVector3(-0.3, 0.4, -0.4))
         sunNode.name = "sun_light"
         
         if !reduceMotion {
-            let driftRight = SCNAction.rotateBy(x: 0.02, y: -0.03, z: 0, duration: 60)
-            let driftLeft = SCNAction.rotateBy(x: -0.02, y: 0.03, z: 0, duration: 60)
+            let driftRight = SCNAction.rotateBy(x: 0.015, y: -0.02, z: 0, duration: 60)
+            let driftLeft = SCNAction.rotateBy(x: -0.015, y: 0.02, z: 0, duration: 60)
             sunNode.runAction(SCNAction.repeatForever(SCNAction.sequence([driftRight, driftLeft])), forKey: "daylight_drift")
         }
         root.addChildNode(sunNode)
@@ -1113,7 +1139,7 @@ final class RoomDioramaBuilder {
         let ambientLight = SCNLight()
         ambientLight.type = .ambient
         ambientLight.color = environment.ambientColor
-        ambientLight.intensity = environment.ambientIntensity
+        ambientLight.intensity = environment.ambientIntensity * 0.72
         
         let ambientNode = SCNNode()
         ambientNode.light = ambientLight
@@ -1654,6 +1680,9 @@ private enum Materials {
     static var verticalWoodSlat: SCNMaterial {
         let mat = SCNMaterial()
         mat.diffuse.contents = Textures.makeVerticalWoodSlatTexture()
+        mat.diffuse.wrapS = .repeat
+        mat.diffuse.wrapT = .repeat
+        mat.diffuse.contentsTransform = SCNMatrix4MakeScale(3.5, 1.0, 1.0)
         mat.roughness.contents = 0.65
         mat.specular.contents = NSColor(white: 0.12, alpha: 1.0)
         return mat
@@ -1671,7 +1700,7 @@ private enum Materials {
     /// Soft Ivory Plaster for room diorama walls
     static var ivoryPlaster: SCNMaterial {
         let mat = SCNMaterial()
-        mat.diffuse.contents = NSColor(red: 0.965, green: 0.952, blue: 0.925, alpha: 1.0)
+        mat.diffuse.contents = NSColor(red: 0.94, green: 0.92, blue: 0.88, alpha: 1.0)
         mat.roughness.contents = 0.92
         return mat
     }
