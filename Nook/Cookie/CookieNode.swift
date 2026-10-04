@@ -216,13 +216,15 @@ final class CookieNode: SCNNode {
             eyelidNode.opacity = 0.0
             eyeContainer.addChildNode(eyelidNode)
             
-            // Peaceful sleeping eye curved arc (sweet `︶` shape)
-            let sleepArcGeo = SCNTorus(ringRadius: 0.018, pipeRadius: 0.0032)
-            sleepArcGeo.materials = [mouthMat]
-            let sleepArcNode = SCNNode(geometry: sleepArcGeo)
-            sleepArcNode.scale = SCNVector3(1.0, 0.50, 0.40)
-            sleepArcNode.position = SCNVector3(0, -0.005, 0.009)
-            sleepArcNode.eulerAngles = SCNVector3(0.65, 0, 0)
+            // Peaceful sleeping eye curved arc (sweet `︶` shape matching reference art)
+            let sleepPlane = SCNPlane(width: 0.040, height: 0.024)
+            let spMat = SCNMaterial()
+            spMat.diffuse.contents = Self.makeSleepEyeTexture()
+            spMat.lightingModel = .constant
+            spMat.isDoubleSided = true
+            sleepPlane.materials = [spMat]
+            let sleepArcNode = SCNNode(geometry: sleepPlane)
+            sleepArcNode.position = SCNVector3(0, -0.002, 0.016)
             sleepArcNode.opacity = 0.0
             eyeContainer.addChildNode(sleepArcNode)
             
@@ -641,6 +643,31 @@ final class CookieNode: SCNNode {
         startSubtleBreathing()
         
         SCNTransaction.commit()
+    }
+    
+    /// Generates a clean smiling closed eyelid arc texture (sweet `︶` curve).
+    private static func makeSleepEyeTexture() -> NSImage {
+        let size = CGSize(width: 128, height: 80)
+        let img = NSImage(size: size)
+        img.lockFocus()
+        guard let ctx = NSGraphicsContext.current?.cgContext else {
+            img.unlockFocus()
+            return img
+        }
+        ctx.clear(CGRect(origin: .zero, size: size))
+        
+        ctx.setStrokeColor(NSColor(red: 0.22, green: 0.16, blue: 0.12, alpha: 1.0).cgColor)
+        ctx.setLineWidth(10.0)
+        ctx.setLineCap(.round)
+        
+        // Curved smiling closed eye arc ︶
+        ctx.beginPath()
+        ctx.move(to: CGPoint(x: 20, y: 56))
+        ctx.addQuadCurve(to: CGPoint(x: 108, y: 56), control: CGPoint(x: 64, y: 16))
+        ctx.strokePath()
+        
+        img.unlockFocus()
+        return img
     }
 }
 
