@@ -18,12 +18,8 @@ struct ContentView: View {
         }
         .background(NookDesign.Colors.backgroundPrimary)
         .onAppear {
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains([.command, .shift]) && event.keyCode == 49 {
-                    openWindow(id: NookWindow.quickCapture.id)
-                    return nil
-                }
-                return event
+            GlobalShortcutManager.shared.setup(appState: appState) {
+                openWindow(id: NookWindow.quickCapture.id)
             }
         }
     }

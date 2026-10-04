@@ -98,9 +98,45 @@ struct RoomView: View {
                 }
                 .padding(NookDesign.Spacing.xl)
             }
+            
+            // Command + K Spotlight Search Palette
+            if appState.isSearchOpen {
+                SearchPaletteView(
+                    onSelectItem: { id in
+                        appState.focusItemInRoom(id: id)
+                    },
+                    onClose: {
+                        appState.closeSearch()
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                .zIndex(100)
+            }
         }
         .onAppear {
             RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
+            GlobalShortcutManager.shared.onEscapePressed = { [weak appState] in
+                if let appState, appState.isSearchOpen {
+                    appState.closeSearch()
+                    return true
+                }
+                if sceneController.selectedItemID != nil {
+                    withAnimation(NookDesign.Animation.springy) {
+                        sceneController.selectedItemID = nil
+                        sceneController.resetCameraFraming()
+                    }
+                    return true
+                }
+                return false
+            }
+        }
+        .onChange(of: appState.focusedItemID) { _, newID in
+            if let id = newID {
+                withAnimation(NookDesign.Animation.springy) {
+                    sceneController.focusItem(id: id)
+                }
+                appState.focusedItemID = nil
+            }
         }
         .task(id: items) {
             sceneController.syncItems(items)
@@ -108,27 +144,12 @@ struct RoomView: View {
         }
         .sheet(isPresented: $isShowingNewItemSheet) {
             NewItemSheet { title, content, type, objectType in
-                let position = PlacementZone.deskCenter.naturalPosition(existingCount: items.count)
-                let newItem = NookItem(
-                    title: title,
-                    content: content,
-                    itemType: type,
-                    objectType: objectType,
-                    position: position
-                )
-                modelContext.insert(newItem)
-                try? modelContext.save()
-                
-                // Notify Cookie and room of newly materialized object
-                RoomEventBus.shared.publish(.itemCreated(title: title, itemType: type, objectType: objectType, position: position))
-                isShowingNewItemSheet = false
-                
-                // Select the freshly materialized object in the room
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(NookDesign.Animation.springy) {
-                        selectItem(newItem.id)
-                    }
-                }
+                placeNewThought(title: title, content: content, type: type, objectType: objectType)
+            }
+        }
+        .sheet(isPresented: Bindable(appState).isShowingNewThoughtSheet) {
+            NewItemSheet { title, content, type, objectType in
+                placeNewThought(title: title, content: content, type: type, objectType: objectType)
             }
         }
         .sheet(item: $detailItem) { item in
@@ -515,6 +536,31 @@ struct RoomView: View {
     }
     
     // MARK: - Interactions & Logic
+    
+    private func placeNewThought(title: String, content: String, type: NookItemType, objectType: NookObjectType) {
+        let position = PlacementZone.deskCenter.naturalPosition(existingCount: items.count)
+        let newItem = NookItem(
+            title: title,
+            content: content,
+            itemType: type,
+            objectType: objectType,
+            position: position
+        )
+        modelContext.insert(newItem)
+        try? modelContext.save()
+        
+        AudioManager.shared.playObjectPlaced()
+        
+        RoomEventBus.shared.publish(.itemCreated(title: title, itemType: type, objectType: objectType, position: position))
+        isShowingNewItemSheet = false
+        appState.isShowingNewThoughtSheet = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(NookDesign.Animation.springy) {
+                selectItem(newItem.id)
+            }
+        }
+    }
     
     private func selectItem(_ id: UUID?) {
         sceneController.selectedItemID = id
