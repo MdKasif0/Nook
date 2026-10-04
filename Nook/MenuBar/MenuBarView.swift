@@ -18,7 +18,7 @@ struct MenuBarView: View {
             Button("Quick Thought") {
                 openWindow(id: NookWindow.quickCapture.id)
             }
-            .keyboardShortcut("t", modifiers: [.command, .shift])
+            .keyboardShortcut(" ", modifiers: [.command, .shift])
             
             Divider()
             

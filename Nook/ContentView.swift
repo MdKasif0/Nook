@@ -5,6 +5,7 @@ import SwiftData
 struct ContentView: View {
     
     @Environment(AppState.self) private var appState
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         @Bindable var state = appState
@@ -16,5 +17,14 @@ struct ContentView: View {
             DetailView()
         }
         .background(NookDesign.Colors.backgroundPrimary)
+        .onAppear {
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains([.command, .shift]) && event.keyCode == 49 {
+                    openWindow(id: NookWindow.quickCapture.id)
+                    return nil
+                }
+                return event
+            }
+        }
     }
 }
