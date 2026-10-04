@@ -152,3 +152,26 @@ extension View {
             .nookShadow(NookDesign.Shadow.subtle)
     }
 }
+
+// MARK: - Accent Color SwiftUI Mapping
+
+extension NookAccentColor {
+    /// Maps the model-layer accent token to a concrete SwiftUI Color.
+    var color: Color {
+        switch self {
+        case .sage:       return NookDesign.Colors.sage
+        case .olive:      return NookDesign.Colors.olive
+        case .terracotta: return NookDesign.Colors.terracotta
+        case .woodBrown:  return NookDesign.Colors.woodBrown
+        case .taupe:      return NookDesign.Colors.taupe
+        }
+    }
+}
+
+extension NookItemType {
+    /// The badge tint color for this item type.
+    var badgeColor: Color {
+        accentColor.color
+    }
+}
+
