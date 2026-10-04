@@ -1357,10 +1357,28 @@ final class RoomDioramaBuilder {
 
 private enum Materials {
     
+    /// Rich Warm Honey-Oak Hardwood Planks with individual board variation and beveled seams
+    static var hardwoodFloor: SCNMaterial {
+        let mat = SCNMaterial()
+        mat.diffuse.contents = Textures.makeHardwoodPlanksTexture()
+        mat.roughness.contents = 0.58
+        mat.specular.contents = NSColor(white: 0.16, alpha: 1.0)
+        return mat
+    }
+    
+    /// Vertical Honey-Oak Tongue-and-Groove Wood Slats for wainscoting and wall panels
+    static var verticalWoodSlat: SCNMaterial {
+        let mat = SCNMaterial()
+        mat.diffuse.contents = Textures.makeVerticalWoodSlatTexture()
+        mat.roughness.contents = 0.65
+        mat.specular.contents = NSColor(white: 0.12, alpha: 1.0)
+        return mat
+    }
+    
     /// Warm Honey-Oak Hardwood (Natural grain warmth, matte satin finish)
     static var honeyOak: SCNMaterial {
         let mat = SCNMaterial()
-        mat.diffuse.contents = NSColor(red: 0.76, green: 0.58, blue: 0.42, alpha: 1.0)
+        mat.diffuse.contents = NSColor(red: 0.77, green: 0.58, blue: 0.42, alpha: 1.0)
         mat.roughness.contents = 0.68
         mat.specular.contents = NSColor(white: 0.14, alpha: 1.0)
         return mat
@@ -1412,6 +1430,129 @@ private enum Materials {
 // MARK: - Procedural High-Res Texture Generators
 
 private enum Textures {
+    
+    /// Generates the rich honey-oak hardwood floor planks texture with dark seams and natural woodgrain.
+    static func makeHardwoodPlanksTexture() -> NSImage {
+        let size = CGSize(width: 1024, height: 1024)
+        let img = NSImage(size: size)
+        img.lockFocus()
+        
+        guard let ctx = NSGraphicsContext.current?.cgContext else {
+            img.unlockFocus()
+            return img
+        }
+        
+        // Base honey oak fill
+        ctx.setFillColor(NSColor(red: 0.77, green: 0.58, blue: 0.42, alpha: 1.0).cgColor)
+        ctx.fill(CGRect(origin: .zero, size: size))
+        
+        let plankCount = 22
+        let plankHeight = size.height / CGFloat(plankCount)
+        
+        for i in 0..<plankCount {
+            let y = CGFloat(i) * plankHeight
+            
+            // Subtle warm tone variation per plank
+            let toneShift = CGFloat((i * 19) % 7 - 3) * 0.018
+            let r = min(0.90, max(0.68, 0.77 + toneShift))
+            let g = min(0.72, max(0.50, 0.58 + toneShift * 0.9))
+            let b = min(0.55, max(0.35, 0.42 + toneShift * 0.8))
+            
+            ctx.setFillColor(NSColor(red: r, green: g, blue: b, alpha: 1.0).cgColor)
+            ctx.fill(CGRect(x: 0, y: y, width: size.width, height: plankHeight))
+            
+            // Faint natural wood grain streaks along the plank
+            ctx.setStrokeColor(NSColor(red: r * 0.88, green: g * 0.88, blue: b * 0.88, alpha: 0.20).cgColor)
+            ctx.setLineWidth(1.2)
+            for g in 0..<4 {
+                let gy = y + CGFloat(g + 1) * (plankHeight / 5.0)
+                ctx.beginPath()
+                ctx.move(to: CGPoint(x: 0, y: gy))
+                ctx.addCurve(
+                    to: CGPoint(x: size.width, y: gy + CGFloat((i * 3 + g) % 5 - 2)),
+                    control1: CGPoint(x: size.width * 0.33, y: gy + CGFloat((i * 7) % 5 - 2)),
+                    control2: CGPoint(x: size.width * 0.66, y: gy - CGFloat((i * 5) % 5 - 2))
+                )
+                ctx.strokePath()
+            }
+            
+            // Staggered vertical end-butt joint between planks
+            let jointX1 = CGFloat((i * 317 + 120) % Int(size.width * 0.85)) + 40
+            ctx.setStrokeColor(NSColor(red: 0.38, green: 0.26, blue: 0.16, alpha: 0.75).cgColor)
+            ctx.setLineWidth(2.0)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: jointX1, y: y))
+            ctx.addLine(to: CGPoint(x: jointX1, y: y + plankHeight))
+            ctx.strokePath()
+            
+            // Dark horizontal groove seam at the top of each plank
+            ctx.setStrokeColor(NSColor(red: 0.38, green: 0.26, blue: 0.16, alpha: 0.85).cgColor)
+            ctx.setLineWidth(2.2)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: 0, y: y))
+            ctx.addLine(to: CGPoint(x: size.width, y: y))
+            ctx.strokePath()
+            
+            // Subtle warm highlight bevel line directly below seam for physical depth
+            ctx.setStrokeColor(NSColor(red: 0.88, green: 0.72, blue: 0.54, alpha: 0.35).cgColor)
+            ctx.setLineWidth(1.0)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: 0, y: y + 2.0))
+            ctx.addLine(to: CGPoint(x: size.width, y: y + 2.0))
+            ctx.strokePath()
+        }
+        
+        img.unlockFocus()
+        return img
+    }
+    
+    /// Generates vertical honey-oak tongue-and-groove wooden slats for wainscoting and wall panels.
+    static func makeVerticalWoodSlatTexture() -> NSImage {
+        let size = CGSize(width: 512, height: 512)
+        let img = NSImage(size: size)
+        img.lockFocus()
+        
+        guard let ctx = NSGraphicsContext.current?.cgContext else {
+            img.unlockFocus()
+            return img
+        }
+        
+        ctx.setFillColor(NSColor(red: 0.76, green: 0.57, blue: 0.41, alpha: 1.0).cgColor)
+        ctx.fill(CGRect(origin: .zero, size: size))
+        
+        let slatCount = 20
+        let slatWidth = size.width / CGFloat(slatCount)
+        
+        for i in 0..<slatCount {
+            let x = CGFloat(i) * slatWidth
+            let toneShift = CGFloat((i * 11) % 5 - 2) * 0.015
+            let r = 0.76 + toneShift
+            let g = 0.57 + toneShift * 0.9
+            let b = 0.41 + toneShift * 0.8
+            
+            ctx.setFillColor(NSColor(red: r, green: g, blue: b, alpha: 1.0).cgColor)
+            ctx.fill(CGRect(x: x, y: 0, width: slatWidth, height: size.height))
+            
+            // Dark vertical tongue-and-groove joint line
+            ctx.setStrokeColor(NSColor(red: 0.36, green: 0.25, blue: 0.16, alpha: 0.80).cgColor)
+            ctx.setLineWidth(2.0)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: x, y: 0))
+            ctx.addLine(to: CGPoint(x: x, y: size.height))
+            ctx.strokePath()
+            
+            // Subtle vertical highlight line on right edge of joint
+            ctx.setStrokeColor(NSColor(red: 0.88, green: 0.72, blue: 0.54, alpha: 0.30).cgColor)
+            ctx.setLineWidth(1.0)
+            ctx.beginPath()
+            ctx.move(to: CGPoint(x: x + 1.8, y: 0))
+            ctx.addLine(to: CGPoint(x: x + 1.8, y: size.height))
+            ctx.strokePath()
+        }
+        
+        img.unlockFocus()
+        return img
+    }
     
     /// Generates the crisp monitor screen texture displaying "hello ♡" with landscape.
     static func makeMonitorScreenTexture() -> NSImage {
