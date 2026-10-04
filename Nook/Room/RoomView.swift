@@ -24,6 +24,7 @@ struct RoomView: View {
     @State private var isShowingNewItemSheet = false
     @State private var cookieToastMessage: String?
     @State private var cookieToastDismissTask: Task<Void, Never>?
+    @State private var detailItem: NookItem?
     
     // Inspector editing state
     @State private var isEditingSelectedItem = false
@@ -48,6 +49,11 @@ struct RoomView: View {
                 },
                 onItemMoved: { id, newPosition in
                     handleItemMoved(id: id, newPosition: newPosition)
+                },
+                onOpenItem: { id in
+                    if let item = items.first(where: { $0.id == id }) {
+                        detailItem = item
+                    }
                 },
                 onToggleLamp: {
                     sceneController.toggleDeskLamp()

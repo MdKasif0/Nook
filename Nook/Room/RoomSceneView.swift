@@ -143,7 +143,9 @@ final class NookSCNView: SCNView {
             if foundInteractive { break }
         }
         
-        if foundInteractive {
+        if foundItem != nil {
+            NSCursor.openHand.set()
+        } else if foundInteractive {
             NSCursor.pointingHand.set()
         } else {
             NSCursor.arrow.set()
@@ -182,6 +184,15 @@ final class NookSCNView: SCNView {
         }
         
         if let itemNode = hitNode {
+            // Check double click immediately to open thought
+            if event.clickCount == 2 {
+                controller.selectedItemID = itemNode.itemID
+                onOpenItem?(itemNode.itemID)
+                self.draggedItemNode = nil
+                self.isDraggingItem = false
+                return
+            }
+            
             // Initiating click on an item (may become drag if moved)
             self.draggedItemNode = itemNode
             self.dragStartMousePoint = location
@@ -209,6 +220,8 @@ final class NookSCNView: SCNView {
                     isDraggingItem = true
                     node.isBeingDragged = true
                 }
+                
+                NSCursor.closedHand.set()
                 
                 // Ray-plane intersection with horizontal desk plane (Y = deskSurfaceY)
                 let near = unprojectPoint(SCNVector3(point.x, point.y, 0))
@@ -266,6 +279,7 @@ final class NookSCNView: SCNView {
             
             self.draggedItemNode = nil
             self.isDraggingItem = false
+            NSCursor.openHand.set()
             return
         }
         
@@ -273,6 +287,7 @@ final class NookSCNView: SCNView {
             // User clicked the item without dragging
             controller.selectedItemID = (controller.selectedItemID == node.itemID) ? nil : node.itemID
             self.draggedItemNode = nil
+            NSCursor.openHand.set()
             return
         }
         
