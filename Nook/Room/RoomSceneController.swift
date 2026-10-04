@@ -96,7 +96,7 @@ final class RoomSceneController {
                 node.scale = SCNVector3(0.01, 0.01, 0.01)
                 SCNTransaction.begin()
                 SCNTransaction.animationDuration = 0.35
-                SCNTransaction.animationTimingMode = .easeOut
+                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
                 node.scale = SCNVector3(1.0, 1.0, 1.0)
                 SCNTransaction.commit()
             }
@@ -135,7 +135,7 @@ final class RoomSceneController {
     private func applyTimeOfDay(_ tod: RoomTimeOfDay) {
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0.8
-        SCNTransaction.animationTimingMode = .easeInOut
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         
         sunLight?.color = tod.sunlightColor
         sunLight?.intensity = tod.sunlightIntensity
