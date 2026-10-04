@@ -14,6 +14,13 @@ struct NookApp: App {
     @State private var appState = AppState()
     @Environment(\.openWindow) private var openWindow
     
+    init() {
+        if CommandLine.arguments.contains("--render-snapshots") {
+            SnapshotGenerator.renderAll()
+            exit(0)
+        }
+    }
+    
     var body: some Scene {
         // MARK: - 1. Main Room Window
         WindowGroup("Nook", id: NookWindow.main.id) {
