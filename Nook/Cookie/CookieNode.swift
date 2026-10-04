@@ -484,12 +484,7 @@ final class CookieNode: SCNNode {
             SCNAction.moveBy(x: 0, y: 0.015, z: 0, duration: 0.18),
             SCNAction.moveBy(x: 0, y: -0.015, z: 0, duration: 0.18)
         ])
-        rightArmNode.runAction(rub) { [weak self] in
-            Task { @MainActor in
-                self?.restPaws()
-                self?.resetHead()
-            }
-        }
+        rightArmNode.runAction(rub)
     }
     
     /// Gentle stretching behavior.
@@ -504,17 +499,17 @@ final class CookieNode: SCNNode {
         headNode.position.y = 0.22
         rightArmNode.eulerAngles = SCNVector3(-0.4, 0, 0.1)
         leftArmNode.eulerAngles = SCNVector3(-0.4, 0, -0.1)
-        
-        SCNTransaction.completionBlock = { [weak self] in
-            guard let self else { return }
-            SCNTransaction.begin()
-            SCNTransaction.animationDuration = 0.45
-            SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
-            self.bodyRootNode.position.y = 0.02
-            self.headNode.position.y = 0.26
-            self.restPaws()
-            SCNTransaction.commit()
-        }
+        SCNTransaction.commit()
+    }
+    
+    /// Relaxes after stretching back to upright sitting.
+    func relaxStretch() {
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 0.45
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
+        bodyRootNode.position.y = 0.02
+        headNode.position.y = 0.26
+        restPaws()
         SCNTransaction.commit()
     }
     
@@ -551,7 +546,7 @@ final class CookieNode: SCNNode {
         SCNTransaction.commit()
     }
     
-    /// Wakes Cookie up gradually: blinks eyes open, raises head, stretches.
+    /// Wakes Cookie up gradually: blinks eyes open, raises head.
     func wakeUp() {
         guard isSleeping else { return }
         isSleeping = false
@@ -575,12 +570,6 @@ final class CookieNode: SCNNode {
         startSubtleBreathing()
         
         SCNTransaction.commit()
-        
-        // Gentle waking stretch after short delay
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 400_000_000)
-            self?.stretch()
-        }
     }
 }
 

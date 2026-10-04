@@ -44,7 +44,9 @@ struct CleanPawBehavior: CookieBehavior {
     func execute(node: CookieNode, state: CookieState) async {
         state.transition(to: .idle, posture: .cleaningPaw)
         node.cleanPaw()
-        try? await Task.sleep(nanoseconds: 2_200_000_000)
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        node.restPaws()
+        node.resetHead()
         state.transition(to: .idle, posture: .sitting)
     }
 }
@@ -58,7 +60,8 @@ struct StretchBehavior: CookieBehavior {
     func execute(node: CookieNode, state: CookieState) async {
         state.transition(to: .idle, posture: .stretching)
         node.stretch()
-        try? await Task.sleep(nanoseconds: 1_800_000_000)
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        node.relaxStretch()
         state.transition(to: .idle, posture: .sitting)
     }
 }
@@ -170,5 +173,9 @@ struct WakeUpBehavior: CookieBehavior {
     func execute(node: CookieNode, state: CookieState) async {
         node.wakeUp()
         state.transition(to: .idle, posture: .sitting)
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        node.stretch()
+        try? await Task.sleep(nanoseconds: 600_000_000)
+        node.relaxStretch()
     }
 }
