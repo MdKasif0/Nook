@@ -1,6 +1,7 @@
 import SceneKit
 import SwiftUI
 import SwiftData
+import AppKit
 
 /// Coordinates the 3D scene state, item node synchronization,
 /// lighting adjustments, camera positioning, and interactions.
@@ -14,7 +15,9 @@ final class RoomSceneController {
     private var sunLight: SCNLight?
     private var ambientLight: SCNLight?
     private var lampLight: SCNLight?
+    private var sconceLight: SCNLight?
     private var outdoorSkyNode: SCNNode?
+    private var dustParticles: SCNParticleSystem?
     
     var timeOfDay: RoomTimeOfDay = .morning {
         didSet {
@@ -25,6 +28,18 @@ final class RoomSceneController {
     var isDeskLampOn: Bool = false {
         didSet {
             updateLampLighting()
+        }
+    }
+    
+    var isWallSconceOn: Bool = false {
+        didSet {
+            updateSconceLighting()
+        }
+    }
+    
+    var isRecordSpinning: Bool = true {
+        didSet {
+            updateRecordSpinning()
         }
     }
     
@@ -45,21 +60,38 @@ final class RoomSceneController {
     // Cookie State-Driven Behavior Engine
     let cookieController = CookieBehaviorController()
     
+    // Performance lifecycle notification observers
+    private var lifecycleObservers: [NSObjectProtocol] = []
+    
     init() {
         setupScene()
+        setupLifecycleObservers()
+    }
+    
+    deinit {
+        for observer in lifecycleObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
     
     // MARK: - Scene Initialization
     
     private func setupScene() {
-        // Build miniature room diorama
-        let lights = RoomDioramaBuilder.buildDiorama(in: scene, environment: timeOfDay)
+        let reduceMotion = PreferencesManager.shared.reduceMotion
+        let lights = RoomDioramaBuilder.buildDiorama(
+            in: scene,
+            environment: timeOfDay,
+            reduceMotion: reduceMotion
+        )
         self.lampLight = lights.lampLight
+        self.sconceLight = lights.sconceLight
         self.sunLight = lights.sunLight
         self.ambientLight = lights.ambientLight
         self.outdoorSkyNode = lights.outdoorSkyNode
+        self.dustParticles = lights.dustParticles
         
         self.isDeskLampOn = timeOfDay.isDeskLampDefaultOn
+        self.isWallSconceOn = timeOfDay.isDeskLampDefaultOn
         
         // Bind Cookie character node to behavior controller
         if let cat = scene.rootNode.childNode(withName: "cookie_character", recursively: true) as? CookieNode {
@@ -69,8 +101,8 @@ final class RoomSceneController {
     
     // MARK: - Dimensions for Desk Surface Item Placement
     
-    static let deskWidthSpan: CGFloat = 1.6
-    static let deskDepthSpan: CGFloat = 0.85
+    static let deskWidthSpan: CGFloat = 1.65
+    static let deskDepthSpan: CGFloat = 0.82
     
     // MARK: - Item Synchronization
     
@@ -111,12 +143,14 @@ final class RoomSceneController {
                 itemNodes[item.id] = node
                 
                 // Spawn animation
-                node.scale = SCNVector3(0.01, 0.01, 0.01)
-                SCNTransaction.begin()
-                SCNTransaction.animationDuration = 0.35
-                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
-                node.scale = SCNVector3(1.0, 1.0, 1.0)
-                SCNTransaction.commit()
+                if !PreferencesManager.shared.reduceMotion {
+                    node.scale = SCNVector3(0.01, 0.01, 0.01)
+                    SCNTransaction.begin()
+                    SCNTransaction.animationDuration = 0.35
+                    SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
+                    node.scale = SCNVector3(1.0, 1.0, 1.0)
+                    SCNTransaction.commit()
+                }
             }
         }
     }
@@ -158,7 +192,7 @@ final class RoomSceneController {
         let target = worldPosition(for: position)
         
         SCNTransaction.begin()
-        SCNTransaction.animationDuration = 0.40
+        SCNTransaction.animationDuration = PreferencesManager.shared.reduceMotion ? 0.0 : 0.40
         SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         node.position = target
         SCNTransaction.commit()
@@ -174,7 +208,7 @@ final class RoomSceneController {
     
     private func applyTimeOfDay(_ tod: RoomTimeOfDay) {
         SCNTransaction.begin()
-        SCNTransaction.animationDuration = 0.8
+        SCNTransaction.animationDuration = PreferencesManager.shared.reduceMotion ? 0.0 : 0.8
         SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         
         sunLight?.color = tod.sunlightColor
@@ -184,14 +218,16 @@ final class RoomSceneController {
         
         outdoorSkyNode?.geometry?.firstMaterial?.diffuse.contents = tod.skyTopColor
         
-        // Auto-turn on desk lamp during Golden Hour and Night
+        // Auto-turn on lamps during Golden Hour and Night
         self.isDeskLampOn = tod.isDeskLampDefaultOn
+        self.isWallSconceOn = tod.isDeskLampDefaultOn
         
         SCNTransaction.commit()
     }
     
     func toggleDeskLamp() {
         isDeskLampOn.toggle()
+        AudioManager.shared.playObjectPlaced()
     }
     
     private func updateLampLighting() {
@@ -199,6 +235,64 @@ final class RoomSceneController {
         SCNTransaction.animationDuration = 0.25
         lampLight?.intensity = isDeskLampOn ? 950 : 0
         SCNTransaction.commit()
+    }
+    
+    func toggleWallSconce() {
+        isWallSconceOn.toggle()
+        AudioManager.shared.playObjectPlaced()
+    }
+    
+    private func updateSconceLighting() {
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 0.25
+        sconceLight?.intensity = isWallSconceOn ? 750 : 0
+        SCNTransaction.commit()
+    }
+    
+    func toggleRecordPlayer() {
+        isRecordSpinning.toggle()
+        AudioManager.shared.playObjectSelected()
+    }
+    
+    private func updateRecordSpinning() {
+        guard let disc = scene.rootNode.childNode(withName: "vinyl_record_disc", recursively: true) else { return }
+        if isRecordSpinning {
+            let spin = SCNAction.rotateBy(x: 0, y: .pi * 2, z: 0, duration: 2.2)
+            disc.runAction(SCNAction.repeatForever(spin), forKey: "vinyl_spin")
+        } else {
+            disc.removeAction(forKey: "vinyl_spin")
+        }
+    }
+    
+    /// Cycles display background on the computer monitor.
+    func cycleMonitorWallpaper() {
+        guard let monitor = scene.rootNode.childNode(withName: "monitor_display", recursively: true) else { return }
+        AudioManager.shared.playObjectSelected()
+        
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 0.2
+        monitor.opacity = 0.8
+        SCNTransaction.commit()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            SCNTransaction.begin()
+            SCNTransaction.animationDuration = 0.2
+            monitor.opacity = 1.0
+            SCNTransaction.commit()
+        }
+    }
+    
+    /// Gently nudges the skateboard on the floor.
+    func nudgeSkateboard() {
+        guard let board = scene.rootNode.childNode(withName: "skateboard", recursively: true) else { return }
+        guard !PreferencesManager.shared.reduceMotion else { return }
+        AudioManager.shared.playObjectSelected()
+        
+        let rollForward = SCNAction.moveBy(x: -0.06, y: 0, z: 0.08, duration: 0.35)
+        rollForward.timingMode = .easeOut
+        let rollBack = SCNAction.moveBy(x: 0.06, y: 0, z: -0.08, duration: 0.45)
+        rollBack.timingMode = .easeInEaseOut
+        board.runAction(SCNAction.sequence([rollForward, rollBack]))
     }
     
     // MARK: - Selection & Hover
@@ -224,13 +318,10 @@ final class RoomSceneController {
     // MARK: - Object Focus & Camera Framing
     
     /// Focuses an object in the room: selects it, levitates/highlights it,
-    /// moves the camera smoothly toward it, and prompts Cookie to look toward it.
+    /// and frames camera toward it smoothly.
     func focusItem(id: UUID) {
         selectedItemID = id
-        
         guard let node = itemNodes[id] else { return }
-        
-        // Frame camera toward the item on the desk
         guard let cameraNode = scene.rootNode.childNode(withName: "main_room_camera", recursively: true) else { return }
         
         let targetX = node.position.x * 0.35 + 4.9
@@ -251,7 +342,57 @@ final class RoomSceneController {
         SCNTransaction.begin()
         SCNTransaction.animationDuration = PreferencesManager.shared.reduceMotion ? 0.0 : 0.5
         SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
-        cameraNode.position = SCNVector3(6.0, 5.0, 6.0)
+        cameraNode.position = SCNVector3(5.8, 5.2, 6.2)
         SCNTransaction.commit()
+    }
+    
+    // MARK: - Performance Lifecycle Management
+    
+    private func setupLifecycleObservers() {
+        let center = NotificationCenter.default
+        
+        let resign = center.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pauseHeavyAnimations()
+        }
+        
+        let becomeActive = center.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resumeHeavyAnimations()
+        }
+        
+        let miniaturize = center.addObserver(
+            forName: NSWindow.didMiniaturizeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pauseHeavyAnimations()
+        }
+        
+        let deminiaturize = center.addObserver(
+            forName: NSWindow.didDeminiaturizeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resumeHeavyAnimations()
+        }
+        
+        lifecycleObservers = [resign, becomeActive, miniaturize, deminiaturize]
+    }
+    
+    private func pauseHeavyAnimations() {
+        dustParticles?.birthRate = 0
+    }
+    
+    private func resumeHeavyAnimations() {
+        if !PreferencesManager.shared.reduceMotion {
+            dustParticles?.birthRate = 8
+        }
     }
 }
