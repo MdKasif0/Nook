@@ -4,12 +4,13 @@ import AppKit
 
 /// SwiftUI wrapper around an `SCNView` hosting the Nook 3D miniature room.
 ///
-/// Handles hover tracking, hit-testing for physical items, desk lamp clicks,
-/// Cookie petting, and gentle isometric camera control.
+/// Handles hover tracking, physical item dragging, click selection,
+/// desk lamp toggling, Cookie petting, and bounded isometric camera control.
 struct RoomSceneView: NSViewRepresentable {
     
     let controller: RoomSceneController
     let onSelectItem: ((UUID?) -> Void)?
+    let onItemMoved: ((UUID, RoomPosition) -> Void)?
     let onToggleLamp: (() -> Void)?
     let onPetCookie: (() -> Void)?
     
@@ -22,6 +23,7 @@ struct RoomSceneView: NSViewRepresentable {
         view.antialiasingMode = .multisampling4X
         view.autoenablesDefaultLighting = false
         view.rendersContinuously = true
+        view.onItemMoved = onItemMoved
         view.delegate = context.coordinator
         
         context.coordinator.parent = self
@@ -33,6 +35,7 @@ struct RoomSceneView: NSViewRepresentable {
     func updateNSView(_ nsView: NookSCNView, context: Context) {
         context.coordinator.parent = self
         nsView.controller = controller
+        nsView.onItemMoved = onItemMoved
     }
     
     func makeCoordinator() -> Coordinator {
@@ -51,21 +54,26 @@ struct RoomSceneView: NSViewRepresentable {
     }
 }
 
-// MARK: - Custom SCNView for Native macOS Gestures & Hover
+// MARK: - Custom SCNView for Native macOS Gestures, Dragging & Hover
 
 final class NookSCNView: SCNView {
     
     var controller: RoomSceneController
+    var onItemMoved: ((UUID, RoomPosition) -> Void)?
+    
     private var trackingAreaRef: NSTrackingArea?
     
+    // Dragging item state
+    private var draggedItemNode: RoomItemNode?
+    private var dragStartMousePoint: CGPoint = .zero
+    private var isDraggingItem: Bool = false
+    
     // Camera gesture state
-    private var lastMousePoint: CGPoint = .zero
+    private var lastCameraMousePoint: CGPoint = .zero
     private var isDraggingCamera: Bool = false
     
     // Initial camera angles
-    private var cameraBaseX: CGFloat = 5.2
     private var cameraBaseY: CGFloat = 5.0
-    private var cameraBaseZ: CGFloat = 5.8
     private var currentOrbitAngle: CGFloat = 0.0 // Horizontal orbit offset
     private var currentPitchAngle: CGFloat = 0.0 // Vertical pitch offset
     
@@ -147,54 +155,141 @@ final class NookSCNView: SCNView {
         controller.hoveredItemID = nil
     }
     
-    // MARK: - Mouse Click Handling
+    // MARK: - Mouse Down
     
     override func mouseDown(with event: NSEvent) {
-        lastMousePoint = convert(event.locationInWindow, from: nil)
-        isDraggingCamera = false
+        let location = convert(event.locationInWindow, from: nil)
+        
+        let hits = hitTest(location, options: [
+            SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue
+        ])
+        
+        var hitNode: RoomItemNode?
+        for hit in hits {
+            var current: SCNNode? = hit.node
+            while let node = current {
+                if let itemNode = node as? RoomItemNode {
+                    hitNode = itemNode
+                    break
+                }
+                current = node.parent
+            }
+            if hitNode != nil { break }
+        }
+        
+        if let itemNode = hitNode {
+            // Initiating click on an item (may become drag if moved)
+            self.draggedItemNode = itemNode
+            self.dragStartMousePoint = location
+            self.isDraggingItem = false
+            self.isDraggingCamera = false
+        } else {
+            // Initiating camera drag or background click
+            self.draggedItemNode = nil
+            self.lastCameraMousePoint = location
+            self.isDraggingItem = false
+            self.isDraggingCamera = false
+        }
     }
+    
+    // MARK: - Mouse Dragged (Physical Item Drag or Camera Orbit)
     
     override func mouseDragged(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        let deltaX = point.x - lastMousePoint.x
-        let deltaY = point.y - lastMousePoint.y
-        lastMousePoint = point
         
-        if abs(deltaX) > 1.5 || abs(deltaY) > 1.5 {
-            isDraggingCamera = true
+        if let node = draggedItemNode {
+            // Check distance threshold to distinguish click from drag
+            let dist = hypot(point.x - dragStartMousePoint.x, point.y - dragStartMousePoint.y)
+            if dist > 3.0 {
+                if !isDraggingItem {
+                    isDraggingItem = true
+                    node.isBeingDragged = true
+                }
+                
+                // Ray-plane intersection with horizontal desk plane (Y = deskSurfaceY)
+                let near = unprojectPoint(SCNVector3(point.x, point.y, 0))
+                let far = unprojectPoint(SCNVector3(point.x, point.y, 1))
+                let dy = far.y - near.y
+                
+                if abs(dy) > 0.0001 {
+                    let t = (RoomDioramaBuilder.deskSurfaceY - near.y) / dy
+                    let worldX = near.x + t * (far.x - near.x)
+                    let worldZ = near.z + t * (far.z - near.z)
+                    
+                    let deskX = RoomDioramaBuilder.deskPosition.x
+                    let deskZ = RoomDioramaBuilder.deskPosition.z
+                    let halfW = RoomSceneController.deskWidthSpan * 0.48
+                    let halfD = RoomSceneController.deskDepthSpan * 0.48
+                    
+                    let clampedX = max(deskX - halfW, min(deskX + halfW, worldX))
+                    let clampedZ = max(deskZ - halfD, min(deskZ + halfD, worldZ))
+                    
+                    node.position.x = clampedX
+                    node.position.z = clampedZ
+                }
+            }
+        } else {
+            // Camera Orbit Dragging
+            let deltaX = point.x - lastCameraMousePoint.x
+            let deltaY = point.y - lastCameraMousePoint.y
+            lastCameraMousePoint = point
+            
+            if abs(deltaX) > 1.5 || abs(deltaY) > 1.5 {
+                isDraggingCamera = true
+            }
+            
+            let sensitivity: CGFloat = 0.005
+            currentOrbitAngle = max(-0.35, min(0.35, currentOrbitAngle - deltaX * sensitivity))
+            currentPitchAngle = max(-0.25, min(0.25, currentPitchAngle + deltaY * sensitivity))
+            
+            updateCameraPosition()
         }
-        
-        // Gentle, bounded orbit camera
-        let sensitivity: CGFloat = 0.005
-        currentOrbitAngle = max(-0.35, min(0.35, currentOrbitAngle - deltaX * sensitivity))
-        currentPitchAngle = max(-0.25, min(0.25, currentPitchAngle + deltaY * sensitivity))
-        
-        updateCameraPosition()
     }
     
+    // MARK: - Mouse Up
+    
     override func mouseUp(with event: NSEvent) {
-        // Only trigger click selection if the user wasn't dragging the camera
-        guard !isDraggingCamera else {
-            isDraggingCamera = false
+        if isDraggingItem, let node = draggedItemNode {
+            // Completed physical drag of item
+            node.isBeingDragged = false
+            let newPos = controller.roomPosition(from: node.position)
+            
+            // Persist the new position through SwiftData
+            onItemMoved?(node.itemID, newPos)
+            
+            // Keep selected
+            controller.selectedItemID = node.itemID
+            
+            self.draggedItemNode = nil
+            self.isDraggingItem = false
             return
         }
         
+        if let node = draggedItemNode {
+            // User clicked the item without dragging
+            controller.selectedItemID = (controller.selectedItemID == node.itemID) ? nil : node.itemID
+            self.draggedItemNode = nil
+            return
+        }
+        
+        if isDraggingCamera {
+            // Finished camera drag
+            self.isDraggingCamera = false
+            return
+        }
+        
+        // Handle background or fixture clicks (Lamp, Cookie)
         let location = convert(event.locationInWindow, from: nil)
         let hits = hitTest(location, options: [
             SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue
         ])
         
         var hitHandled = false
-        
         for hit in hits {
             var current: SCNNode? = hit.node
             while let node = current {
                 if let name = node.name {
-                    if name.hasPrefix("item_"), let uuid = UUID(uuidString: String(name.dropFirst(5))) {
-                        controller.selectedItemID = (controller.selectedItemID == uuid) ? nil : uuid
-                        hitHandled = true
-                        break
-                    } else if name == "desk_lamp" {
+                    if name == "desk_lamp" {
                         controller.toggleDeskLamp()
                         hitHandled = true
                         break
@@ -210,7 +305,7 @@ final class NookSCNView: SCNView {
         }
         
         if !hitHandled {
-            // Deselect item when clicking on background or empty floor
+            // Clicked empty background
             controller.selectedItemID = nil
         }
     }
@@ -220,7 +315,6 @@ final class NookSCNView: SCNView {
     override func scrollWheel(with event: NSEvent) {
         guard let cameraNode = scene?.rootNode.childNode(withName: "main_room_camera", recursively: true) else { return }
         
-        // Subtle dolly zoom with boundaries
         let zoomDelta = event.deltaY * 0.08
         let currentDist = sqrt(
             cameraNode.position.x * cameraNode.position.x +
