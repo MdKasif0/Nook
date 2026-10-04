@@ -42,9 +42,8 @@ final class RoomSceneController {
     
     var hoveredNodeName: String?
     
-    // Cookie interaction feedback state
-    var cookieMessage: String?
-    var isPettingCookie: Bool = false
+    // Cookie State-Driven Behavior Engine
+    let cookieController = CookieBehaviorController()
     
     init() {
         setupScene()
@@ -61,6 +60,11 @@ final class RoomSceneController {
         self.outdoorSkyNode = lights.outdoorSkyNode
         
         self.isDeskLampOn = timeOfDay.isDeskLampDefaultOn
+        
+        // Bind Cookie character node to behavior controller
+        if let cat = scene.rootNode.childNode(withName: "cookie_character", recursively: true) as? CookieNode {
+            cookieController.bind(node: cat)
+        }
     }
     
     // MARK: - Dimensions for Desk Surface Item Placement

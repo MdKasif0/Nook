@@ -525,69 +525,11 @@ final class RoomDioramaBuilder {
         ringNode.position = SCNVector3(0, 0.015, 0)
         cookieGroup.addChildNode(ringNode)
         
-        // Curled Cat — "Cookie"
-        let catNode = SCNNode()
-        catNode.name = "cookie_character"
-        catNode.position = SCNVector3(0, 0.03, 0)
-        
-        let catFurMat = SCNMaterial()
-        catFurMat.diffuse.contents = NSColor(red: 0.85, green: 0.58, blue: 0.36, alpha: 1.0) // Warm ginger/apricot
-        catFurMat.roughness.contents = 0.88
-        
-        let catWhiteMat = SCNMaterial()
-        catWhiteMat.diffuse.contents = NSColor(red: 0.98, green: 0.96, blue: 0.92, alpha: 1.0) // Cream belly & muzzle
-        catWhiteMat.roughness.contents = 0.88
-        
-        // Torso (curled oval)
-        let body = SCNSphere(radius: 0.16)
-        body.materials = [catFurMat]
-        let bodyNode = SCNNode(geometry: body)
-        bodyNode.scale = SCNVector3(1.2, 0.85, 1.4)
-        bodyNode.position = SCNVector3(0, 0.12, 0)
-        catNode.addChildNode(bodyNode)
-        
-        // Cream tummy patch
-        let patch = SCNSphere(radius: 0.12)
-        patch.materials = [catWhiteMat]
-        let patchNode = SCNNode(geometry: patch)
-        patchNode.scale = SCNVector3(0.9, 0.7, 1.1)
-        patchNode.position = SCNVector3(-0.04, 0.11, 0.02)
-        catNode.addChildNode(patchNode)
-        
-        // Head resting on paws
-        let head = SCNSphere(radius: 0.11)
-        head.materials = [catFurMat]
-        let headNode = SCNNode(geometry: head)
-        headNode.position = SCNVector3(0.12, 0.13, 0.16)
-        
-        // Cat Ears
-        for (ex, ey, ez, tilt) in [(-0.04, 0.09, 0.02, -0.2), (0.05, 0.09, 0.02, 0.2)] {
-            let ear = SCNCone(topRadius: 0.002, bottomRadius: 0.035, height: 0.06)
-            ear.materials = [catFurMat]
-            let earNode = SCNNode(geometry: ear)
-            earNode.position = SCNVector3(ex, ey, ez)
-            earNode.eulerAngles.z = CGFloat(tilt)
-            headNode.addChildNode(earNode)
-        }
-        catNode.addChildNode(headNode)
-        
-        // Curled Tail wrapped around body
-        let tail = SCNTorus(ringRadius: 0.17, pipeRadius: 0.035)
-        tail.materials = [catFurMat]
-        let tailNode = SCNNode(geometry: tail)
-        tailNode.position = SCNVector3(-0.06, 0.08, -0.06)
-        tailNode.eulerAngles.x = 0.2
-        catNode.addChildNode(tailNode)
-        
-        // Gentle breathing animation (subtle rhythmic rise and fall)
-        if !reduceMotion {
-            let breatheIn = SCNAction.scale(to: 1.035, duration: 2.4)
-            breatheIn.timingMode = .easeInEaseOut
-            let breatheOut = SCNAction.scale(to: 0.975, duration: 2.4)
-            breatheOut.timingMode = .easeInEaseOut
-            let breathingLoop = SCNAction.repeatForever(SCNAction.sequence([breatheIn, breatheOut]))
-            bodyNode.runAction(breathingLoop, forKey: "cat_breathing")
-        }
+        // Living companion cat — Cookie (matches character art with porcelain fur, rosy blush & button eyes)
+        let catNode = CookieNode()
+        catNode.reduceMotion = reduceMotion
+        catNode.position = SCNVector3(0, 0.02, 0)
+        catNode.eulerAngles.y = 0.40 // Angled warmly toward room and desk
         
         cookieGroup.addChildNode(catNode)
         root.addChildNode(cookieGroup)
