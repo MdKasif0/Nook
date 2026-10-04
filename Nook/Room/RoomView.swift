@@ -13,6 +13,7 @@ import SceneKit
 struct RoomView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
     @Query(
         filter: #Predicate<NookItem> { !$0.isArchived },
         sort: \NookItem.createdAt,

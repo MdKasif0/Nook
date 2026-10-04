@@ -220,4 +220,38 @@ final class RoomSceneController {
     func petCookie() {
         RoomEventBus.shared.publish(.cookiePetted)
     }
+    
+    // MARK: - Object Focus & Camera Framing
+    
+    /// Focuses an object in the room: selects it, levitates/highlights it,
+    /// moves the camera smoothly toward it, and prompts Cookie to look toward it.
+    func focusItem(id: UUID) {
+        selectedItemID = id
+        
+        guard let node = itemNodes[id] else { return }
+        
+        // Frame camera toward the item on the desk
+        guard let cameraNode = scene.rootNode.childNode(withName: "main_room_camera", recursively: true) else { return }
+        
+        let targetX = node.position.x * 0.35 + 4.9
+        let targetY: CGFloat = 4.25
+        let targetZ = node.position.z * 0.35 + 5.3
+        
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = PreferencesManager.shared.reduceMotion ? 0.0 : 0.65
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        cameraNode.position = SCNVector3(targetX, targetY, targetZ)
+        SCNTransaction.commit()
+    }
+    
+    /// Resets camera framing back to natural room overview.
+    func resetCameraFraming() {
+        guard let cameraNode = scene.rootNode.childNode(withName: "main_room_camera", recursively: true) else { return }
+        
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = PreferencesManager.shared.reduceMotion ? 0.0 : 0.5
+        SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
+        cameraNode.position = SCNVector3(6.0, 5.0, 6.0)
+        SCNTransaction.commit()
+    }
 }

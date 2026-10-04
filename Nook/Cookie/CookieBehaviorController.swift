@@ -52,17 +52,24 @@ final class CookieBehaviorController {
             switch event {
             case .itemCreated(_, _, _, let position):
                 state.consecutiveThoughtsCount += 1
-                await handleNewItemCreated(at: position)
+                if PreferencesManager.shared.cookieReactionsEnabled {
+                    await handleNewItemCreated(at: position)
+                }
                 
             case .itemDeleted:
                 state.consecutiveThoughtsCount = max(0, state.consecutiveThoughtsCount - 1)
-                await execute(ObjectDeletedReactionBehavior())
+                if PreferencesManager.shared.cookieReactionsEnabled {
+                    await execute(ObjectDeletedReactionBehavior())
+                }
                 
             case .itemCompleted:
-                await execute(HappyCelebrationBehavior())
+                if PreferencesManager.shared.cookieReactionsEnabled {
+                    await execute(HappyCelebrationBehavior())
+                }
                 
             case .thoughtCaptured(_, _):
                 state.consecutiveThoughtsCount += 1
+                guard PreferencesManager.shared.cookieReactionsEnabled else { break }
                 if let node = cookieNode {
                     if node.isSleeping {
                         await execute(WakeUpBehavior())

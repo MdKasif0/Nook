@@ -32,9 +32,11 @@ final class CookieNode: SCNNode {
     
     // MARK: - State Tracking
     
-    private(set) var isSleeping: Bool = false
-    private(set) var isPointing: Bool = false
-    var reduceMotion: Bool = false
+    private var _reduceMotion: Bool = false
+    var reduceMotion: Bool {
+        get { _reduceMotion || PreferencesManager.shared.reduceMotion }
+        set { _reduceMotion = newValue }
+    }
     
     // Base resting transforms
     private let defaultHeadRotation = SCNVector3(0, 0, 0)
