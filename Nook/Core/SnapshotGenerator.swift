@@ -77,8 +77,22 @@ enum SnapshotGenerator {
         hostingView.cacheDisplay(in: hostingView.bounds, to: bitmapRep)
         
         if let pngData = bitmapRep.representation(using: .png, properties: [:]) {
-            try? pngData.write(to: URL(fileURLWithPath: path))
-            print("Successfully rendered snapshot to: \(path)")
+            let targetURL = URL(fileURLWithPath: path)
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(targetURL.lastPathComponent)
+            
+            do {
+                try pngData.write(to: targetURL)
+                print("Successfully rendered snapshot to: \(targetURL.path)")
+            } catch {
+                do {
+                    try pngData.write(to: tempURL)
+                    print("Rendered snapshot to sandbox temp: \(tempURL.path)")
+                } catch {
+                    print("Failed to write snapshot: \(error)")
+                }
+            }
+        } else {
+            print("Failed to get PNG data representation for \(path)")
         }
     }
 }
