@@ -243,7 +243,7 @@ final class CookieNode: SCNNode {
         bodyRootNode.addChildNode(leftArmNode)
         
         // --- G. HIND LEGS / SITTING HAUNCHES ---
-        for (hx, isLeft) in [(-0.11, true), (0.11, false)] {
+        for (hx, _) in [(-0.11, true), (0.11, false)] {
             let haunchGeo = SCNSphere(radius: 0.09)
             haunchGeo.materials = [furMat]
             let haunch = SCNNode(geometry: haunchGeo)
