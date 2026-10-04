@@ -116,13 +116,14 @@ final class NookDataReliabilityTests {
         // Sleep slightly to guarantee updated timestamp differs
         Thread.sleep(forTimeInterval: 0.01)
         
+        let itemID = item.id
         item.title = "Refined Thought"
         item.content = "Polished Content"
         item.objectType = .polaroid
         item.touch()
         try context.save()
         
-        var descriptor = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == item.id })
+        let descriptor = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == itemID })
         guard let fetched = try context.fetch(descriptor).first else {
             throw TestError("Item not found after edit.")
         }
@@ -140,6 +141,7 @@ final class NookDataReliabilityTests {
         let context = container.mainContext
         
         let item = NookItem(title: "Draggable Thought", position: RoomPosition(x: 0.1, y: 0.1, z: 0.5))
+        let targetID = item.id
         context.insert(item)
         try context.save()
         
@@ -148,7 +150,7 @@ final class NookDataReliabilityTests {
         item.touch()
         try context.save()
         
-        var descriptor = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == item.id })
+        let descriptor = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == targetID })
         guard let fetched = try context.fetch(descriptor).first else {
             throw TestError("Moved item not found.")
         }
@@ -244,7 +246,7 @@ final class NookDataReliabilityTests {
             contextA.insert(item)
             
             let room = RoomState(
-                timeOfDay: .goldenHour,
+                timeOfDay: .sunset,
                 isDeskLampOn: true,
                 isWallSconceOn: false,
                 isRecordSpinning: true,
@@ -275,7 +277,7 @@ final class NookDataReliabilityTests {
             guard let restoredRoom = try contextB.fetch(roomDesc).first else {
                 throw TestError("RoomState was not preserved across container restart.")
             }
-            guard restoredRoom.timeOfDay == .goldenHour else { throw TestError("Room timeOfDay not restored") }
+            guard restoredRoom.timeOfDay == .sunset else { throw TestError("Room timeOfDay not restored") }
             guard restoredRoom.isDeskLampOn == true else { throw TestError("Desk lamp state not restored") }
             guard restoredRoom.cookiePetCount == 7 else { throw TestError("Cookie pet count not restored") }
         }
