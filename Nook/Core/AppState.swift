@@ -4,6 +4,7 @@ import SwiftUI
 ///
 /// Shared across windows and menu bar utility to coordinate navigation,
 /// contextual search (Command+K), quick thought creation, and room object focusing.
+@MainActor
 @Observable
 final class AppState {
     

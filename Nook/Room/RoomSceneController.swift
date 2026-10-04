@@ -118,7 +118,7 @@ final class RoomSceneController {
            let props = try? JSONDecoder().decode([String: [Double]].self, from: data) {
             for (propName, coords) in props where coords.count >= 3 {
                 if let node = scene.rootNode.childNode(withName: propName, recursively: true) {
-                    node.position = SCNVector3(coords[0], coords[1], coords[2])
+                    node.position = SCNVector3(CGFloat(coords[0]), CGFloat(coords[1]), CGFloat(coords[2]))
                 }
             }
         }
