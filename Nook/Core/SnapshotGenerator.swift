@@ -40,8 +40,8 @@ enum SnapshotGenerator {
             )
         saveView(searchPaletteView, size: CGSize(width: 580, height: 500), to: "\(artifactDir)/nook_search_palette.png")
         
-        // 4. Native Settings Window
-        let settingsView = SettingsView()
+        // 4. Native Settings Window (General)
+        let settingsView = SettingsView(initialTab: .general)
             .environment(state)
             .modelContainer(container)
             .padding(16)
@@ -49,6 +49,16 @@ enum SnapshotGenerator {
                 Color(red: 0.96, green: 0.95, blue: 0.93)
             )
         saveView(settingsView, size: CGSize(width: 500, height: 380), to: "\(artifactDir)/nook_settings.png")
+        
+        // 5. Data & Privacy Settings
+        let privacySettingsView = SettingsView(initialTab: .privacy)
+            .environment(state)
+            .modelContainer(container)
+            .padding(16)
+            .background(
+                Color(red: 0.96, green: 0.95, blue: 0.93)
+            )
+        saveView(privacySettingsView, size: CGSize(width: 500, height: 380), to: "\(artifactDir)/nook_privacy_settings.png")
     }
     
     private static func saveView<V: View>(_ view: V, size: CGSize, to path: String) {

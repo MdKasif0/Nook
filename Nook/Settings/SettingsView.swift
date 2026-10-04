@@ -9,6 +9,13 @@ import AppKit
 /// 2. Room & Companion Cat settings
 /// 3. Data & Privacy (Local-First guarantee, offline status, JSON Export/Restore)
 /// 4. About Nook
+enum SettingsTab: Hashable {
+    case general
+    case room
+    case privacy
+    case about
+}
+
 struct SettingsView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -22,6 +29,11 @@ struct SettingsView: View {
     @State private var prefs = PreferencesManager.shared
     @State private var hasResetLayout = false
     @State private var backupStatusMessage: String?
+    @State private var selectedTab: SettingsTab
+    
+    init(initialTab: SettingsTab = .general) {
+        _selectedTab = State(initialValue: initialTab)
+    }
     
     private var activeItems: [NookItem] {
         allItems.filter { !$0.isArchived }
@@ -30,7 +42,7 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var preferences = prefs
         
-        TabView {
+        TabView(selection: $selectedTab) {
             // MARK: - 1. General Tab
             Form {
                 Section {
@@ -67,6 +79,7 @@ struct SettingsView: View {
             .tabItem {
                 Label("General", systemImage: "gearshape")
             }
+            .tag(SettingsTab.general)
             
             // MARK: - 2. Room & Companion Tab
             Form {
@@ -123,6 +136,7 @@ struct SettingsView: View {
             .tabItem {
                 Label("Room & Cookie", systemImage: "house")
             }
+            .tag(SettingsTab.room)
             
             // MARK: - 3. Data & Privacy Tab
             Form {
@@ -201,12 +215,14 @@ struct SettingsView: View {
             .tabItem {
                 Label("Privacy & Data", systemImage: "internaldrive")
             }
+            .tag(SettingsTab.privacy)
             
             // MARK: - 4. About Tab
             AboutSettingsTab()
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
+                .tag(SettingsTab.about)
         }
         .frame(width: 500, height: 350)
     }
