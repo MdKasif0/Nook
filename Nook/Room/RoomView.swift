@@ -10,16 +10,22 @@ import SceneKit
 ///
 /// Features Nook's core concept: Thoughts Become Physical Objects,
 /// supporting tactile dragging, object selection, editing, moving, and onboarding.
+/// Fully integrated with local-first persistence, native macOS undo (⌘Z),
+/// room environment persistence, and graceful error recovery.
 struct RoomView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.undoManager) private var undoManager
     @Environment(AppState.self) private var appState
+    
     @Query(
         filter: #Predicate<NookItem> { !$0.isArchived },
         sort: \NookItem.createdAt,
         order: .reverse
     )
     private var items: [NookItem]
+    
+    @Query private var roomStates: [RoomState]
     
     @State private var sceneController = RoomSceneController()
     @State private var isShowingNewItemSheet = false
@@ -33,6 +39,16 @@ struct RoomView: View {
     @State private var editContent = ""
     @State private var editObjectType: NookObjectType = .pebble
     @State private var isHeaderHovered = false
+    
+    private var currentRoomState: RoomState {
+        if let first = roomStates.first {
+            return first
+        }
+        let room = RoomState()
+        modelContext.insert(room)
+        PersistenceController.shared.safeSave(context: modelContext, appState: appState)
+        return room
+    }
     
     var selectedItem: NookItem? {
         guard let id = sceneController.selectedItemID else { return nil }
@@ -59,6 +75,7 @@ struct RoomView: View {
                 },
                 onToggleLamp: {
                     sceneController.toggleDeskLamp()
+                    persistRoomState()
                 },
                 onPetCookie: {
                     handleCookieInteraction()
@@ -68,6 +85,14 @@ struct RoomView: View {
             
             // Floating Overlays & Controls
             VStack(spacing: 0) {
+                // Top Persistence Error Alert Banner (if save error occurs)
+                if let errorMsg = appState.persistenceErrorMessage {
+                    persistenceErrorBanner(errorMsg)
+                        .padding(.horizontal, NookDesign.Spacing.lg)
+                        .padding(.top, NookDesign.Spacing.sm)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
                 // Top Room Control Bar
                 roomControlHeader
                     .padding(.horizontal, NookDesign.Spacing.lg)
@@ -75,26 +100,36 @@ struct RoomView: View {
                 
                 Spacer()
                 
-                // Bottom Area: Selected Item Inspector or Cookie Toast
-                HStack(alignment: .bottom) {
-                    // Cookie Speech Bubble / Reaction (Bottom Left, near Cookie's area)
-                    if let message = sceneController.cookieController.state.speechBubble ?? cookieToastMessage {
-                        cookieToastBubble(message)
+                // Bottom Area: Undo Toast, Selected Item Inspector or Cookie Toast
+                VStack(spacing: NookDesign.Spacing.sm) {
+                    if let undoMessage = appState.undoToastMessage {
+                        undoToastPill(undoMessage)
                             .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                insertion: .opacity.combined(with: .move(edge: .bottom)),
                                 removal: .opacity
                             ))
                     }
                     
-                    Spacer()
-                    
-                    // Selected Item Floating Inspector Card (Bottom Right)
-                    if let item = selectedItem {
-                        selectedItemInspector(for: item)
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .move(edge: .trailing)),
-                                removal: .opacity.combined(with: .scale(scale: 0.96))
-                            ))
+                    HStack(alignment: .bottom) {
+                        // Cookie Speech Bubble / Reaction (Bottom Left, near Cookie's area)
+                        if let message = sceneController.cookieController.state.speechBubble ?? cookieToastMessage {
+                            cookieToastBubble(message)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                    removal: .opacity
+                                ))
+                        }
+                        
+                        Spacer()
+                        
+                        // Selected Item Floating Inspector Card (Bottom Right)
+                        if let item = selectedItem {
+                            selectedItemInspector(for: item)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                    removal: .opacity.combined(with: .scale(scale: 0.96))
+                                ))
+                        }
                     }
                 }
                 .padding(NookDesign.Spacing.xl)
@@ -115,6 +150,7 @@ struct RoomView: View {
             }
         }
         .onAppear {
+            sceneController.applySavedRoomState(currentRoomState)
             RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
             GlobalShortcutManager.shared.onEscapePressed = { [weak appState] in
                 if let appState, appState.isSearchOpen {
@@ -164,19 +200,24 @@ struct RoomView: View {
                 },
                 onArchive: {
                     withAnimation(NookDesign.Animation.standard) {
-                        item.isArchived = true
                         sceneController.selectedItemID = nil
-                        try? modelContext.save()
-                        RoomEventBus.shared.publish(.itemCompleted(title: item.title))
+                        NookActionService.shared.archiveItem(
+                            item,
+                            in: modelContext,
+                            undoManager: undoManager,
+                            appState: appState
+                        )
                     }
                 },
                 onDelete: {
                     withAnimation(NookDesign.Animation.standard) {
                         sceneController.selectedItemID = nil
-                        let deletedTitle = item.title
-                        modelContext.delete(item)
-                        try? modelContext.save()
-                        RoomEventBus.shared.publish(.itemDeleted(title: deletedTitle))
+                        NookActionService.shared.deleteItem(
+                            item,
+                            in: modelContext,
+                            undoManager: undoManager,
+                            appState: appState
+                        )
                     }
                 }
             )
@@ -184,6 +225,89 @@ struct RoomView: View {
     }
     
     // MARK: - Subviews
+    
+    /// User-friendly persistence error banner with "Try Again" recovery path.
+    private func persistenceErrorBanner(_ message: String) -> some View {
+        HStack(spacing: NookDesign.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(NookDesign.Colors.terracotta)
+            
+            Text(message)
+                .font(NookDesign.Typography.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(NookDesign.Colors.textPrimary)
+            
+            Spacer()
+            
+            Button("Try Again") {
+                appState.persistenceRetryAction?()
+            }
+            .font(NookDesign.Typography.caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(NookDesign.Colors.backgroundPrimary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(NookDesign.Colors.terracotta)
+            .clipShape(Capsule())
+            
+            Button {
+                appState.clearPersistenceError()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(NookDesign.Colors.textTertiary)
+                    .padding(4)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, NookDesign.Spacing.md)
+        .padding(.vertical, NookDesign.Spacing.xs + 3)
+        .background(NookDesign.Colors.surface.opacity(0.96))
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(NookDesign.Colors.terracotta.opacity(0.4), lineWidth: 0.8))
+        .nookShadow(NookDesign.Shadow.elevated)
+    }
+    
+    /// Subtle floating toast with native undo trigger and ⌘Z reminder.
+    private func undoToastPill(_ message: String) -> some View {
+        HStack(spacing: NookDesign.Spacing.sm) {
+            Image(systemName: "arrow.uturn.backward")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(NookDesign.Colors.olive)
+            
+            Text(message)
+                .font(NookDesign.Typography.caption)
+                .foregroundStyle(NookDesign.Colors.textPrimary)
+            
+            Text("•")
+                .font(.system(size: 8))
+                .foregroundStyle(NookDesign.Colors.textTertiary)
+            
+            Text("⌘Z to Undo")
+                .font(NookDesign.Typography.mono)
+                .font(.system(size: 10))
+                .foregroundStyle(NookDesign.Colors.textTertiary)
+            
+            Button("Undo") {
+                appState.undoToastAction?()
+                appState.dismissUndoToast()
+            }
+            .font(NookDesign.Typography.caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(NookDesign.Colors.backgroundPrimary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(NookDesign.Colors.olive)
+            .clipShape(Capsule())
+        }
+        .padding(.horizontal, NookDesign.Spacing.md)
+        .padding(.vertical, NookDesign.Spacing.xs + 2)
+        .background(NookDesign.Colors.surface.opacity(0.96))
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
+        .nookShadow(NookDesign.Shadow.soft)
+    }
     
     /// Minimalist floating top island for lighting and room status, leaving breathing room.
     private var roomControlHeader: some View {
@@ -193,6 +317,7 @@ struct RoomView: View {
                 ForEach(RoomTimeOfDay.allCases) { tod in
                     Button {
                         sceneController.setTimeOfDay(tod)
+                        persistRoomState()
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: tod.iconName)
@@ -221,6 +346,7 @@ struct RoomView: View {
             // Desk Lamp Quick Toggle
             Button {
                 sceneController.toggleDeskLamp()
+                persistRoomState()
             } label: {
                 Image(systemName: sceneController.isDeskLampOn ? "lamp.desk.fill" : "lamp.desk")
                     .font(.system(size: 12))
@@ -236,6 +362,7 @@ struct RoomView: View {
             // Wall Sconce Quick Toggle
             Button {
                 sceneController.toggleWallSconce()
+                persistRoomState()
             } label: {
                 Image(systemName: sceneController.isWallSconceOn ? "lightbulb.fill" : "lightbulb")
                     .font(.system(size: 11))
@@ -468,10 +595,13 @@ struct RoomView: View {
                         // Archive Action
                         Button {
                             withAnimation(NookDesign.Animation.standard) {
-                                item.isArchived = true
                                 sceneController.selectedItemID = nil
-                                try? modelContext.save()
-                                RoomEventBus.shared.publish(.itemCompleted(title: item.title))
+                                NookActionService.shared.archiveItem(
+                                    item,
+                                    in: modelContext,
+                                    undoManager: undoManager,
+                                    appState: appState
+                                )
                             }
                         } label: {
                             Image(systemName: "archivebox")
@@ -480,16 +610,18 @@ struct RoomView: View {
                                 .padding(NookDesign.Spacing.xxs + 2)
                         }
                         .buttonStyle(.plain)
-                        .help("Archive this object from the room")
+                        .help("Archive this object from the room (⌘Z to undo)")
                         
                         // Delete Action
                         Button {
                             withAnimation(NookDesign.Animation.standard) {
                                 sceneController.selectedItemID = nil
-                                let deletedTitle = item.title
-                                modelContext.delete(item)
-                                try? modelContext.save()
-                                RoomEventBus.shared.publish(.itemDeleted(title: deletedTitle))
+                                NookActionService.shared.deleteItem(
+                                    item,
+                                    in: modelContext,
+                                    undoManager: undoManager,
+                                    appState: appState
+                                )
                             }
                         } label: {
                             Image(systemName: "trash")
@@ -498,7 +630,7 @@ struct RoomView: View {
                                 .padding(NookDesign.Spacing.xxs + 2)
                         }
                         .buttonStyle(.plain)
-                        .help("Permanently delete this thought")
+                        .help("Delete this thought (⌘Z to undo)")
                     }
                 }
             }
@@ -535,6 +667,11 @@ struct RoomView: View {
     
     // MARK: - Interactions & Logic
     
+    private func persistRoomState() {
+        sceneController.syncToRoomState(currentRoomState)
+        PersistenceController.shared.safeSave(context: modelContext, appState: appState)
+    }
+    
     private func placeNewThought(title: String, content: String, type: NookItemType, objectType: NookObjectType) {
         let position = PlacementZone.deskCenter.naturalPosition(existingCount: items.count)
         let newItem = NookItem(
@@ -545,7 +682,7 @@ struct RoomView: View {
             position: position
         )
         modelContext.insert(newItem)
-        try? modelContext.save()
+        PersistenceController.shared.safeSave(context: modelContext, appState: appState)
         
         AudioManager.shared.playObjectPlaced()
         
@@ -567,9 +704,13 @@ struct RoomView: View {
     
     private func handleItemMoved(id: UUID, newPosition: RoomPosition) {
         if let item = items.first(where: { $0.id == id }) {
-            item.roomPosition = newPosition
-            item.touch()
-            try? modelContext.save()
+            NookActionService.shared.moveItem(
+                item,
+                to: newPosition,
+                in: modelContext,
+                undoManager: undoManager,
+                appState: appState
+            )
         }
     }
     
@@ -583,12 +724,15 @@ struct RoomView: View {
     }
     
     private func saveEdits(for item: NookItem) {
-        item.title = editTitle
-        item.content = editContent
-        item.objectType = editObjectType
-        item.touch()
-        try? modelContext.save()
-        
+        NookActionService.shared.updateItem(
+            item,
+            title: editTitle,
+            content: editContent,
+            objectType: editObjectType,
+            in: modelContext,
+            undoManager: undoManager,
+            appState: appState
+        )
         withAnimation(NookDesign.Animation.standard) {
             isEditingSelectedItem = false
         }
@@ -596,14 +740,19 @@ struct RoomView: View {
     
     private func moveItem(_ item: NookItem, to zone: PlacementZone) {
         let newPos = zone.naturalPosition(existingCount: items.count)
-        item.roomPosition = newPos
-        item.touch()
-        try? modelContext.save()
+        NookActionService.shared.moveItem(
+            item,
+            to: newPos,
+            in: modelContext,
+            undoManager: undoManager,
+            appState: appState
+        )
         sceneController.moveItem(item.id, to: newPos)
     }
     
     private func handleCookieInteraction() {
         sceneController.petCookie()
+        persistRoomState()
     }
     
     private func showCookieToast(_ message: String) {
@@ -634,6 +783,6 @@ struct RoomView: View {
             position: PlacementZone.deskCenter.basePosition
         )
         modelContext.insert(welcomePebble)
-        try? modelContext.save()
+        PersistenceController.shared.safeSave(context: modelContext, appState: appState)
     }
 }
