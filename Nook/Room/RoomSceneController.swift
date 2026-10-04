@@ -227,8 +227,8 @@ final class RoomSceneController {
             SCNAction.moveBy(x: 0, y: -0.04, z: 0, duration: 0.18)
         ])
         
-        cookieNode.runAction(purrWiggle) {
-            Task { @MainActor [weak self] in
+        cookieNode.runAction(purrWiggle) { [weak self] in
+            Task { @MainActor in
                 self?.isPettingCookie = false
             }
         }

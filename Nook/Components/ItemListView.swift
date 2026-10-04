@@ -64,8 +64,8 @@ struct ItemListView: View {
         }
         .sheet(isPresented: $isShowingNewItemSheet) {
             if case .itemType(let type) = filter {
-                NewItemSheet(preselectedType: type) { title, content, itemType in
-                    let newItem = NookItem(title: title, content: content, itemType: itemType)
+                NewItemSheet(preselectedType: type) { title, content, itemType, objectType in
+                    let newItem = NookItem(title: title, content: content, itemType: itemType, objectType: objectType)
                     modelContext.insert(newItem)
                     isShowingNewItemSheet = false
                 }
