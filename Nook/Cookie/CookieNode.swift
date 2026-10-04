@@ -220,9 +220,9 @@ final class CookieNode: SCNNode {
             let sleepArcGeo = SCNTorus(ringRadius: 0.018, pipeRadius: 0.0032)
             sleepArcGeo.materials = [mouthMat]
             let sleepArcNode = SCNNode(geometry: sleepArcGeo)
-            sleepArcNode.scale = SCNVector3(1.0, 0.55, 0.40)
-            sleepArcNode.position = SCNVector3(0, -0.002, 0.010)
-            sleepArcNode.eulerAngles = SCNVector3(0.25, 0, 0)
+            sleepArcNode.scale = SCNVector3(1.0, 0.50, 0.40)
+            sleepArcNode.position = SCNVector3(0, -0.005, 0.009)
+            sleepArcNode.eulerAngles = SCNVector3(0.65, 0, 0)
             sleepArcNode.opacity = 0.0
             eyeContainer.addChildNode(sleepArcNode)
             
