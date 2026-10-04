@@ -127,11 +127,6 @@ final class CookieNode: SCNNode {
         headBase.scale = SCNVector3(1.18, 1.00, 1.05)
         headNode.addChildNode(headBase)
         
-        // Left & Right chubby cheek bulges
-        for (cx, side) in [(-0.08, "left"), (0.08, "right")] {
-            let cheekGeo = SCNSphere(radius: 0.075)
-            cheekGeo.materials = [furMat]
-            let cheekNode = SCNNode(geometry: cheekGeo)
         // Left & Right chubby cheek bulges (softened for adorable chibi cheeks)
         for (cx, side) in [(-0.075, "left"), (0.075, "right")] {
             let cheekGeo = SCNSphere(radius: 0.062)
