@@ -581,9 +581,9 @@ final class RoomDioramaBuilder {
         // Gentle breathing animation (subtle rhythmic rise and fall)
         if !reduceMotion {
             let breatheIn = SCNAction.scale(to: 1.035, duration: 2.4)
-            breatheIn.timingMode = .easeInOut
+            breatheIn.timingMode = .easeInEaseOut
             let breatheOut = SCNAction.scale(to: 0.975, duration: 2.4)
-            breatheOut.timingMode = .easeInOut
+            breatheOut.timingMode = .easeInEaseOut
             let breathingLoop = SCNAction.repeatForever(SCNAction.sequence([breatheIn, breatheOut]))
             bodyNode.runAction(breathingLoop, forKey: "cat_breathing")
         }
