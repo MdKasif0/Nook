@@ -471,11 +471,13 @@ final class RoomDioramaBuilder {
         nbGeo.materials = [nbMat]
         let nbNode = SCNNode(geometry: nbGeo)
         nbNode.position = SCNVector3(0.16, deskH + 0.009, -0.72)
+        nbNode.name = "open_notebook"
         deskGroup.addChildNode(nbNode)
         
         // Cute White Ceramic Mug with Smiley Face
         let mugNode = buildSmileyMug()
         mugNode.position = SCNVector3(-0.15, deskH + 0.045, 0.05)
+        mugNode.name = "smiley_mug"
         deskGroup.addChildNode(mugNode)
         
         // Articulated Cream Desk Lamp with Warm Spotlight
@@ -488,9 +490,22 @@ final class RoomDioramaBuilder {
         cup.materials = [Materials.satinCeramic]
         let cupNode = SCNNode(geometry: cup)
         cupNode.position = SCNVector3(0.05, deskH + 0.055, -0.85)
+        cupNode.name = "pencil_cup"
         deskGroup.addChildNode(cupNode)
         
+        // Potted succulent plant on desk next to laptop (matching reference photo)
+        let deskPlant = buildPottedSucculent(potColor: NSColor(white: 0.95, alpha: 1.0))
+        deskPlant.position = SCNVector3(-0.12, deskH, 0.68)
+        deskPlant.name = "desk_plant"
+        deskGroup.addChildNode(deskPlant)
+        
         root.addChildNode(deskGroup)
+        
+        // Potted plant on floor next to desk drawers (matching reference photo)
+        let floorDeskPlant = buildFloorDeskPlant()
+        floorDeskPlant.position = SCNVector3(-1.05, 0.14, 0.95)
+        floorDeskPlant.name = "floor_plant"
+        root.addChildNode(floorDeskPlant)
         
         // Botanical Area Rug on floor under desk & chair
         let rugGeo = SCNBox(width: 1.45, height: 0.012, length: 1.65, chamferRadius: 0.04)
