@@ -183,13 +183,14 @@ final class RoomDioramaBuilder {
         windowGroup.addChildNode(skyNode)
         
         // Distant rolling green hills outside seen through window
-        let hillGeo = SCNSphere(radius: 1.1)
+        let hillPlane = SCNPlane(width: 2.25, height: 0.55)
         let hillMat = SCNMaterial()
         hillMat.diffuse.contents = NSColor(red: 0.44, green: 0.62, blue: 0.42, alpha: 1.0) // Soft sage hills
         hillMat.lightingModel = .constant
-        hillGeo.materials = [hillMat]
-        let hillNode = SCNNode(geometry: hillGeo)
-        hillNode.position = SCNVector3(-0.22, -0.75, -0.15)
+        hillPlane.materials = [hillMat]
+        let hillNode = SCNNode(geometry: hillPlane)
+        hillNode.position = SCNVector3(-0.06, -0.45, 0)
+        hillNode.eulerAngles.y = .pi / 2
         windowGroup.addChildNode(hillNode)
         
         // Cute miniature succulent on the window sill
