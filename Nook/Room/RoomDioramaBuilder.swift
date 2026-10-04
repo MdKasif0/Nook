@@ -13,6 +13,7 @@ import SwiftUI
 /// - Cozy desk lamp with toggleable warm illumination
 /// - Desk accessories (blotter, pencil cup, potted plants)
 /// - Cookie's relaxing area with woven rug and curled sleeping cat
+@MainActor
 final class RoomDioramaBuilder {
     
     // MARK: - Dimensions & Constants
