@@ -130,6 +130,10 @@ struct QuickCaptureView: View {
         modelContext.insert(item)
         try? modelContext.save()
         
+        // Notify room and Cookie companion of the new thought
+        RoomEventBus.shared.publish(.thoughtCaptured(title: trimmed, objectType: selectedObjectType))
+        RoomEventBus.shared.publish(.itemCreated(title: trimmed, itemType: .thought, objectType: selectedObjectType, position: position))
+        
         title = ""
         content = ""
         selectedObjectType = .pebble
