@@ -1,31 +1,35 @@
 import SwiftUI
 import SwiftData
 
-/// A minimal, tactile window for capturing a thought and choosing its physical manifestation.
+/// A tactile floating window for capturing a thought and choosing its physical manifestation.
 ///
-/// Triggered via Command + Shift + Space.
+/// Designed to feel like a tiny piece of paper floating gently above the desktop.
+/// Triggered globally via Command + Shift + Space.
 struct QuickCaptureView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @State private var title: String = ""
-    @State private var content: String = ""
-    @State private var selectedObjectType: NookObjectType = .pebble // Default is Pebble
-    @State private var selectedZone: PlacementZone = .deskCenter
+    @Query(filter: #Predicate<NookItem> { !$0.isArchived })
+    private var existingItems: [NookItem]
     
-    @FocusState private var isTitleFocused: Bool
+    @State private var content: String = ""
+    @State private var optionalTitle: String = ""
+    @State private var selectedObjectType: NookObjectType = .pebble
+    
+    @FocusState private var isContentFocused: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: NookDesign.Spacing.lg) {
-            // Header
-            HStack(spacing: NookDesign.Spacing.sm) {
+        VStack(alignment: .leading, spacing: NookDesign.Spacing.md) {
+            // Header: "What are you thinking about?"
+            HStack(alignment: .center, spacing: NookDesign.Spacing.sm) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(NookDesign.Colors.olive)
                 
-                Text("Quick Thought")
+                Text("What are you thinking about?")
                     .font(NookDesign.Typography.subheading)
+                    .fontWeight(.medium)
                     .foregroundStyle(NookDesign.Colors.textPrimary)
                 
                 Spacer()
@@ -36,31 +40,57 @@ struct QuickCaptureView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(NookDesign.Colors.textTertiary)
+                        .padding(4)
                 }
                 .buttonStyle(.plain)
+                .help("Dismiss (esc)")
             }
             
-            // Thought Input TextField
-            VStack(alignment: .leading, spacing: NookDesign.Spacing.xs) {
-                TextField("I should build a local AI coding assistant...", text: $title)
-                    .textFieldStyle(.plain)
+            // Large Thought Content TextField
+            ZStack(alignment: .topLeading) {
+                if content.isEmpty {
+                    Text("Type a thought, idea, memory, or note...")
+                        .font(NookDesign.Typography.body)
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                        .padding(.horizontal, NookDesign.Spacing.md)
+                        .padding(.vertical, NookDesign.Spacing.sm + 2)
+                        .allowsHitTesting(false)
+                }
+                
+                TextEditor(text: $content)
                     .font(NookDesign.Typography.body)
-                    .focused($isTitleFocused)
-                    .padding(NookDesign.Spacing.md)
-                    .background(NookDesign.Colors.backgroundSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous)
-                            .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
-                    )
-                    .onSubmit {
-                        save()
-                    }
+                    .focused($isContentFocused)
+                    .scrollContentBackground(.hidden)
+                    .padding(.horizontal, NookDesign.Spacing.sm)
+                    .padding(.vertical, NookDesign.Spacing.xs)
+                    .frame(minHeight: 70, maxHeight: 110)
             }
+            .background(NookDesign.Colors.backgroundSecondary.opacity(0.8))
+            .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous)
+                    .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.6)
+            )
             
-            // Physical Object Representation Picker
-            VStack(alignment: .leading, spacing: NookDesign.Spacing.xs) {
-                Text("Manifests as:")
+            // Optional Title Field
+            TextField("Title (optional)", text: $optionalTitle)
+                .textFieldStyle(.plain)
+                .font(NookDesign.Typography.caption)
+                .padding(.horizontal, NookDesign.Spacing.md)
+                .padding(.vertical, NookDesign.Spacing.xs + 2)
+                .background(NookDesign.Colors.backgroundSecondary.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous)
+                        .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
+                )
+                .onSubmit {
+                    saveAndMaterialize()
+                }
+            
+            // Physical Object Selector
+            VStack(alignment: .leading, spacing: NookDesign.Spacing.xxs) {
+                Text("Manifests in your room as:")
                     .font(NookDesign.Typography.caption)
                     .foregroundStyle(NookDesign.Colors.textSecondary)
                 
@@ -70,9 +100,9 @@ struct QuickCaptureView: View {
             Divider()
                 .foregroundStyle(NookDesign.Colors.surfaceBorder)
             
-            // Footer Actions
+            // Footer: Keyboard shortcuts & Action buttons
             HStack {
-                Text("Press ↵ to place in room")
+                Text("⌘↵ or Enter to place")
                     .font(NookDesign.Typography.caption)
                     .foregroundStyle(NookDesign.Colors.textTertiary)
                 
@@ -81,10 +111,13 @@ struct QuickCaptureView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .font(NookDesign.Typography.caption)
+                .foregroundStyle(NookDesign.Colors.textSecondary)
+                .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
                 
                 Button {
-                    save()
+                    saveAndMaterialize()
                 } label: {
                     HStack(spacing: NookDesign.Spacing.xs) {
                         Image(systemName: "plus")
@@ -96,48 +129,97 @@ struct QuickCaptureView: View {
                     .foregroundStyle(NookDesign.Colors.backgroundPrimary)
                     .padding(.horizontal, NookDesign.Spacing.md)
                     .padding(.vertical, NookDesign.Spacing.xs + 2)
-                    .background(title.trimmingCharacters(in: .whitespaces).isEmpty ? NookDesign.Colors.taupe : NookDesign.Colors.olive)
+                    .background(canCreate ? NookDesign.Colors.olive : NookDesign.Colors.taupe.opacity(0.5))
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .disabled(!canCreate)
                 .keyboardShortcut(.defaultAction)
-                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
-        .padding(NookDesign.Spacing.xl)
+        .padding(NookDesign.Spacing.lg)
         .frame(width: 440)
-        .background(NookDesign.Colors.backgroundPrimary)
+        .background(
+            // Tactile Warm Paper Material
+            NookDesign.Colors.paper
+                .overlay(
+                    // Subtle paper fiber grain gradient
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.2), Color.black.opacity(0.02)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous)
+                .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.8)
+        )
+        .nookShadow(NookDesign.Shadow.elevated)
         .onAppear {
-            NSApp.activate(ignoringOtherApps: true)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                isTitleFocused = true
-            }
+            isContentFocused = true
         }
     }
     
-    private func save() {
-        let trimmed = title.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
+    private var canCreate: Bool {
+        !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !optionalTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    private func saveAndMaterialize() {
+        guard canCreate else { return }
         
-        let position = selectedZone.naturalPosition()
+        let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTitle = optionalTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let finalTitle: String
+        let finalContent: String
+        
+        if !trimmedTitle.isEmpty {
+            finalTitle = trimmedTitle
+            finalContent = trimmedContent
+        } else {
+            // First sentence or first 45 characters
+            let firstLine = trimmedContent.components(separatedBy: .newlines).first ?? trimmedContent
+            if firstLine.count > 50 {
+                finalTitle = String(firstLine.prefix(47)) + "..."
+            } else {
+                finalTitle = firstLine
+            }
+            finalContent = trimmedContent
+        }
+        
+        // Find natural placement zone on desk
+        let position = PlacementZone.deskCenter.naturalPosition(existingCount: existingItems.count)
+        
         let item = NookItem(
-            title: trimmed,
-            content: content,
+            title: finalTitle,
+            content: finalContent,
             itemType: .thought,
             objectType: selectedObjectType,
             position: position
         )
+        
         modelContext.insert(item)
         try? modelContext.save()
         
-        // Notify room and Cookie companion of the new thought
-        RoomEventBus.shared.publish(.thoughtCaptured(title: trimmed, objectType: selectedObjectType))
-        RoomEventBus.shared.publish(.itemCreated(title: trimmed, itemType: .thought, objectType: selectedObjectType, position: position))
+        // Play gentle tactile feedback
+        AudioManager.shared.playObjectPlaced()
         
-        title = ""
-        content = ""
-        selectedObjectType = .pebble
+        // Broadcast to notify main room and Cookie
+        RoomEventBus.shared.publish(.itemCreated(
+            title: finalTitle,
+            itemType: .thought,
+            objectType: selectedObjectType,
+            position: position
+        ))
+        RoomEventBus.shared.publish(.thoughtCaptured(
+            title: finalTitle,
+            objectType: selectedObjectType
+        ))
         
+        // Close floating window
         dismiss()
     }
 }

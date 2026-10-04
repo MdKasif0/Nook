@@ -1,38 +1,145 @@
 import SwiftUI
 
-/// The menu bar dropdown for Nook.
+/// Minimal, native macOS menu bar utility popover for Nook.
 ///
-/// Provides quick access to open the main window, quick capture,
-/// and shows a summary of items.
+/// Contains:
+/// - Nook / Your room header
+/// - Quick Thought (⌘⇧Space)
+/// - Search (⌘K)
+/// - Open Nook
+/// - Settings
+/// - Quit Nook
 struct MenuBarView: View {
     
+    @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
     
     var body: some View {
-        VStack(spacing: 0) {
-            Button("Open Nook") {
-                openWindow(id: NookWindow.main.id)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack(spacing: NookDesign.Spacing.xs) {
+                Image(systemName: "house.fill")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(NookDesign.Colors.olive)
+                
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Nook")
+                        .font(NookDesign.Typography.subheading)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(NookDesign.Colors.textPrimary)
+                    
+                    Text("Your room")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                }
+                
+                Spacer()
             }
-            .keyboardShortcut("n", modifiers: [.command, .shift])
-            
-            Button("Quick Thought") {
-                openWindow(id: NookWindow.quickCapture.id)
-            }
-            .keyboardShortcut(" ", modifiers: [.command, .shift])
+            .padding(.horizontal, NookDesign.Spacing.md)
+            .padding(.top, NookDesign.Spacing.md)
+            .padding(.bottom, NookDesign.Spacing.xs)
             
             Divider()
+                .foregroundStyle(NookDesign.Colors.surfaceBorder)
+                .padding(.vertical, NookDesign.Spacing.xxs)
             
-            Button("Settings…") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            // Actions
+            VStack(spacing: 2) {
+                menuRow(
+                    title: "Quick Thought",
+                    icon: "sparkles",
+                    shortcut: "⌘⇧Space"
+                ) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: NookWindow.quickCapture.id)
+                }
+                
+                menuRow(
+                    title: "Search",
+                    icon: "magnifyingglass",
+                    shortcut: "⌘K"
+                ) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: NookWindow.main.id)
+                    appState.openSearch()
+                }
+                
+                menuRow(
+                    title: "Open Nook",
+                    icon: "arrow.up.forward.app",
+                    shortcut: nil
+                ) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: NookWindow.main.id)
+                }
             }
-            .keyboardShortcut(",", modifiers: .command)
+            .padding(.horizontal, NookDesign.Spacing.xs)
+            .padding(.vertical, NookDesign.Spacing.xxs)
             
             Divider()
+                .foregroundStyle(NookDesign.Colors.surfaceBorder)
+                .padding(.vertical, NookDesign.Spacing.xxs)
             
-            Button("Quit Nook") {
-                NSApplication.shared.terminate(nil)
+            // Settings & Quit
+            VStack(spacing: 2) {
+                menuRow(
+                    title: "Settings",
+                    icon: "gearshape",
+                    shortcut: "⌘,"
+                ) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                }
+                
+                menuRow(
+                    title: "Quit Nook",
+                    icon: "power",
+                    shortcut: "⌘Q"
+                ) {
+                    NSApplication.shared.terminate(nil)
+                }
             }
-            .keyboardShortcut("q")
+            .padding(.horizontal, NookDesign.Spacing.xs)
+            .padding(.bottom, NookDesign.Spacing.xs)
         }
+        .frame(width: 220)
+        .background(NookDesign.Colors.surface)
+    }
+    
+    private func menuRow(
+        title: String,
+        icon: String,
+        shortcut: String?,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: NookDesign.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(NookDesign.Colors.textSecondary)
+                    .frame(width: 14)
+                
+                Text(title)
+                    .font(NookDesign.Typography.body)
+                    .foregroundStyle(NookDesign.Colors.textPrimary)
+                
+                Spacer()
+                
+                if let shortcut {
+                    Text(shortcut)
+                        .font(NookDesign.Typography.mono)
+                        .font(.system(size: 10))
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(NookDesign.Colors.backgroundSecondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
+            }
+            .padding(.horizontal, NookDesign.Spacing.sm)
+            .padding(.vertical, NookDesign.Spacing.xs + 1)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
