@@ -32,6 +32,8 @@ final class CookieNode: SCNNode {
     
     // MARK: - State Tracking
     
+    private(set) var isSleeping: Bool = false
+    private(set) var isPointing: Bool = false
     private var _reduceMotion: Bool = false
     var reduceMotion: Bool {
         get { _reduceMotion || PreferencesManager.shared.reduceMotion }
