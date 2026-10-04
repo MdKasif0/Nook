@@ -19,6 +19,11 @@ struct NookApp: App {
             SnapshotGenerator.renderAll()
             exit(0)
         }
+        if CommandLine.arguments.contains("--run-tests") {
+            let results = NookDataReliabilityTests.runAll()
+            let allPassed = results.allSatisfy { $0.passed }
+            exit(allPassed ? 0 : 1)
+        }
     }
     
     var body: some Scene {
