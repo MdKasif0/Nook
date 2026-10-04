@@ -191,7 +191,7 @@ struct QuickCaptureView: View {
         )
         
         modelContext.insert(item)
-        try? modelContext.save()
+        PersistenceController.shared.safeSave(context: modelContext)
         
         // Play gentle tactile feedback
         AudioManager.shared.playObjectPlaced()

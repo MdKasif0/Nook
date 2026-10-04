@@ -1,32 +1,37 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
 /// Native macOS Settings window.
 ///
-/// Features the 5 core user preferences:
-/// 1. Reduce Motion
-/// 2. Launch at Login
-/// 3. Sound Effects
-/// 4. Cookie reactions
-/// 5. Reset Room Layout
+/// Features:
+/// 1. General Preferences (Reduce motion, Launch at login, Sound effects)
+/// 2. Room & Companion Cat settings
+/// 3. Data & Privacy (Local-First guarantee, offline status, JSON Export/Restore)
+/// 4. About Nook
 struct SettingsView: View {
     
     @Environment(\.modelContext) private var modelContext
-    @Query(
-        filter: #Predicate<NookItem> { !$0.isArchived },
-        sort: \NookItem.createdAt,
-        order: .reverse
-    )
-    private var activeItems: [NookItem]
+    @Environment(AppState.self) private var appState
+    
+    @Query(sort: \NookItem.createdAt, order: .reverse)
+    private var allItems: [NookItem]
+    
+    @Query private var roomStates: [RoomState]
     
     @State private var prefs = PreferencesManager.shared
     @State private var hasResetLayout = false
+    @State private var backupStatusMessage: String?
+    
+    private var activeItems: [NookItem] {
+        allItems.filter { !$0.isArchived }
+    }
     
     var body: some View {
         @Bindable var preferences = prefs
         
         TabView {
-            // MARK: - General Tab
+            // MARK: - 1. General Tab
             Form {
                 Section {
                     Toggle("Reduce Motion", isOn: $preferences.reduceMotion)
@@ -63,7 +68,7 @@ struct SettingsView: View {
                 Label("General", systemImage: "gearshape")
             }
             
-            // MARK: - Room & Companion Tab
+            // MARK: - 2. Room & Companion Tab
             Form {
                 Section {
                     Toggle("Cookie reactions", isOn: $preferences.cookieReactionsEnabled)
@@ -119,13 +124,140 @@ struct SettingsView: View {
                 Label("Room & Cookie", systemImage: "house")
             }
             
-            // MARK: - About Tab
+            // MARK: - 3. Data & Privacy Tab
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: NookDesign.Spacing.xs) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(NookDesign.Colors.olive)
+                            Text("Your thoughts stay on your Mac.")
+                                .font(NookDesign.Typography.subheading)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(NookDesign.Colors.textPrimary)
+                        }
+                        
+                        Text("Nook is 100% local-first. There are no servers, no cloud databases, no user accounts, and zero analytics. Everything is stored privately inside your local SwiftData database.")
+                            .font(NookDesign.Typography.caption)
+                            .foregroundStyle(NookDesign.Colors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Privacy & Storage")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textSecondary)
+                }
+                
+                Section {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Export Offline Backup")
+                                .font(NookDesign.Typography.body)
+                            Text("Saves all thoughts and room state to a standalone JSON file.")
+                                .font(NookDesign.Typography.caption)
+                                .foregroundStyle(NookDesign.Colors.textTertiary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button("Export…") {
+                            exportBackup()
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 2)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Restore Backup")
+                                .font(NookDesign.Typography.body)
+                            Text("Imports thoughts and room preferences from a previously saved JSON backup.")
+                                .font(NookDesign.Typography.caption)
+                                .foregroundStyle(NookDesign.Colors.textTertiary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button("Restore…") {
+                            restoreBackup()
+                        }
+                    }
+                    
+                    if let status = backupStatusMessage {
+                        Text(status)
+                            .font(NookDesign.Typography.caption)
+                            .foregroundStyle(NookDesign.Colors.olive)
+                            .padding(.top, 2)
+                    }
+                } header: {
+                    Text("Backup & Portability")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textSecondary)
+                }
+            }
+            .formStyle(.grouped)
+            .tabItem {
+                Label("Privacy & Data", systemImage: "internaldrive")
+            }
+            
+            // MARK: - 4. About Tab
             AboutSettingsTab()
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 460, height: 320)
+        .frame(width: 500, height: 350)
+    }
+    
+    // MARK: - Backup Export & Restore Logic
+    
+    private func exportBackup() {
+        do {
+            let data = try NookBackupService.shared.exportBackup(
+                items: allItems,
+                roomState: roomStates.first
+            )
+            
+            let panel = NSSavePanel()
+            panel.title = "Export Nook Backup"
+            panel.prompt = "Export"
+            panel.allowedContentTypes = [.json]
+            panel.nameFieldStringValue = "NookBackup-\(Date().formatted(date: .numeric, time: .omitted).replacingOccurrences(of: "/", with: "-")).json"
+            
+            if panel.runModal() == .OK, let url = panel.url {
+                try data.write(to: url)
+                withAnimation {
+                    backupStatusMessage = "Successfully exported \(allItems.count) thoughts."
+                }
+            }
+        } catch {
+            withAnimation {
+                backupStatusMessage = "Export failed: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    private func restoreBackup() {
+        let panel = NSOpenPanel()
+        panel.title = "Restore Nook Backup"
+        panel.prompt = "Restore"
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        
+        if panel.runModal() == .OK, let url = panel.url, let data = try? Data(contentsOf: url) {
+            do {
+                let result = try NookBackupService.shared.importBackup(from: data, into: modelContext)
+                withAnimation {
+                    backupStatusMessage = "Restored \(result.itemsImported) new thoughts!"
+                }
+            } catch {
+                withAnimation {
+                    backupStatusMessage = "Restore failed: \(error.localizedDescription)"
+                }
+            }
+        }
     }
 }
 
@@ -150,10 +282,17 @@ struct AboutSettingsTab: View {
                     .foregroundStyle(NookDesign.Colors.textSecondary)
             }
             
-            Text("Version 1.0 (Native macOS)")
-                .font(NookDesign.Typography.mono)
-                .font(.system(size: 11))
-                .foregroundStyle(NookDesign.Colors.textTertiary)
+            VStack(spacing: 4) {
+                Text("Local-First • Zero Cloud • Native macOS")
+                    .font(NookDesign.Typography.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(NookDesign.Colors.textSecondary)
+                
+                Text("Version 1.0 (Build 1)")
+                    .font(NookDesign.Typography.mono)
+                    .font(.system(size: 11))
+                    .foregroundStyle(NookDesign.Colors.textTertiary)
+            }
             
             Spacer()
         }
