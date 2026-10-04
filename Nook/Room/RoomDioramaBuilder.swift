@@ -46,10 +46,10 @@ final class RoomDioramaBuilder {
         buildArchitecture(in: root)
         
         // 2. Right Window, Draped Curtains & Outdoor Horizon
-        let (skyNode, curtains) = buildWindowAndOutdoors(in: root, environment: environment, reduceMotion: reduceMotion)
+        let (skyNode, _) = buildWindowAndOutdoors(in: root, environment: environment, reduceMotion: reduceMotion)
         
         // 3. Left Workspace: Oak desk, drawers, rug, ergonomic chair, monitor, laptop, stationery
-        let (lampLight, monitorNode) = buildWorkspace(in: root, environment: environment, reduceMotion: reduceMotion)
+        let (lampLight, _) = buildWorkspace(in: root, environment: environment, reduceMotion: reduceMotion)
         
         // 4. Upper Wall Shelving, Pegboard & Cascading Ivy
         buildShelvesAndPegboard(in: root, reduceMotion: reduceMotion)
@@ -58,7 +58,7 @@ final class RoomDioramaBuilder {
         buildDaybedNook(in: root, reduceMotion: reduceMotion)
         
         // 6. Record Player Bench & Large Floor Monstera
-        let (recordNode, sconceLight) = buildRecordBenchAndLighting(in: root, environment: environment, reduceMotion: reduceMotion)
+        let (_, sconceLight) = buildRecordBenchAndLighting(in: root, environment: environment, reduceMotion: reduceMotion)
         
         // 7. Lower Sunken Lounge: Skateboard, Boucle Beanbag & Steps Accents
         buildLowerLounge(in: root)
