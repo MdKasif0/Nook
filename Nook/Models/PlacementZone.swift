@@ -12,6 +12,8 @@ enum PlacementZone: String, CaseIterable, Identifiable, Sendable {
     
     var id: String { rawValue }
     
+    var displayName: String { rawValue }
+    
     var iconName: String {
         switch self {
         case .deskCenter: return "square.inset.filled"
