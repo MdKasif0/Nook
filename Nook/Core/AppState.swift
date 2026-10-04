@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Observable application-wide state.
 ///
-/// Shared across windows to coordinate global behaviors
-/// such as sidebar visibility and the active navigation section.
+/// Shared across windows and menu bar utility to coordinate navigation,
+/// contextual search (Command+K), quick thought creation, and room object focusing.
 @Observable
 final class AppState {
     
@@ -15,6 +15,48 @@ final class AppState {
     
     /// The current state of Cookie, the companion cat.
     var cookieState: CookieMood = .idle
+    
+    /// Whether the Command + K Spotlight search palette is currently displayed.
+    var isSearchOpen: Bool = false
+    
+    /// Current search query in the search palette.
+    var searchQuery: String = ""
+    
+    /// Whether the "Place Thought" modal sheet is open in the main room (triggered via Command + N).
+    var isShowingNewThoughtSheet: Bool = false
+    
+    /// A focused item ID to highlight and move the camera toward in the 3D room.
+    var focusedItemID: UUID? = nil
+    
+    // MARK: - Actions
+    
+    func openSearch() {
+        withAnimation(NookDesign.Animation.springy) {
+            self.isSearchOpen = true
+            self.searchQuery = ""
+        }
+    }
+    
+    func closeSearch() {
+        withAnimation(NookDesign.Animation.gentle) {
+            self.isSearchOpen = false
+            self.searchQuery = ""
+        }
+    }
+    
+    func toggleSearch() {
+        if isSearchOpen {
+            closeSearch()
+        } else {
+            openSearch()
+        }
+    }
+    
+    func focusItemInRoom(id: UUID) {
+        self.selectedSection = .room
+        self.focusedItemID = id
+        closeSearch()
+    }
 }
 
 /// The top-level navigation sections available in the sidebar.
