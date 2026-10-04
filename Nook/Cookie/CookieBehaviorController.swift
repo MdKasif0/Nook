@@ -17,7 +17,7 @@ final class CookieBehaviorController {
     static let nearDeskPosition = SCNVector3(-0.45, 0.03, 0.55)
     
     private var eventSubscriptionToken: UUID?
-    nonisolated(unsafe) private var idleLoopTask: Task<Void, Never>?
+    private var idleLoopTask: Task<Void, Never>?
     private var isExecutingBehavior: Bool = false
     
     init(state: CookieState = CookieState()) {
@@ -26,7 +26,7 @@ final class CookieBehaviorController {
         startIdleMonitoring()
     }
     
-    deinit {
+    isolated deinit {
         idleLoopTask?.cancel()
     }
     
@@ -208,7 +208,7 @@ final class CookieBehaviorController {
             ]),
             count: stepCount
         )
-        node.runAction(bobAction, forKey: "walk_bob")
+        await node.runAction(bobAction, forKey: "walk_bob")
         
         SCNTransaction.begin()
         SCNTransaction.animationDuration = duration
