@@ -187,7 +187,136 @@ export class ObjectManager {
     mesh.receiveShadow = true;
     obj.visualRoot.add(mesh);
     obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
     return obj;
+  }
+
+  createPaperNote(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'paper_note',
+      category: 'thought',
+      collisionRadius: 0.16
+    });
+
+    const noteTex = TextureGenerator.createPaperNoteTexture(512, 512);
+    const geo = new THREE.BoxGeometry(0.24, 0.005, 0.28);
+    const mat = new THREE.MeshStandardMaterial({
+      map: noteTex,
+      roughness: 0.88,
+      color: 0xffffff
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    return obj;
+  }
+
+  createPolaroid(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'polaroid',
+      category: 'thought',
+      collisionRadius: 0.16
+    });
+
+    const polTex = TextureGenerator.createPolaroidTexture(512, 600);
+    const geo = new THREE.BoxGeometry(0.22, 0.006, 0.26);
+    const mat = new THREE.MeshPhysicalMaterial({
+      map: polTex,
+      roughness: 0.45,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.15
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    return obj;
+  }
+
+  createBookmark(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'bookmark',
+      category: 'thought',
+      collisionRadius: 0.12
+    });
+
+    const bmTex = TextureGenerator.createBookmarkTexture(256, 512);
+    const geo = new THREE.BoxGeometry(0.08, 0.004, 0.28);
+    const mat = new THREE.MeshStandardMaterial({
+      map: bmTex,
+      roughness: 0.82
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    // Tiny brass charm ring at top
+    const charmGeo = new THREE.TorusGeometry(0.016, 0.004, 8, 16);
+    const charmMat = new THREE.MeshStandardMaterial({
+      color: 0xd9b362,
+      metalness: 0.8,
+      roughness: 0.25
+    });
+    const charm = new THREE.Mesh(charmGeo, charmMat);
+    charm.position.set(0, 0.003, -0.15);
+    charm.rotation.x = Math.PI * 0.5;
+    obj.visualRoot.add(charm);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    return obj;
+  }
+
+  createStickyNote(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'sticky_note',
+      category: 'thought',
+      collisionRadius: 0.14
+    });
+
+    const stickyTex = TextureGenerator.createStickyNoteTexture(512, 512);
+    const geo = new THREE.BoxGeometry(0.20, 0.004, 0.20);
+    const mat = new THREE.MeshStandardMaterial({
+      map: stickyTex,
+      roughness: 0.85
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    return obj;
+  }
+
+  createThoughtObject(type, options) {
+    switch (type) {
+      case 'pebble':
+        return this.createPebble(options);
+      case 'paper_note':
+        return this.createPaperNote(options);
+      case 'polaroid':
+        return this.createPolaroid(options);
+      case 'bookmark':
+        return this.createBookmark(options);
+      case 'sticky_note':
+        return this.createStickyNote(options);
+      default:
+        return this.createPebble(options);
+    }
   }
 
   createJournal(options) {
