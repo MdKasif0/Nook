@@ -1,9 +1,9 @@
 import RealityKit
 import AppKit
 
-/// Builds the right wall window setup:
+/// Builds the large wooden window on the right-hand wall above the bed:
 /// - Warm honey-oak double-hung window frame
-/// - Vertical and horizontal mullions dividing glass into 4 panes
+/// - Vertical and horizontal cross mullions dividing glass into 4 panes
 /// - Translucent glass panes
 /// - Wooden curtain rod with finials
 /// - Cream gathered linen curtains on both sides
@@ -21,98 +21,96 @@ final class RoomWindowEntity: Entity {
     private func buildWindow() {
         let mats = RoomMaterials.shared
         
-        let windowWidth: Float = 0.95
-        let windowHeight: Float = 1.05
-        let frameDepth: Float = 0.08
+        let windowWidth: Float = 0.88   // along X
+        let windowHeight: Float = 0.96  // along Y
+        let frameDepth: Float = 0.06
         
-        // Window placed on the right wall (X = 1.30m), centered around Z = -0.45m, Y = 1.15m
-        let windowCenterX: Float = RoomArchitectureEntity.roomSpanX * 0.5 - 0.05
-        let windowCenterY: Float = 1.18
-        let windowCenterZ: Float = -0.45
+        // Window placed on the back-right wall (Z = -1.20m), right above the bed!
+        // X = +0.55, Y = 1.22, Z = -1.18
+        let windowCenterX: Float = 0.55
+        let windowCenterY: Float = 1.25
+        let windowCenterZ: Float = -1.18
         
         // 1. Outer Wooden Window Frame Casing
         // Top frame
-        let topFrame = ModelEntity(mesh: .generateBox(size: [frameDepth, 0.06, windowWidth + 0.08], cornerRadius: 0.008), materials: [mats.honeyOakWood])
-        topFrame.position = [windowCenterX, windowCenterY + windowHeight * 0.5 + 0.03, windowCenterZ]
+        let topFrame = ModelEntity(mesh: .generateBox(size: [windowWidth + 0.08, 0.05, frameDepth], cornerRadius: 0.008), materials: [mats.honeyOakWood])
+        topFrame.position = [windowCenterX, windowCenterY + windowHeight * 0.5 + 0.025, windowCenterZ]
         addChild(topFrame)
         
         // Bottom frame / Window Sill
-        let sill = ModelEntity(mesh: .generateBox(size: [frameDepth + 0.06, 0.05, windowWidth + 0.16], cornerRadius: 0.01), materials: [mats.honeyOakWood])
-        sill.position = [windowCenterX - 0.02, windowCenterY - windowHeight * 0.5 - 0.025, windowCenterZ]
+        let sill = ModelEntity(mesh: .generateBox(size: [windowWidth + 0.16, 0.045, frameDepth + 0.06], cornerRadius: 0.01), materials: [mats.honeyOakWood])
+        sill.position = [windowCenterX, windowCenterY - windowHeight * 0.5 - 0.02, windowCenterZ + 0.02]
         sill.name = "window_sill"
         addChild(sill)
         
         // Left & Right frame posts
-        let leftPost = ModelEntity(mesh: .generateBox(size: [frameDepth, windowHeight, 0.05], cornerRadius: 0.008), materials: [mats.honeyOakWood])
-        leftPost.position = [windowCenterX, windowCenterY, windowCenterZ - windowWidth * 0.5 - 0.025]
+        let leftPost = ModelEntity(mesh: .generateBox(size: [0.05, windowHeight, frameDepth], cornerRadius: 0.008), materials: [mats.honeyOakWood])
+        leftPost.position = [windowCenterX - windowWidth * 0.5 - 0.025, windowCenterY, windowCenterZ]
         addChild(leftPost)
         
-        let rightPost = ModelEntity(mesh: .generateBox(size: [frameDepth, windowHeight, 0.05], cornerRadius: 0.008), materials: [mats.honeyOakWood])
-        rightPost.position = [windowCenterX, windowCenterY, windowCenterZ + windowWidth * 0.5 + 0.025]
+        let rightPost = ModelEntity(mesh: .generateBox(size: [0.05, windowHeight, frameDepth], cornerRadius: 0.008), materials: [mats.honeyOakWood])
+        rightPost.position = [windowCenterX + windowWidth * 0.5 + 0.025, windowCenterY, windowCenterZ]
         addChild(rightPost)
         
         // 2. Center Wooden Mullions (Cross)
-        let verticalMullion = ModelEntity(mesh: .generateBox(size: [0.03, windowHeight, 0.03], cornerRadius: 0.005), materials: [mats.honeyOakWood])
+        let verticalMullion = ModelEntity(mesh: .generateBox(size: [0.025, windowHeight, 0.025], cornerRadius: 0.004), materials: [mats.honeyOakWood])
         verticalMullion.position = [windowCenterX, windowCenterY, windowCenterZ]
         addChild(verticalMullion)
         
-        let horizontalMullion = ModelEntity(mesh: .generateBox(size: [0.03, 0.03, windowWidth], cornerRadius: 0.005), materials: [mats.honeyOakWood])
+        let horizontalMullion = ModelEntity(mesh: .generateBox(size: [windowWidth, 0.025, 0.025], cornerRadius: 0.004), materials: [mats.honeyOakWood])
         horizontalMullion.position = [windowCenterX, windowCenterY, windowCenterZ]
         addChild(horizontalMullion)
         
         // 3. Glass Panes (Translucent)
-        let glassPane = ModelEntity(mesh: .generateBox(size: [0.008, windowHeight - 0.04, windowWidth - 0.04]), materials: [mats.windowGlass])
+        let glassPane = ModelEntity(mesh: .generateBox(size: [windowWidth - 0.04, windowHeight - 0.04, 0.008]), materials: [mats.windowGlass])
         glassPane.position = [windowCenterX, windowCenterY, windowCenterZ]
         glassPane.name = "window_glass"
         addChild(glassPane)
         
         // 4. Wooden Curtain Rod & Rings
-        let rodLength: Float = windowWidth + 0.38
+        let rodLength: Float = windowWidth + 0.32
         let rod = ModelEntity(mesh: .generateCylinder(height: rodLength, radius: 0.012), materials: [mats.honeyOakWood])
-        rod.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
-        rod.position = [windowCenterX - 0.08, windowCenterY + windowHeight * 0.5 + 0.12, windowCenterZ]
+        rod.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 0, 1])
+        rod.position = [windowCenterX, windowCenterY + windowHeight * 0.5 + 0.10, windowCenterZ + 0.06]
         addChild(rod)
         
         // Rod finials
-        let finialMesh = MeshResource.generateSphere(radius: 0.02)
+        let finialMesh = MeshResource.generateSphere(radius: 0.018)
         let leftFinial = ModelEntity(mesh: finialMesh, materials: [mats.honeyOakWood])
-        leftFinial.position = [windowCenterX - 0.08, windowCenterY + windowHeight * 0.5 + 0.12, windowCenterZ - rodLength * 0.5]
+        leftFinial.position = [windowCenterX - rodLength * 0.5, windowCenterY + windowHeight * 0.5 + 0.10, windowCenterZ + 0.06]
         addChild(leftFinial)
         
         let rightFinial = ModelEntity(mesh: finialMesh, materials: [mats.honeyOakWood])
-        rightFinial.position = [windowCenterX - 0.08, windowCenterY + windowHeight * 0.5 + 0.12, windowCenterZ + rodLength * 0.5]
+        rightFinial.position = [windowCenterX + rodLength * 0.5, windowCenterY + windowHeight * 0.5 + 0.10, windowCenterZ + 0.06]
         addChild(rightFinial)
         
         // 5. Draped Cream Linen Curtains (Left & Right gathered sides)
-        let curtainMesh = ProceduralMeshGenerator.generateCurtainMesh(width: 0.24, height: 1.15, folds: 3)
+        let curtainMesh = ProceduralMeshGenerator.generateCurtainMesh(width: 0.22, height: 1.05, folds: 3)
         
         let leftCurtain = ModelEntity(mesh: curtainMesh, materials: [mats.creamLinenFabric])
-        // Positioned inside the room, aligned with the rod
-        leftCurtain.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 1, 0])
-        leftCurtain.position = [windowCenterX - 0.06, windowCenterY + windowHeight * 0.5 + 0.10, windowCenterZ - windowWidth * 0.5 + 0.04]
+        leftCurtain.position = [windowCenterX - windowWidth * 0.5 + 0.03, windowCenterY + windowHeight * 0.5 + 0.08, windowCenterZ + 0.05]
         leftCurtain.name = "left_curtain"
         addChild(leftCurtain)
         
         let rightCurtain = ModelEntity(mesh: curtainMesh, materials: [mats.creamLinenFabric])
-        rightCurtain.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 1, 0])
-        rightCurtain.position = [windowCenterX - 0.06, windowCenterY + windowHeight * 0.5 + 0.10, windowCenterZ + windowWidth * 0.5 - 0.04]
+        rightCurtain.position = [windowCenterX + windowWidth * 0.5 - 0.03, windowCenterY + windowHeight * 0.5 + 0.08, windowCenterZ + 0.05]
         rightCurtain.name = "right_curtain"
         addChild(rightCurtain)
         
         // 6. Window Sill Accents (Succulent in ceramic pot & tiny ceramic cat)
-        let pot = ModelEntity(mesh: .generateCylinder(height: 0.06, radius: 0.035), materials: [mats.glazedWhiteCeramic])
-        pot.position = [windowCenterX - 0.02, windowCenterY - windowHeight * 0.5 + 0.03, windowCenterZ + 0.22]
-        let plant = ModelEntity(mesh: .generateSphere(radius: 0.032), materials: [mats.foliageLight])
-        plant.position = [0, 0.035, 0]
+        let pot = ModelEntity(mesh: .generateCylinder(height: 0.05, radius: 0.03), materials: [mats.glazedWhiteCeramic])
+        pot.position = [windowCenterX - 0.22, windowCenterY - windowHeight * 0.5 + 0.025, windowCenterZ + 0.03]
+        let plant = ModelEntity(mesh: .generateSphere(radius: 0.028), materials: [mats.foliageLight])
+        plant.position = [0, 0.03, 0]
         pot.addChild(plant)
         addChild(pot)
         
-        let figurine = ModelEntity(mesh: .generateSphere(radius: 0.022), materials: [mats.glazedWhiteCeramic])
-        figurine.position = [windowCenterX - 0.02, windowCenterY - windowHeight * 0.5 + 0.022, windowCenterZ - 0.22]
+        let figurine = ModelEntity(mesh: .generateSphere(radius: 0.02), materials: [mats.glazedWhiteCeramic])
+        figurine.position = [windowCenterX + 0.22, windowCenterY - windowHeight * 0.5 + 0.02, windowCenterZ + 0.03]
         addChild(figurine)
         
-        // 7. Soft Outdoor Natural Environment Backdrop Plane
-        buildOutdoorBackdrop(atX: windowCenterX + 0.25, centerY: windowCenterY, centerZ: windowCenterZ)
+        // 7. Soft Outdoor Natural Environment Backdrop Plane (Behind the window)
+        buildOutdoorBackdrop(atX: windowCenterX, centerY: windowCenterY, centerZ: windowCenterZ - 0.15)
     }
     
     private func buildOutdoorBackdrop(atX: Float, centerY: Float, centerZ: Float) {
@@ -121,21 +119,21 @@ final class RoomWindowEntity: Entity {
         let image = NSImage(size: NSSize(width: width, height: height))
         image.lockFocus()
         
-        // Soft sunny sky gradient (warm golden daylight to gentle blue)
+        // Soft sunny sky gradient (warm golden daylight to gentle sky)
         let skyGradient = NSGradient(colors: [
             NSColor(red: 0.72, green: 0.82, blue: 0.90, alpha: 1.0),
-            NSColor(red: 0.96, green: 0.92, blue: 0.82, alpha: 1.0)
+            NSColor(red: 0.98, green: 0.94, blue: 0.85, alpha: 1.0)
         ])
         skyGradient?.draw(in: NSRect(x: 0, y: 0, width: width, height: height), angle: -90)
         
-        // Soft blurred sun flare
-        let sunFlare = NSBezierPath(ovalIn: NSRect(x: 280, y: 280, width: 140, height: 140))
+        // Soft sun flare
+        let sunFlare = NSBezierPath(ovalIn: NSRect(x: 240, y: 260, width: 160, height: 160))
         NSColor(red: 1.0, green: 0.96, blue: 0.82, alpha: 0.45).setFill()
         sunFlare.fill()
         
         // Soft blurred green foliage clusters in the lower half
         NSColor(red: 0.48, green: 0.62, blue: 0.42, alpha: 0.75).setFill()
-        let bush1 = NSBezierPath(ovalIn: NSRect(x: 40, y: 30, width: 220, height: 260))
+        let bush1 = NSBezierPath(ovalIn: NSRect(x: 40, y: 20, width: 220, height: 260))
         bush1.fill()
         
         NSColor(red: 0.38, green: 0.52, blue: 0.34, alpha: 0.85).setFill()
@@ -143,7 +141,7 @@ final class RoomWindowEntity: Entity {
         bush2.fill()
         
         NSColor(red: 0.55, green: 0.68, blue: 0.46, alpha: 0.80).setFill()
-        let bush3 = NSBezierPath(ovalIn: NSRect(x: 320, y: 40, width: 200, height: 220))
+        let bush3 = NSBezierPath(ovalIn: NSRect(x: 320, y: 30, width: 200, height: 220))
         bush3.fill()
         
         image.unlockFocus()
@@ -153,15 +151,15 @@ final class RoomWindowEntity: Entity {
            let tex = try? TextureResource(image: cg, options: .init(semantic: .color)) {
             mat.baseColor = .init(texture: .init(tex))
             mat.emissiveColor = .init(texture: .init(tex))
-            mat.emissiveIntensity = 0.6
+            mat.emissiveIntensity = 0.75
         } else {
             mat.baseColor = .init(tint: NSColor(red: 0.72, green: 0.82, blue: 0.90, alpha: 1.0))
         }
         mat.roughness = .init(floatLiteral: 0.9)
         
-        let backdropMesh = MeshResource.generatePlane(width: 1.8, depth: 1.8, cornerRadius: 0.05)
+        let backdropMesh = MeshResource.generatePlane(width: 1.6, depth: 1.6, cornerRadius: 0.05)
         let backdrop = ModelEntity(mesh: backdropMesh, materials: [mat])
-        backdrop.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 0, 1]) * simd_quatf(angle: Float.pi * 0.5, axis: [0, 1, 0])
+        backdrop.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
         backdrop.position = [atX, centerY, centerZ]
         backdrop.name = "outdoor_sky_plane"
         addChild(backdrop)
