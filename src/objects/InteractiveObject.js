@@ -2,11 +2,13 @@
  * Nook 3D - InteractiveObject
  * Base physical entity class for all movable, static, and special props in the diorama.
  * Implements physically based lift, subtle warm highlights, spring settling physics,
- * rebound on invalid placement, and transform history.
+ * velocity-dependent motion tilting, plant secondary leaf wobble, skateboard deck rocking,
+ * smart surface book orientation, and rebound on invalid placement.
  */
 
 import * as THREE from 'three';
 import { MathUtils } from '../utils/MathUtils.js';
+import { soundManager } from '../audio/SoundManager.js';
 
 export class InteractiveObject extends THREE.Group {
   constructor(options = {}) {
@@ -15,16 +17,24 @@ export class InteractiveObject extends THREE.Group {
     this.itemId = options.id || THREE.MathUtils.generateUUID();
     this.name = options.name || 'Interactive Object';
     this.accessibilityLabel = options.accessibilityLabel || this.name;
-    this.category = options.category || 'movable'; // 'movable' | 'static' | 'special'
-    this.objectType = options.objectType || 'prop'; // 'plant', 'book', 'lamp', 'skateboard', etc.
+    this.category = options.category || 'movable'; // 'movable' | 'static' | 'special' | 'thought'
+    this.objectType = options.objectType || 'prop'; // 'plant', 'book', 'lamp', 'skateboard', 'pebble', etc.
+
+    // Metadata for thoughts and props
+    this.metadata = options.metadata || {
+      title: options.title || this.name,
+      description: options.content || options.description || '',
+      date: options.date || new Date().toISOString().split('T')[0],
+      author: options.author || 'User'
+    };
 
     // Permissions
     this.isMovable = options.isMovable !== undefined ? options.isMovable : (this.category !== 'static');
     this.isDraggable = this.isMovable;
     this.isSelectable = options.isSelectable !== undefined ? options.isSelectable : true;
     this.isRotatable = options.isRotatable !== undefined ? options.isRotatable : this.isMovable;
-    this.isDeletable = options.isDeletable !== undefined ? options.isDeletable : (this.category === 'movable');
-    this.isDuplicatable = options.isDuplicatable !== undefined ? options.isDuplicatable : (this.category === 'movable');
+    this.isDeletable = options.isDeletable !== undefined ? options.isDeletable : (this.category === 'movable' || this.category === 'thought');
+    this.isDuplicatable = options.isDuplicatable !== undefined ? options.isDuplicatable : (this.category === 'movable' || this.category === 'thought');
 
     // Physical sizing for collision detection
     this.collisionRadius = options.collisionRadius || 0.16;
@@ -38,6 +48,13 @@ export class InteractiveObject extends THREE.Group {
     // Elevation & Visual smoothing
     this.currentElevation = 0.0;
     this.targetElevation = 0.0;
+
+    // Velocity-based motion tilt
+    this.currentTiltX = 0.0;
+    this.currentTiltZ = 0.0;
+    this.targetTiltX = 0.0;
+    this.targetTiltZ = 0.0;
+    this.lastDragPos = new THREE.Vector3();
 
     // Transforms & History
     this.defaultPosition = new THREE.Vector3();
@@ -60,11 +77,26 @@ export class InteractiveObject extends THREE.Group {
     this.settleDuration = 0.35; // seconds
     this.settleStartPos = new THREE.Vector3();
     this.settleEndPos = new THREE.Vector3();
+    this.settleStartRot = new THREE.Euler();
+    this.settleEndRot = new THREE.Euler();
     this.settleTiltAngle = 0;
 
     this.isRebounding = false;
     this.reboundProgress = 0;
     this.reboundStartPos = new THREE.Vector3();
+
+    // Secondary motion for plants (leaf inertia wobble)
+    this.isPlant = this.objectType === 'plant';
+    this.leafSwayTarget = new THREE.Vector2(0, 0);
+    this.leafSwayCurrent = new THREE.Vector2(0, 0);
+    this.leafMeshes = []; // meshes that receive secondary motion
+
+    // Skateboard physical deck rock animation
+    this.isSkateboard = this.objectType === 'skateboard';
+    this.isRocking = false;
+    this.rockTime = 0.0;
+    this.rockDuration = 0.65;
+    this.rockAmp = 0.06; // radians
 
     // Material original emissive storage
     this.cachedMaterials = new Map();
@@ -170,36 +202,96 @@ export class InteractiveObject extends THREE.Group {
 
     this.previousValidPosition.copy(this.position);
     this.previousValidRotation.copy(this.rotation);
+    this.lastDragPos.copy(this.position);
 
     this.targetElevation = 0.16; // Elevate during pick-up
     this.applyWarmHighlight(0x422f14);
   }
 
   onDragUpdate(targetPos) {
+    // Physical velocity-dependent tilt
+    const vx = targetPos.x - this.position.x;
+    const vz = targetPos.z - this.position.z;
+
+    // Subtly tilt object in motion direction (clamped to prevent extremes)
+    this.targetTiltZ = THREE.MathUtils.clamp(-vx * 0.45, -0.10, 0.10);
+    this.targetTiltX = THREE.MathUtils.clamp(vz * 0.45, -0.10, 0.10);
+
+    // Secondary motion for plant foliage
+    if (this.isPlant) {
+      this.leafSwayTarget.x += -vx * 1.8;
+      this.leafSwayTarget.y += -vz * 1.8;
+    }
+
     this.position.x = targetPos.x;
     this.position.z = targetPos.z;
     this.position.y = targetPos.y;
+    this.lastDragPos.copy(targetPos);
   }
 
-  onDragEnd(finalSurfacePosition, isValid = true) {
+  onDragEnd(finalSurfacePosition, isValid = true, targetRotation = null) {
     this.isDragging = false;
     this.targetElevation = this.isSelected ? 0.075 : (this.isHovered ? 0.035 : 0.0);
+    this.targetTiltX = 0;
+    this.targetTiltZ = 0;
     this.applyWarmHighlight(this.isSelected ? 0x352510 : 0x000000);
 
     if (isValid && finalSurfacePosition) {
-      // Valid placement: Physical drop settling bounce
+      // Valid placement: Physical drop settling bounce & sound
       this.isSettling = true;
       this.settleProgress = 0;
       this.settleStartPos.copy(this.position);
       this.settleEndPos.copy(finalSurfacePosition);
-      this.settleTiltAngle = (Math.random() - 0.5) * 0.05;
+
+      this.settleStartRot.copy(this.rotation);
+      this.settleEndRot.copy(targetRotation || this.rotation);
+
+      this.settleTiltAngle = (Math.random() - 0.5) * 0.04;
 
       this.previousValidPosition.copy(finalSurfacePosition);
-      this.previousValidRotation.copy(this.rotation);
+      this.previousValidRotation.copy(this.settleEndRot);
+
+      // Play soft placement audio
+      soundManager.playPlacementSound(this.objectType);
+
+      // Settle leaf secondary wobble
+      if (this.isPlant) {
+        this.leafSwayTarget.set((Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.08);
+      }
     } else {
       // Invalid placement: Rebound back to previous position
       this.playInvalidRebound();
     }
+  }
+
+  /**
+   * Adapts orientation according to target surface (e.g. books stand upright on shelves, lie flat on desk).
+   */
+  adaptOrientationToSurface(surfaceId) {
+    if (this.objectType === 'book') {
+      const targetRot = this.rotation.clone();
+      if (surfaceId === 'shelf') {
+        // Shelf: Settle upright
+        targetRot.x = 0;
+        targetRot.z = 0;
+      } else {
+        // Desk, Bed, Ottoman, Floor: Lie flat
+        targetRot.x = 0;
+        targetRot.z = 0;
+      }
+      return targetRot;
+    }
+    return this.rotation;
+  }
+
+  /**
+   * Skateboard deck rock interaction (urethane bushings compression & rebound).
+   */
+  rockDeck() {
+    this.isRocking = true;
+    this.rockTime = 0.0;
+    this.rockAmp = (Math.random() > 0.5 ? 1 : -1) * 0.065;
+    soundManager.playSkateboardRock();
   }
 
   /**
@@ -210,6 +302,8 @@ export class InteractiveObject extends THREE.Group {
     this.reboundProgress = 0;
     this.reboundStartPos.copy(this.position);
     this.targetElevation = 0.0;
+    this.targetTiltX = 0;
+    this.targetTiltZ = 0;
     this.applyWarmHighlight(0x000000);
   }
 
@@ -221,9 +315,12 @@ export class InteractiveObject extends THREE.Group {
     this.settleProgress = 0;
     this.settleStartPos.copy(this.position);
     this.settleEndPos.copy(this.defaultPosition);
+    this.settleStartRot.copy(this.rotation);
+    this.settleEndRot.copy(this.defaultRotation);
     this.rotation.copy(this.defaultRotation);
     this.previousValidPosition.copy(this.defaultPosition);
     this.previousValidRotation.copy(this.defaultRotation);
+    soundManager.playPlacementSound(this.objectType);
   }
 
   /**
@@ -236,9 +333,13 @@ export class InteractiveObject extends THREE.Group {
   }
 
   /**
-   * Triggers special action (lamp toggle, record player, cat pet).
+   * Triggers special action (lamp toggle, record player, skateboard rock, monitor visual cycle, etc.).
    */
   triggerSpecialAction() {
+    if (this.isSkateboard) {
+      this.rockDeck();
+    }
+
     if (typeof this.specialAction === 'function') {
       this.specialAction(this);
     }
@@ -251,46 +352,89 @@ export class InteractiveObject extends THREE.Group {
     this.currentElevation = MathUtils.damp(this.currentElevation, this.targetElevation, 12, delta);
     this.visualRoot.position.y = this.currentElevation;
 
-    // 2. Physical Settling Animation (Drop onto surface)
+    // 2. Velocity motion tilt smoothing
+    this.currentTiltX = MathUtils.damp(this.currentTiltX, this.targetTiltX, 10, delta);
+    this.currentTiltZ = MathUtils.damp(this.currentTiltZ, this.targetTiltZ, 10, delta);
+    if (this.isDragging) {
+      this.visualRoot.rotation.x = this.currentTiltX;
+      this.visualRoot.rotation.z = this.currentTiltZ;
+    }
+
+    // 3. Physical Settling Animation (Drop onto surface)
     if (this.isSettling) {
       this.settleProgress += delta / this.settleDuration;
 
       if (this.settleProgress >= 1.0) {
         this.position.copy(this.settleEndPos);
-        this.visualRoot.rotation.z = 0;
+        this.rotation.copy(this.settleEndRot);
+        this.visualRoot.rotation.set(0, 0, 0);
         this.isSettling = false;
       } else {
         const t = this.settleProgress;
-        // Damped harmonic bounce
-        const bounce = Math.sin(t * Math.PI) * Math.exp(-t * 4.0) * 0.08;
-        const tilt = Math.sin(t * Math.PI * 2) * Math.exp(-t * 3.5) * this.settleTiltAngle;
+        // Damped harmonic bounce & tilt
+        const bounce = Math.sin(t * Math.PI) * Math.exp(-t * 5.0) * 0.06;
+        const tilt = Math.sin(t * Math.PI * 2) * Math.exp(-t * 4.0) * this.settleTiltAngle;
 
         this.position.x = MathUtils.lerp(this.settleStartPos.x, this.settleEndPos.x, t);
         this.position.z = MathUtils.lerp(this.settleStartPos.z, this.settleEndPos.z, t);
         this.position.y = MathUtils.lerp(this.settleStartPos.y, this.settleEndPos.y, t) + bounce;
 
+        this.rotation.x = MathUtils.lerp(this.settleStartRot.x, this.settleEndRot.x, t);
+        this.rotation.y = MathUtils.lerp(this.settleStartRot.y, this.settleEndRot.y, t);
+        this.rotation.z = MathUtils.lerp(this.settleStartRot.z, this.settleEndRot.z, t);
+
         this.visualRoot.rotation.z = tilt;
       }
     }
 
-    // 3. Rebound Animation (return to previous valid position with a subtle wobble)
+    // 4. Rebound Animation (return to previous valid position with a subtle wobble)
     if (this.isRebounding) {
       this.reboundProgress += delta / 0.40;
 
       if (this.reboundProgress >= 1.0) {
         this.position.copy(this.previousValidPosition);
         this.rotation.copy(this.previousValidRotation);
-        this.visualRoot.rotation.z = 0;
+        this.visualRoot.rotation.set(0, 0, 0);
         this.isRebounding = false;
       } else {
         const t = this.reboundProgress;
-        const wobble = Math.sin(t * Math.PI * 4) * Math.exp(-t * 4.0) * 0.06;
+        const wobble = Math.sin(t * Math.PI * 4) * Math.exp(-t * 4.0) * 0.05;
 
         this.position.x = MathUtils.lerp(this.reboundStartPos.x, this.previousValidPosition.x, t);
         this.position.z = MathUtils.lerp(this.reboundStartPos.z, this.previousValidPosition.z, t);
         this.position.y = MathUtils.lerp(this.reboundStartPos.y, this.previousValidPosition.y, t) + Math.abs(wobble);
 
-        this.visualRoot.rotation.z = wobble * 0.4;
+        this.visualRoot.rotation.z = wobble * 0.35;
+      }
+    }
+
+    // 5. Skateboard deck rocking
+    if (this.isRocking) {
+      this.rockTime += delta;
+      if (this.rockTime >= this.rockDuration) {
+        this.visualRoot.rotation.z = 0;
+        this.isRocking = false;
+      } else {
+        const t = this.rockTime;
+        // Damped harmonic roll oscillation (polyurethane truck bushing behavior)
+        const roll = Math.sin(t * 16.0) * Math.exp(-t * 6.5) * this.rockAmp;
+        this.visualRoot.rotation.z = roll;
+      }
+    }
+
+    // 6. Plant foliage secondary inertia sway
+    if (this.isPlant && this.leafMeshes.length > 0) {
+      this.leafSwayTarget.x = MathUtils.damp(this.leafSwayTarget.x, 0, 4.0, delta);
+      this.leafSwayTarget.y = MathUtils.damp(this.leafSwayTarget.y, 0, 4.0, delta);
+
+      this.leafSwayCurrent.x = MathUtils.damp(this.leafSwayCurrent.x, this.leafSwayTarget.x, 8.0, delta);
+      this.leafSwayCurrent.y = MathUtils.damp(this.leafSwayCurrent.y, this.leafSwayTarget.y, 8.0, delta);
+
+      for (let i = 0; i < this.leafMeshes.length; i++) {
+        const leaf = this.leafMeshes[i];
+        const phase = (i * 0.7);
+        leaf.rotation.x += Math.sin(phase) * this.leafSwayCurrent.y * 0.15;
+        leaf.rotation.z += Math.cos(phase) * this.leafSwayCurrent.x * 0.15;
       }
     }
   }

@@ -13,6 +13,8 @@ import * as THREE from 'three';
 import { PALETTE, MAIN_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { MaterialSystem } from '../materials/MaterialSystem.js';
+import { MathUtils } from '../utils/MathUtils.js';
+import { soundManager } from '../audio/SoundManager.js';
 import { InteractiveObject } from './InteractiveObject.js';
 
 export class FurnitureBuilder {
@@ -404,10 +406,20 @@ export class FurnitureBuilder {
 
   // MARK: - 3. Monitor
   buildMonitor() {
+    const helloTex = TextureGenerator.createMonitorHelloTexture(1024, 640);
+    const nookTex = TextureGenerator.createMonitorNookTexture(1024, 640);
+    const ambientTex = TextureGenerator.createMonitorAmbientTexture(1024, 640);
+    const screenTextures = [helloTex, nookTex, ambientTex];
+    let screenIndex = 0;
+
+    const screenMat = new THREE.MeshBasicMaterial({
+      map: screenTextures[0]
+    });
+
     const obj = new InteractiveObject({
       id: 'prop_monitor',
       name: 'Monitor',
-      accessibilityLabel: 'Desk monitor displaying warm hello screen',
+      accessibilityLabel: 'Desk monitor displaying calm ambient visual',
       category: 'special',
       objectType: 'monitor',
       collisionRadius: 0.45,
@@ -417,7 +429,10 @@ export class FurnitureBuilder {
       isRotatable: true,
       isDeletable: false,
       specialAction: () => {
-        // Subtle screen glow toggle
+        screenIndex = (screenIndex + 1) % screenTextures.length;
+        screenMat.map = screenTextures[screenIndex];
+        screenMat.needsUpdate = true;
+        soundManager.playLaptopTap();
       }
     });
 
@@ -447,9 +462,9 @@ export class FurnitureBuilder {
     bezel.castShadow = true;
     obj.visualRoot.add(bezel);
 
-    // Active Display Screen Plane ("hello ♡" visual)
+    // Active Display Screen Plane
     const dispGeo = new THREE.PlaneGeometry(screenW - 0.08, screenH - 0.08);
-    const display = new THREE.Mesh(dispGeo, this.materials.monitorScreen);
+    const display = new THREE.Mesh(dispGeo, screenMat);
     display.position.set(0, 0.88, screenD * 0.5 + 0.002);
     obj.visualRoot.add(display);
 
@@ -460,6 +475,48 @@ export class FurnitureBuilder {
 
   // MARK: - 4. Laptop
   buildLaptop() {
+    // Decorative dynamic mini canvas screen
+    const screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 512;
+    screenCanvas.height = 340;
+    const sCtx = screenCanvas.getContext('2d');
+
+    const renderScreen = (pulse = 0.0) => {
+      // Warm dark editor canvas
+      sCtx.fillStyle = '#232428';
+      sCtx.fillRect(0, 0, 512, 340);
+
+      // Top window dots
+      sCtx.fillStyle = '#e57373';
+      sCtx.beginPath(); sCtx.arc(28, 22, 5, 0, Math.PI * 2); sCtx.fill();
+      sCtx.fillStyle = '#ffb74d';
+      sCtx.beginPath(); sCtx.arc(44, 22, 5, 0, Math.PI * 2); sCtx.fill();
+      sCtx.fillStyle = '#81c784';
+      sCtx.beginPath(); sCtx.arc(60, 22, 5, 0, Math.PI * 2); sCtx.fill();
+
+      // Decorative calm code lines
+      const colors = ['#dda362', '#8ea889', '#d8a49c', '#90caf9', '#e0e0e0'];
+      for (let i = 0; i < 7; i++) {
+        sCtx.fillStyle = colors[i % colors.length];
+        const w = 110 + ((i * 43) % 210);
+        sCtx.fillRect(35, 62 + i * 32, w, 7);
+      }
+
+      // Decorative blinking cursor
+      if (pulse > 0.4) {
+        sCtx.fillStyle = '#e6b477';
+        sCtx.fillRect(260, 222, 10, 15);
+      }
+    };
+    renderScreen(0.8);
+
+    const laptopTexture = new THREE.CanvasTexture(screenCanvas);
+    laptopTexture.colorSpace = THREE.SRGBColorSpace;
+    const laptopScreenMat = new THREE.MeshBasicMaterial({ map: laptopTexture });
+
+    let isPulsing = false;
+    let pulseTime = 0;
+
     const obj = new InteractiveObject({
       id: 'prop_laptop',
       name: 'Laptop',
@@ -471,8 +528,29 @@ export class FurnitureBuilder {
       isDraggable: true,
       isSelectable: true,
       isRotatable: true,
-      isDeletable: true
+      isDeletable: true,
+      specialAction: () => {
+        isPulsing = true;
+        pulseTime = 0;
+        soundManager.playLaptopTap();
+      }
     });
+
+    const baseUpdate = obj.update.bind(obj);
+    obj.update = delta => {
+      baseUpdate(delta);
+      if (isPulsing) {
+        pulseTime += delta;
+        const wave = Math.sin(pulseTime * 14) * 0.5 + 0.5;
+        renderScreen(wave);
+        laptopTexture.needsUpdate = true;
+        if (pulseTime > 1.2) {
+          isPulsing = false;
+          renderScreen(0.8);
+          laptopTexture.needsUpdate = true;
+        }
+      }
+    };
 
     // Base Chassis
     const baseGeo = new THREE.BoxGeometry(0.72, 0.022, 0.52);
@@ -504,7 +582,7 @@ export class FurnitureBuilder {
     lidGroup.add(lid);
 
     const screenGeo = new THREE.PlaneGeometry(0.66, 0.44);
-    const screen = new THREE.Mesh(screenGeo, this.materials.darkTech);
+    const screen = new THREE.Mesh(screenGeo, laptopScreenMat);
     screen.position.set(0, 0.25, 0.01);
     lidGroup.add(screen);
 
@@ -690,6 +768,33 @@ export class FurnitureBuilder {
 
   // MARK: - 10. Desk Lamp
   buildDeskLamp() {
+    let isLampOn = true;
+
+    // Conical Lamp Shade pointing down onto desk
+    const shadeGeo = new THREE.ConeGeometry(0.18, 0.24, 20, 1, true);
+    const shade = new THREE.Mesh(shadeGeo, this.materials.chairFrameCream);
+    shade.position.set(-0.25, 0.52, 0.28);
+    shade.rotation.x = Math.PI * 0.75;
+    shade.rotation.y = -0.4;
+    shade.castShadow = true;
+
+    // Glowing bulb inside shade
+    const bulbGeo = new THREE.SphereGeometry(0.045, 12, 12);
+    const bulbMat = new THREE.MeshStandardMaterial({
+      color: 0xffedd0,
+      emissive: new THREE.Color(0xffb866),
+      emissiveIntensity: 1.6,
+      roughness: 0.2
+    });
+    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+    bulb.position.set(-0.25, 0.46, 0.28);
+
+    // Soft Warm Task Light radiating from shade
+    // Warm 2400K golden light, subtle, illuminates nearby desk objects without overpowering sunlight
+    const lampLight = new THREE.PointLight(0xffb866, 0.75, 3.2, 1.8);
+    lampLight.position.set(-0.25, 0.44, 0.28);
+    lampLight.castShadow = false;
+
     const obj = new InteractiveObject({
       id: 'prop_desk_lamp',
       name: 'Desk Lamp',
@@ -703,11 +808,17 @@ export class FurnitureBuilder {
       isRotatable: true,
       isDeletable: false,
       specialAction: () => {
+        isLampOn = !isLampOn;
+        obj.isLampOn = isLampOn;
+        lampLight.visible = isLampOn;
+        bulbMat.emissiveIntensity = isLampOn ? 1.6 : 0.0;
+        soundManager.playLampClick();
         if (this.roomScene && this.roomScene.lighting) {
-          this.roomScene.lighting.toggleDeskLamp();
+          this.roomScene.lighting.setDeskLamp(isLampOn);
         }
       }
     });
+    obj.isLampOn = isLampOn;
 
     // Weighted Round Base
     const baseGeo = new THREE.CylinderGeometry(0.16, 0.18, 0.03, 24);
@@ -728,19 +839,8 @@ export class FurnitureBuilder {
     stem.castShadow = true;
     obj.visualRoot.add(stem);
 
-    // Conical Lamp Shade pointing down onto desk
-    const shadeGeo = new THREE.ConeGeometry(0.18, 0.24, 20, 1, true);
-    const shade = new THREE.Mesh(shadeGeo, this.materials.chairFrameCream);
-    shade.position.set(-0.25, 0.52, 0.28);
-    shade.rotation.x = Math.PI * 0.75;
-    shade.rotation.y = -0.4;
-    shade.castShadow = true;
     obj.visualRoot.add(shade);
-
-    // Soft Warm Task Light radiating from shade
-    const lampLight = new THREE.PointLight(0xffecd0, 0.9, 4.0, 1.8);
-    lampLight.position.set(-0.25, 0.44, 0.28);
-    lampLight.castShadow = false;
+    obj.visualRoot.add(bulb);
     obj.visualRoot.add(lampLight);
 
     obj.setDefaultTransform(new THREE.Vector3(-1.48, 1.70, -2.95));
@@ -808,7 +908,7 @@ export class FurnitureBuilder {
     pot.castShadow = true;
     obj.visualRoot.add(pot);
 
-    // Succulent Leaves
+    // Succulent Leaves with secondary motion
     for (let i = 0; i < 6; i++) {
       const leafGeo = new THREE.ConeGeometry(0.045, 0.11, 5);
       const leaf = new THREE.Mesh(leafGeo, this.materials.foliageGreen);
@@ -818,6 +918,7 @@ export class FurnitureBuilder {
       leaf.rotation.z = -Math.cos(angle) * 0.45;
       leaf.castShadow = true;
       obj.visualRoot.add(leaf);
+      obj.leafMeshes.push(leaf);
     }
 
     obj.setDefaultTransform(new THREE.Vector3(-0.32, MAIN_FLOOR_Y + 1.05 + 0.04, -2.55));
@@ -1311,6 +1412,12 @@ export class FurnitureBuilder {
 
   // MARK: - 22. Record Player & Vinyl
   buildRecordPlayer() {
+    let isPlaying = false;
+    let tonearmAngle = -0.34;
+    let targetTonearmAngle = -0.34;
+    let vinylSpeed = 0.0;
+    let targetVinylSpeed = 0.0;
+
     const obj = new InteractiveObject({
       id: 'prop_record_player',
       name: 'Record Player',
@@ -1324,9 +1431,20 @@ export class FurnitureBuilder {
       isRotatable: true,
       isDeletable: false,
       specialAction: targetObj => {
-        targetObj.isSpinning = !targetObj.isSpinning;
+        isPlaying = !isPlaying;
+        targetObj.isPlaying = isPlaying;
+        if (isPlaying) {
+          targetTonearmAngle = 0.42; // Swing into playing groove
+          targetVinylSpeed = 2.8;
+          soundManager.startVinyl();
+        } else {
+          targetTonearmAngle = -0.34; // Return to armrest
+          targetVinylSpeed = 0.0;
+          soundManager.stopVinyl();
+        }
       }
     });
+    obj.isPlaying = isPlaying;
 
     // Turntable Base Case (Vintage Dusty Rose Suitcase)
     const baseW = 0.72;
@@ -1358,18 +1476,37 @@ export class FurnitureBuilder {
     vinylMesh.castShadow = true;
     obj.visualRoot.add(vinylMesh);
 
-    // Tonearm with Cartridge and Pivot
+    // Tonearm Pivot Assembly
+    const tonearmPivot = new THREE.Group();
+    tonearmPivot.position.set(0.24, baseH + 0.04, -0.18);
+    tonearmPivot.rotation.y = tonearmAngle;
+
+    // Pivot Base cylinder
     const pivotGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.06, 12);
     const pivot = new THREE.Mesh(pivotGeo, this.materials.metalChrome);
-    pivot.position.set(0.24, baseH + 0.04, -0.18);
-    obj.visualRoot.add(pivot);
+    pivot.position.set(0, 0, 0);
+    tonearmPivot.add(pivot);
 
-    const armGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.32, 8);
+    // Counterweight
+    const cwGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.035, 12);
+    const cw = new THREE.Mesh(cwGeo, this.materials.darkTech);
+    cw.position.set(0, 0.02, -0.04);
+    tonearmPivot.add(cw);
+
+    // Wand extending forward
+    const armGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.30, 8);
     const arm = new THREE.Mesh(armGeo, this.materials.metalChrome);
-    arm.position.set(0.14, baseH + 0.06, -0.04);
+    arm.position.set(0, 0.02, 0.15);
     arm.rotation.x = Math.PI * 0.5;
-    arm.rotation.z = 0.42;
-    obj.visualRoot.add(arm);
+    tonearmPivot.add(arm);
+
+    // Cartridge / Headshell at tip of tonearm
+    const headGeo = new THREE.BoxGeometry(0.022, 0.016, 0.045);
+    const head = new THREE.Mesh(headGeo, this.materials.darkTech);
+    head.position.set(0, 0.015, 0.29);
+    tonearmPivot.add(head);
+
+    obj.visualRoot.add(tonearmPivot);
 
     // Open Hinged Lid (Angled back at 65 degrees)
     const lidGroup = new THREE.Group();
@@ -1400,12 +1537,18 @@ export class FurnitureBuilder {
 
     obj.setDefaultTransform(new THREE.Vector3(3.40, MAIN_FLOOR_Y + 0.78, 0.60));
 
-    obj.isSpinning = true;
     const baseUpdate = obj.update.bind(obj);
     obj.update = delta => {
       baseUpdate(delta);
-      if (obj.isSpinning && vinylMesh) {
-        vinylMesh.rotation.y += delta * 2.8;
+
+      // Smooth tonearm motion
+      tonearmAngle = MathUtils.damp(tonearmAngle, targetTonearmAngle, 4.0, delta);
+      tonearmPivot.rotation.y = tonearmAngle;
+
+      // Smooth vinyl spin up/down
+      vinylSpeed = MathUtils.damp(vinylSpeed, targetVinylSpeed, 3.0, delta);
+      if (vinylSpeed > 0.01 && vinylMesh) {
+        vinylMesh.rotation.y += delta * vinylSpeed;
       }
     };
 
@@ -1426,7 +1569,10 @@ export class FurnitureBuilder {
       isDraggable: true,
       isSelectable: true,
       isRotatable: true,
-      isDeletable: true
+      isDeletable: true,
+      specialAction: target => {
+        target.rockDeck();
+      }
     });
 
     const deckL = 1.35;
@@ -1584,6 +1730,7 @@ export class FurnitureBuilder {
       leaf.rotation.y = a;
       leaf.castShadow = true;
       obj.visualRoot.add(leaf);
+      obj.leafMeshes.push(leaf);
     }
 
     obj.setDefaultTransform(new THREE.Vector3(4.35, MAIN_FLOOR_Y, 1.45));
@@ -1676,6 +1823,7 @@ export class FurnitureBuilder {
     plant.position.set(0, 0.15, 0);
     plant.castShadow = true;
     obj.visualRoot.add(plant);
+    obj.leafMeshes.push(plant);
 
     obj.setDefaultTransform(new THREE.Vector3(-0.85, LOWER_FLOOR_Y + 0.06, 2.92));
     obj.cacheMaterials();

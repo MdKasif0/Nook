@@ -261,6 +261,235 @@ export class TextureGenerator {
   }
 
   /**
+   * Generates minimalist "Nook 🌱" display visual for the desktop monitor.
+   */
+  static createMonitorNookTexture(width = 1024, height = 640) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Warm cream display background
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0.0, '#fbf8f2');
+    bgGrad.addColorStop(1.0, '#ede4d6');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle decorative circle in background
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.46, height * 0.32, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8decb';
+    ctx.fill();
+
+    // "Nook" logo
+    ctx.fillStyle = '#2f3b33';
+    ctx.font = 'bold 112px Georgia, "Times New Roman", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Nook 🌱', width * 0.5, height * 0.45);
+
+    // Subtitle tagline
+    ctx.fillStyle = '#6e7a70';
+    ctx.font = '32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('a quiet corner for your thoughts', width * 0.5, height * 0.60);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates minimalist ambient visual for desktop monitor (sunset orb & mountains).
+   */
+  static createMonitorAmbientTexture(width = 1024, height = 640) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Soft warm dusk gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0.0, '#f9ecd7');
+    bgGrad.addColorStop(0.5, '#edd1b0');
+    bgGrad.addColorStop(1.0, '#cda180');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Sun orb
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.42, 90, 0, Math.PI * 2);
+    ctx.fillStyle = '#fce4be';
+    ctx.fill();
+
+    // Minimalist mountains
+    ctx.fillStyle = '#8f725a';
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    ctx.lineTo(width * 0.28, height * 0.55);
+    ctx.lineTo(width * 0.62, height);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#735843';
+    ctx.beginPath();
+    ctx.moveTo(width * 0.35, height);
+    ctx.lineTo(width * 0.72, height * 0.50);
+    ctx.lineTo(width, height * 0.85);
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates soft cream paper note texture with subtle handwritten lines.
+   */
+  static createPaperNoteTexture(width = 512, height = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#faf6ed';
+    ctx.fillRect(0, 0, width, height);
+
+    // Ruled lines
+    ctx.strokeStyle = '#e2d5c2';
+    ctx.lineWidth = 2;
+    for (let y = 80; y < height - 40; y += 38) {
+      ctx.beginPath();
+      ctx.moveTo(35, y);
+      ctx.lineTo(width - 35, y);
+      ctx.stroke();
+    }
+
+    // Subtle handwritten script lines
+    ctx.strokeStyle = '#605445';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    for (let y = 72; y < height - 60; y += 38) {
+      ctx.beginPath();
+      ctx.moveTo(45, y);
+      const endX = width - 60 - Math.random() * 80;
+      let curX = 45;
+      while (curX < endX) {
+        curX += 25 + Math.random() * 20;
+        ctx.lineTo(curX, y + (Math.random() - 0.5) * 6);
+      }
+      ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates instant Polaroid photo texture.
+   */
+  static createPolaroidTexture(width = 512, height = 600) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Classic cream frame
+    ctx.fillStyle = '#f8f4ec';
+    ctx.fillRect(0, 0, width, height);
+
+    // Inner photo area
+    const pMargin = 38;
+    const pWidth = width - pMargin * 2;
+    const pHeight = height - 150;
+
+    const photoGrad = ctx.createLinearGradient(pMargin, pMargin, pMargin, pMargin + pHeight);
+    photoGrad.addColorStop(0.0, '#a3c4db');
+    photoGrad.addColorStop(0.4, '#e6c8a2');
+    photoGrad.addColorStop(1.0, '#98aa8c');
+    ctx.fillStyle = photoGrad;
+    ctx.fillRect(pMargin, pMargin, pWidth, pHeight);
+
+    // Gentle sun orb in photo
+    ctx.beginPath();
+    ctx.arc(pMargin + pWidth * 0.5, pMargin + pHeight * 0.4, 40, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff4db';
+    ctx.fill();
+
+    // Handwritten caption on bottom margin
+    ctx.fillStyle = '#5c5042';
+    ctx.font = 'italic 30px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('sunday morning ♡', width * 0.5, height - 60);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates sticky note texture with gentle reminder.
+   */
+  static createStickyNoteTexture(width = 512, height = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Soft pastel warm cream-yellow
+    ctx.fillStyle = '#fbf3cc';
+    ctx.fillRect(0, 0, width, height);
+
+    // Adhesive band along top edge
+    ctx.fillStyle = 'rgba(215, 195, 140, 0.22)';
+    ctx.fillRect(0, 0, width, 55);
+
+    // Handwritten note
+    ctx.fillStyle = '#4f4536';
+    ctx.font = 'italic bold 44px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('breathe deeply,', width * 0.5, height * 0.44);
+    ctx.font = 'italic 36px Georgia, serif';
+    ctx.fillText('you are home 🌱', width * 0.5, height * 0.56);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates woven bookmark ribbon texture.
+   */
+  static createBookmarkTexture(width = 256, height = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Sage green ribbon
+    ctx.fillStyle = '#8ea889';
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle herringbone weave pattern
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 2;
+    for (let y = 0; y < height; y += 12) {
+      ctx.beginPath();
+      ctx.moveTo(10, y);
+      ctx.lineTo(width * 0.5, y + 8);
+      ctx.lineTo(width - 10, y);
+      ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
    * Generates woven botanical pattern rug texture for the desk area.
    */
   static createRugBotanicalTexture(width = 1024, height = 1024) {
