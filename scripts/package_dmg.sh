@@ -187,6 +187,10 @@ cp "$OUTPUT_DMG" "$PROJECT_ROOT/web/assets/Nook-1.0-Universal.dmg"
 
 echo "  ✅ Synced DMG to website downloads."
 
+# Step 6: Generate Sparkle 2 AppCast feed with Ed25519 signature
+echo "📡 Step 6/6: Generating Sparkle 2 AppCast XML Feed..."
+"$SCRIPT_DIR/generate_appcast.sh" "$OUTPUT_DMG"
+
 # Optional: Notarization
 if [ "$NOTARIZE" = true ]; then
   if [ -n "$APPLE_ID" ] && [ -n "$TEAM_ID" ] && [ -n "$PASSWORD" ]; then
