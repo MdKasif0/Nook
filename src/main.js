@@ -61,7 +61,7 @@ class NookApplication {
 
     // Soft PCF Shadow Maps
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
   }
 
   initScene() {

@@ -206,14 +206,76 @@ export class RoomScene {
     rightWallTop.castShadow = true;
     this.architecture.add(rightWallTop);
 
-    // Window Wooden Frame & Sill
-    const windowFrameGeo = new THREE.BoxGeometry(WALL_THICKNESS + 0.08, 1.35, 1.55);
-    const windowFrameMat = this.materials.woodHoney;
-    const windowFrame = new THREE.Mesh(windowFrameGeo, windowFrameMat);
-    windowFrame.position.set(halfW + WALL_THICKNESS * 0.5, 1.42 + LOWER_FLOOR_Y, -0.9);
-    windowFrame.castShadow = true;
-    windowFrame.receiveShadow = true;
-    this.architecture.add(windowFrame);
+    // Window Frame Assembly (Open frame with mullions and outdoor view matching reference)
+    const windowGroup = new THREE.Group();
+    windowGroup.name = 'WindowAssembly';
+    const frameMat = this.materials.woodHoney;
+    const frameX = halfW + WALL_THICKNESS * 0.5;
+    const frameY = 1.42 + LOWER_FLOOR_Y;
+    const frameZ = -0.9;
+    const frameH = 1.32;
+    const frameW = 1.52;
+    const railThick = 0.06;
+    const railDepth = WALL_THICKNESS + 0.04;
+
+    // Top & Bottom Rails
+    const hRailGeo = new THREE.BoxGeometry(railDepth, railThick, frameW);
+    const topRail = new THREE.Mesh(hRailGeo, frameMat);
+    topRail.position.set(frameX, frameY + frameH * 0.5 - railThick * 0.5, frameZ);
+    topRail.castShadow = true;
+    windowGroup.add(topRail);
+
+    const bottomRail = new THREE.Mesh(hRailGeo, frameMat);
+    bottomRail.position.set(frameX, frameY - frameH * 0.5 + railThick * 0.5, frameZ);
+    bottomRail.castShadow = true;
+    windowGroup.add(bottomRail);
+
+    // Left & Right Vertical Jambs
+    const vRailGeo = new THREE.BoxGeometry(railDepth, frameH, railThick);
+    const leftJamb = new THREE.Mesh(vRailGeo, frameMat);
+    leftJamb.position.set(frameX, frameY, frameZ - frameW * 0.5 + railThick * 0.5);
+    leftJamb.castShadow = true;
+    windowGroup.add(leftJamb);
+
+    const rightJamb = new THREE.Mesh(vRailGeo, frameMat);
+    rightJamb.position.set(frameX, frameY, frameZ + frameW * 0.5 - railThick * 0.5);
+    rightJamb.castShadow = true;
+    windowGroup.add(rightJamb);
+
+    // Center Cross Mullions
+    const centerHMullion = new THREE.Mesh(
+      new THREE.BoxGeometry(railDepth * 0.6, 0.035, frameW - 0.08),
+      frameMat
+    );
+    centerHMullion.position.set(frameX, frameY, frameZ);
+    centerHMullion.castShadow = true;
+    windowGroup.add(centerHMullion);
+
+    const centerVMullion = new THREE.Mesh(
+      new THREE.BoxGeometry(railDepth * 0.6, frameH - 0.08, 0.035),
+      frameMat
+    );
+    centerVMullion.position.set(frameX, frameY, frameZ);
+    centerVMullion.castShadow = true;
+    windowGroup.add(centerVMullion);
+
+    // Window Glass Pane
+    const windowGlassGeo = new THREE.BoxGeometry(0.015, frameH - 0.08, frameW - 0.08);
+    const windowGlass = new THREE.Mesh(windowGlassGeo, this.materials.glassWindow);
+    windowGlass.position.set(frameX, frameY, frameZ);
+    windowGroup.add(windowGlass);
+
+    // Outdoor Sunny View Backdrop Plane (Sky + distant treetops matching reference photo)
+    const outdoorBackdropGeo = new THREE.PlaneGeometry(2.4, 2.0);
+    const outdoorBackdropMat = new THREE.MeshBasicMaterial({
+      color: 0x8cc4e8
+    });
+    const outdoorBackdrop = new THREE.Mesh(outdoorBackdropGeo, outdoorBackdropMat);
+    outdoorBackdrop.position.set(frameX + 0.45, frameY, frameZ);
+    outdoorBackdrop.rotation.y = -Math.PI / 2;
+    windowGroup.add(outdoorBackdrop);
+
+    this.architecture.add(windowGroup);
 
     // Window Sill Shelf (matching reference with small plants)
     const sillGeo = new THREE.BoxGeometry(WALL_THICKNESS + 0.22, 0.08, 1.75);
@@ -222,12 +284,6 @@ export class RoomScene {
     sill.castShadow = true;
     sill.receiveShadow = true;
     this.architecture.add(sill);
-
-    // Window Glass Pane
-    const windowGlassGeo = new THREE.BoxGeometry(0.02, 1.25, 1.45);
-    const windowGlass = new THREE.Mesh(windowGlassGeo, this.materials.glassWindow);
-    windowGlass.position.set(halfW + WALL_THICKNESS * 0.5, 1.42 + LOWER_FLOOR_Y, -0.9);
-    this.architecture.add(windowGlass);
 
     // Right Wall Top Header Trim
     const rightTrimGeo = new THREE.BoxGeometry(WOOD_TRIM_DEPTH, WOOD_TRIM_HEIGHT, windowWallWidth);
@@ -341,9 +397,9 @@ export class RoomScene {
     bedGroup.add(mattress);
 
     // Sage Green Duvet / Folded Quilt
-    const duvetGeo = new THREE.BoxGeometry(1.28, 0.16, 1.15);
+    const duvetGeo = new THREE.BoxGeometry(1.30, 0.16, 1.25);
     const duvet = new THREE.Mesh(duvetGeo, this.materials.bedBlanket);
-    duvet.position.set(0.95, UPPER_FLOOR_Y + 0.46, -0.45);
+    duvet.position.set(0.95, UPPER_FLOOR_Y + 0.44, -0.45);
     duvet.castShadow = true;
     duvet.receiveShadow = true;
     bedGroup.add(duvet);
@@ -392,22 +448,35 @@ export class RoomScene {
   }
 
   buildFoundationalDecorations() {
-    // 1. Back Wall Bookshelf Structure (connecting desk to bed)
+    // 1. Back Wall Bookshelf Structure (recessed against back wall matching reference)
     const shelfGroup = new THREE.Group();
     shelfGroup.name = 'BackBookshelfArchitecture';
 
-    const shelfBackGeo = new THREE.BoxGeometry(1.35, 1.45, 0.28);
+    // Flush back panel
+    const shelfBackGeo = new THREE.BoxGeometry(1.35, 1.45, 0.04);
     const shelfBack = new THREE.Mesh(shelfBackGeo, this.materials.woodHoney);
-    shelfBack.position.set(0.15, 1.65 + LOWER_FLOOR_Y, -1.82);
+    shelfBack.position.set(0.15, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.02);
     shelfBack.castShadow = true;
     shelfBack.receiveShadow = true;
     shelfGroup.add(shelfBack);
 
-    // Individual horizontal shelves
-    for (let y = 1.15; y <= 2.15; y += 0.42) {
-      const plankGeo = new THREE.BoxGeometry(1.32, 0.04, 0.26);
+    // Left and right vertical uprights
+    const uprightGeo = new THREE.BoxGeometry(0.04, 1.45, 0.22);
+    const leftUpright = new THREE.Mesh(uprightGeo, this.materials.woodTrim);
+    leftUpright.position.set(0.15 - 1.35 * 0.5 + 0.02, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
+    leftUpright.castShadow = true;
+    shelfGroup.add(leftUpright);
+
+    const rightUpright = new THREE.Mesh(uprightGeo, this.materials.woodTrim);
+    rightUpright.position.set(0.15 + 1.35 * 0.5 - 0.02, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
+    rightUpright.castShadow = true;
+    shelfGroup.add(rightUpright);
+
+    // Horizontal shelves
+    for (let y = 1.05; y <= 2.15; y += 0.42) {
+      const plankGeo = new THREE.BoxGeometry(1.30, 0.035, 0.22);
       const plank = new THREE.Mesh(plankGeo, this.materials.woodTrim);
-      plank.position.set(0.15, y + LOWER_FLOOR_Y, -1.82);
+      plank.position.set(0.15, y + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
       plank.castShadow = true;
       shelfGroup.add(plank);
     }
