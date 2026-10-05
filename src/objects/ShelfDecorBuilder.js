@@ -574,6 +574,9 @@ export class ShelfDecorBuilder {
     const rightCurtain = buildCurtainPanel(winZ + winW * 0.5 - 0.16, false);
     group.add(rightCurtain);
 
+    group.userData.leftCurtain = leftCurtain;
+    group.userData.rightCurtain = rightCurtain;
+
     return group;
   }
 
