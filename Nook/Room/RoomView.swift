@@ -846,6 +846,127 @@ struct RoomView: View {
         .accessibilityLabel("Inspector for \(item.title), \(item.objectType.displayName)")
     }
     
+    /// Contextual floating inspector panel when a movable room prop is selected.
+    private func selectedPropInspector(for prop: InteractivePropComponent) -> some View {
+        HStack(spacing: NookDesign.Spacing.md) {
+            // Prop Category / Nature Icon
+            Image(systemName: iconForProp(prop.propId))
+                .font(.system(size: 15))
+                .foregroundStyle(NookDesign.Colors.olive)
+                .frame(width: 32, height: 32)
+                .background(NookDesign.Colors.olive.opacity(0.12))
+                .clipShape(Circle())
+            
+            // Display Name and micro-instruction
+            VStack(alignment: .leading, spacing: 2) {
+                Text(prop.displayName)
+                    .font(NookDesign.Typography.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(NookDesign.Colors.textPrimary)
+                
+                Text("Drag to move • Arrow keys to nudge")
+                    .font(NookDesign.Typography.caption)
+                    .foregroundStyle(NookDesign.Colors.textTertiary)
+            }
+            
+            Spacer(minLength: 16)
+            
+            // Action Controls
+            HStack(spacing: NookDesign.Spacing.xs) {
+                if prop.allowsRotation {
+                    Button {
+                        sceneController.interactionSystem?.rotateProp(id: prop.propId, angleDegrees: 45, undoManager: undoManager)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "rotate.right")
+                                .font(.system(size: 11))
+                            Text("Rotate")
+                                .font(NookDesign.Typography.caption)
+                                .fontWeight(.medium)
+                            Text("R")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(NookDesign.Colors.textTertiary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(NookDesign.Colors.surfaceAlt)
+                                .clipShape(RoundedRectangle(cornerRadius: 3))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(NookDesign.Colors.surfaceAlt)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Rotate 45° (R)")
+                }
+                
+                Button {
+                    sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 11))
+                        Text("Reset")
+                            .font(NookDesign.Typography.caption)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(NookDesign.Colors.surfaceAlt)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Reset position to default")
+                
+                Button {
+                    withAnimation(NookDesign.Animation.springy) {
+                        sceneController.interactionSystem?.clearPropSelection()
+                        selectedPropInfo = nil
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
+                .help("Deselect (Esc)")
+            }
+        }
+        .padding(.horizontal, NookDesign.Spacing.md)
+        .padding(.vertical, NookDesign.Spacing.sm)
+        .background(NookDesign.Colors.surface.opacity(0.96))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(NookDesign.Colors.borderSubtle, lineWidth: 0.8)
+        )
+        .nookShadow(NookDesign.Shadow.elevated)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(prop.displayName), movable diorama object")
+    }
+    
+    private func iconForProp(_ propId: String) -> String {
+        if propId.contains("lamp") { return "lamp.table.fill" }
+        if propId.contains("monitor") { return "display" }
+        if propId.contains("laptop") { return "laptopcomputer" }
+        if propId.contains("keyboard") { return "keyboard" }
+        if propId.contains("mouse") { return "computermouse" }
+        if propId.contains("phone") { return "iphone" }
+        if propId.contains("notebook") { return "book.pages" }
+        if propId.contains("pillow") { return "square.fill" }
+        if propId.contains("skateboard") { return "figure.skateboarding" }
+        if propId.contains("plant") || propId.contains("succulent") || propId.contains("monstera") { return "leaf.fill" }
+        if propId.contains("record") { return "opticaldisc.fill" }
+        if propId.contains("mug") { return "cup.and.saucer.fill" }
+        if propId.contains("pencil") { return "pencil.tip" }
+        if propId.contains("clock") { return "alarm.fill" }
+        if propId.contains("cookie") { return "cat.fill" }
+        if propId.contains("box") { return "shippingbox.fill" }
+        if propId.contains("headphones") { return "headphones" }
+        return "cube.fill"
+    }
+    
     /// Speech bubble when Cookie is petted or clicked in the room.
     private func cookieToastBubble(_ message: String) -> some View {
         HStack(spacing: NookDesign.Spacing.sm) {
