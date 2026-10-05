@@ -72,14 +72,14 @@ export class Lighting {
     this.deskLamp.shadow.radius = 2.0;
     this.group.add(this.deskLamp);
 
-    // 4. Bookshelf Warm Ambient Accent (under-shelf LED / back nook glow)
+    // 4. Bookshelf Warm Ambient Accent (under-shelf soft LED)
     this.shelfAccent = new THREE.PointLight(
       0xffba66,
-      LIGHTING_CONFIG.accentShelfIntensity,
-      2.8,
+      0.35,
+      2.2,
       2.0
     );
-    this.shelfAccent.position.set(0.65, 1.7, -1.55);
+    this.shelfAccent.position.set(0.15, 1.85, -1.8);
     this.group.add(this.shelfAccent);
 
     // 5. Wall Sconce Light (near window cutaway)
