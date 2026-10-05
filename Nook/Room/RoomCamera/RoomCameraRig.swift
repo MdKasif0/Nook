@@ -93,6 +93,14 @@ public final class RoomCameraRig {
         recomputeTransform()
     }
     
+    /// Gently focuses slightly toward Cookie when interacting with Cookie (subtle pan, no dramatic zoom).
+    public func subtleFocus(on position: SIMD3<Float>) {
+        let subtleOffsetX = min(max((position.x - Self.defaultTargetPosition.x) * 0.16, -0.08), 0.08)
+        let subtleOffsetZ = min(max((position.z - Self.defaultTargetPosition.z) * 0.16, -0.08), 0.08)
+        panOffset = SIMD3<Float>(subtleOffsetX, 0, subtleOffsetZ)
+        recomputeTransform()
+    }
+    
     /// Recomputes camera position and orientation based on current exploration state.
     private func recomputeTransform() {
         let baseDir = Self.defaultCameraPosition - Self.defaultTargetPosition

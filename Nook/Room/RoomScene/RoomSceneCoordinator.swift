@@ -226,6 +226,10 @@ final class RoomSceneCoordinator {
         return propEntities[id]
     }
     
+    func findThoughtEntity(id: UUID) -> Entity? {
+        return thoughtsContainer.findEntity(named: "thought_\(id.uuidString)")
+    }
+    
     // MARK: - Persistence Synchronization
     
     func applySavedRoomState(_ roomState: RoomState) {

@@ -72,31 +72,118 @@ struct RoomView: View {
                 .accessibilityHint("Use Tab or arrow keys to cycle through objects. Press Return to open.")
                 .contextMenu {
                     if let prop = selectedPropInfo {
-                        if prop.allowsRotation {
+                        if prop.propId == "prop_cookie" {
                             Button {
-                                sceneController.interactionSystem?.rotateProp(id: prop.propId, angleDegrees: 45, undoManager: undoManager)
+                                sceneController.petCookie()
                             } label: {
-                                Label("Rotate 45°", systemImage: "rotate.right")
+                                Label("Pet", systemImage: "hand.tap.fill")
                             }
-                        }
-                        if prop.allowsScaling {
+                            
+                            Menu("Call Cookie") {
+                                Button {
+                                    Task { await sceneController.cookie?.goToBed() }
+                                } label: {
+                                    Label("To Bed", systemImage: "bed.double.fill")
+                                }
+                                Button {
+                                    Task { await sceneController.cookie?.goToDesk() }
+                                } label: {
+                                    Label("To Desk", systemImage: "desktopcomputer")
+                                }
+                                Button {
+                                    Task { await sceneController.cookie?.goToSunkenLounge() }
+                                } label: {
+                                    Label("To Sunken Lounge", systemImage: "sofa.fill")
+                                }
+                                Button {
+                                    Task { await sceneController.cookie?.goToWindow() }
+                                } label: {
+                                    Label("To Window Sill", systemImage: "sun.max.fill")
+                                }
+                            }
+                            
+                            Menu("Move Here") {
+                                Button {
+                                    Task { await sceneController.cookie?.goToBed() }
+                                } label: {
+                                    Label("Daybed", systemImage: "bed.double.fill")
+                                }
+                                Button {
+                                    Task { await sceneController.cookie?.goToDesk() }
+                                } label: {
+                                    Label("Desk Tabletop", systemImage: "desktopcomputer")
+                                }
+                                Button {
+                                    Task { await sceneController.cookie?.goToSunkenLounge() }
+                                } label: {
+                                    Label("Sunken Lounge", systemImage: "sofa.fill")
+                                }
+                            }
+                            
                             Button {
-                                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 1.08, undoManager: undoManager)
+                                sceneController.cookie?.play()
                             } label: {
-                                Label("Slightly Enlarge", systemImage: "plus.magnifyingglass")
+                                Label("Play", systemImage: "sparkles")
+                            }
+                            
+                            Button {
+                                sceneController.cookie?.sleep()
+                            } label: {
+                                Label("Sleep", systemImage: "moon.zzz.fill")
+                            }
+                            
+                            Button {
+                                sceneController.cookie?.stayHere()
+                            } label: {
+                                Label("Stay Here", systemImage: "pin.fill")
+                            }
+                        } else {
+                            Button {
+                                if let entity = sceneController.findPropEntity(id: prop.propId) {
+                                    Task {
+                                        await sceneController.cookie?.callCookie(to: entity.position)
+                                    }
+                                }
+                            } label: {
+                                Label("Call Cookie Here", systemImage: "cat.fill")
+                            }
+                            
+                            if prop.allowsRotation {
+                                Button {
+                                    sceneController.interactionSystem?.rotateProp(id: prop.propId, angleDegrees: 45, undoManager: undoManager)
+                                } label: {
+                                    Label("Rotate 45°", systemImage: "rotate.right")
+                                }
+                            }
+                            if prop.allowsScaling {
+                                Button {
+                                    sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 1.08, undoManager: undoManager)
+                                } label: {
+                                    Label("Slightly Enlarge", systemImage: "plus.magnifyingglass")
+                                }
+                                Button {
+                                    sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 0.92, undoManager: undoManager)
+                                } label: {
+                                    Label("Slightly Shrink", systemImage: "minus.magnifyingglass")
+                                }
                             }
                             Button {
-                                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 0.92, undoManager: undoManager)
+                                sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
                             } label: {
-                                Label("Slightly Shrink", systemImage: "minus.magnifyingglass")
+                                Label("Reset Position", systemImage: "arrow.counterclockwise")
                             }
-                        }
-                        Button {
-                            sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
-                        } label: {
-                            Label("Reset Position", systemImage: "arrow.counterclockwise")
                         }
                     } else if let item = selectedItem {
+                        Button {
+                            if let entity = sceneController.findThoughtEntity(id: item.id) {
+                                Task {
+                                    await sceneController.cookie?.callCookie(to: entity.position)
+                                }
+                            }
+                        } label: {
+                            Label("Call Cookie Here", systemImage: "cat.fill")
+                        }
+                        Divider()
                         Button {
                             detailItem = item
                         } label: {
@@ -112,6 +199,29 @@ struct RoomView: View {
                             deleteSelectedItem(item)
                         } label: {
                             Label("Delete", systemImage: "trash")
+                        }
+                    } else {
+                        Menu("Call Cookie") {
+                            Button {
+                                Task { await sceneController.cookie?.goToBed() }
+                            } label: {
+                                Label("Call Cookie to Bed", systemImage: "bed.double.fill")
+                            }
+                            Button {
+                                Task { await sceneController.cookie?.goToDesk() }
+                            } label: {
+                                Label("Call Cookie to Desk", systemImage: "desktopcomputer")
+                            }
+                            Button {
+                                Task { await sceneController.cookie?.goToSunkenLounge() }
+                            } label: {
+                                Label("Call Cookie to Lounge", systemImage: "sofa.fill")
+                            }
+                            Button {
+                                Task { await sceneController.cookie?.goToWindow() }
+                            } label: {
+                                Label("Call Cookie to Window", systemImage: "sun.max.fill")
+                            }
                         }
                     }
                 }

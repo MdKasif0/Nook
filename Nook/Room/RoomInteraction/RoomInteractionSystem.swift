@@ -75,6 +75,9 @@ final class RoomInteractionSystem {
            entity.name == "cookie_character" || entity.findAncestor(named: "cookie_character") != nil {
             coordinator?.petCookie()
             selectProp(id: "prop_cookie")
+            if let cookiePos = coordinator?.cookie?.position {
+                coordinator?.cameraRig.subtleFocus(on: cookiePos)
+            }
             return
         }
         
@@ -141,6 +144,13 @@ final class RoomInteractionSystem {
     }
     
     private func applySelectionVisual(to entity: Entity, isSelected: Bool) {
+        if entity.name == "prop_cookie" || entity is CookieRealityEntity {
+            if let cookie = (entity as? CookieRealityEntity) ?? coordinator?.cookie {
+                cookie.setSelected(isSelected)
+            }
+            return
+        }
+        
         guard let prop = entity.components[InteractivePropComponent.self],
               prop.category == .movable else { return }
         
@@ -158,6 +168,9 @@ final class RoomInteractionSystem {
     // MARK: - Drag Manipulation
     
     func canDragEntity(_ entity: Entity) -> Bool {
+        if entity.name == "prop_cookie" || entity.findAncestor(named: "prop_cookie") != nil {
+            return true
+        }
         if entity.name.hasPrefix("thought_") || entity.findAncestor(prefix: "thought_") != nil {
             return true
         }
@@ -170,7 +183,9 @@ final class RoomInteractionSystem {
     func handleDragStart(for entity: Entity) -> Entity? {
         // Resolve the top interactive node
         let target: Entity
-        if let thought = entity.findAncestor(prefix: "thought_") {
+        if let cookie = entity.findAncestor(named: "prop_cookie") ?? (entity.name == "prop_cookie" ? entity : nil) {
+            target = cookie
+        } else if let thought = entity.findAncestor(prefix: "thought_") {
             target = thought
         } else if let (propNode, _) = entity.findInteractiveProp() {
             target = propNode
@@ -189,6 +204,12 @@ final class RoomInteractionSystem {
             orientation: target.orientation,
             scale: target.scale
         )
+        
+        if target.name == "prop_cookie" || target is CookieRealityEntity {
+            if let cookie = (target as? CookieRealityEntity) ?? coordinator?.cookie {
+                cookie.animationController?.onDragStart()
+            }
+        }
         
         // Physical pick-up feedback:
         // 1. Visually lift slightly (+4cm)
@@ -212,22 +233,61 @@ final class RoomInteractionSystem {
         let clampedX = min(max(newX, Self.minRoomX), Self.maxRoomX)
         let clampedZ = min(max(newZ, Self.minRoomZ), Self.maxRoomZ)
         
+        let isCookie = target.name == "prop_cookie" || target is CookieRealityEntity
+        let cookie = isCookie ? ((target as? CookieRealityEntity) ?? coordinator?.cookie) : nil
+        
         // Dynamic resting surface height based on diorama zones
-        let currentSurfaceY = Self.surfaceHeight(at: clampedX, z: clampedZ)
+        let currentSurfaceY = isCookie
+            ? CookieNavigationController.surfaceHeight(at: clampedX, z: clampedZ)
+            : Self.surfaceHeight(at: clampedX, z: clampedZ)
         
         // In-air lifted height (+4cm)
         target.position = [clampedX, currentSurfaceY + 0.04, clampedZ]
         
-        // Subtle dynamic tilt based on drag motion
-        let tiltAngle = min(max(deltaX * 0.04, -0.06), 0.06)
-        target.orientation = dragOriginalRot * simd_quatf(angle: tiltAngle, axis: [0, 0, 1])
-        
-        // Cookie companion notices object movement
-        coordinator?.cookie?.curiousLook(at: target.position)
+        if isCookie {
+            cookie?.animationController?.onDragUpdate(velocity: SIMD2<Float>(deltaX, deltaZ))
+        } else {
+            // Subtle dynamic tilt based on drag motion
+            let tiltAngle = min(max(deltaX * 0.04, -0.06), 0.06)
+            target.orientation = dragOriginalRot * simd_quatf(angle: tiltAngle, axis: [0, 0, 1])
+            
+            // Cookie companion notices object movement
+            coordinator?.cookie?.curiousLook(at: target.position)
+        }
     }
     
     func handleDragEnd(target: Entity, undoManager: UndoManager?) {
         guard let startTransform = self.dragStartTransform else { return }
+        
+        let isCookie = target.name == "prop_cookie" || target is CookieRealityEntity
+        let cookie = isCookie ? ((target as? CookieRealityEntity) ?? coordinator?.cookie) : nil
+        
+        if isCookie {
+            let safePos = CookieNavigationController.clampToWalkable(target.position)
+            target.position = safePos
+            target.scale = dragOriginalScale
+            target.orientation = dragOriginalRot
+            
+            let zone = CookieNavigationController.zone(for: safePos)
+            cookie?.animationController?.onDragEnd(at: safePos)
+            CookieMemoryStore.shared.updatePosition(safePos, rotationY: cookie?.rotationAngleY ?? 0, zone: zone.rawValue)
+            
+            if zone == .daybed {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    await cookie?.settleOnBed()
+                }
+            } else if zone == .desk {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    await cookie?.settleOnDesk()
+                }
+            }
+            
+            self.draggingEntity = nil
+            self.dragStartTransform = nil
+            return
+        }
         
         // Physical drop settling
         let restingY = Self.surfaceHeight(at: target.position.x, z: target.position.z)

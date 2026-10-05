@@ -55,7 +55,11 @@ final class NookDataReliabilityTests {
             ("Crowded Surface Intelligent Fallback Placement", testCrowdedSurfaceFallbackPlacement),
             ("Camera Exploration Clamping & Reset View", testCameraExplorationClampingAndReset),
             ("Cookie Deterministic State Transitions", testCookieDeterministicStateTransitions),
-            ("Cookie Anatomical Rig & Facial Expressions", testCookieAnatomicalRigAndFacialExpressions)
+            ("Cookie Anatomical Rig & Facial Expressions", testCookieAnatomicalRigAndFacialExpressions),
+            ("Cookie State Machine & Contradiction Rejection", testCookieStateMachineDeterministicTransitions),
+            ("Cookie Navigation Zones & Obstacle Avoidance", testCookieNavigationZonesAndObstacleAvoidance),
+            ("Cookie Local Memory Persistence Across Restarts", testCookieMemoryPersistenceAcrossRestarts),
+            ("Cookie 5-Stage Jump Parabolic Trajectory", testCookieParabolicJumpTrajectory)
         ]
         
         for (name, testBlock) in tests {
