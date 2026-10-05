@@ -134,6 +134,47 @@ final class NookSCNView: SCNView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Lifecycle & Occlusion Throttling
+    
+    private var windowObservers: [NSObjectProtocol] = []
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        
+        windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        windowObservers.removeAll()
+        
+        guard let window = self.window else {
+            self.rendersContinuously = false
+            self.isPlaying = false
+            return
+        }
+        
+        self.preferredFramesPerSecond = 60
+        
+        let center = NotificationCenter.default
+        let obs1 = center.addObserver(forName: NSWindow.didMiniaturizeNotification, object: window, queue: .main) { [weak self] _ in
+            self?.rendersContinuously = false
+            self?.isPlaying = false
+        }
+        let obs2 = center.addObserver(forName: NSWindow.didDeminiaturizeNotification, object: window, queue: .main) { [weak self] _ in
+            self?.rendersContinuously = true
+            self?.isPlaying = true
+        }
+        let obs3 = center.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self] _ in
+            guard let self = self, let win = self.window else { return }
+            let isVisible = win.occlusionState.contains(.visible) && !win.isMiniaturized
+            self.rendersContinuously = isVisible
+            self.isPlaying = isVisible
+        }
+        
+        windowObservers = [obs1, obs2, obs3]
+    }
+    
+    deinit {
+        windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+    
     // MARK: - Tracking Area for Hover
     
     override func updateTrackingAreas() {

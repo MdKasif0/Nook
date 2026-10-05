@@ -69,9 +69,12 @@ final class NookItem {
     var roomPosition: RoomPosition {
         get { RoomPosition(x: positionX, y: positionY, z: positionZ) }
         set {
-            positionX = newValue.x
-            positionY = newValue.y
-            positionZ = newValue.z
+            let validX = newValue.x.isFinite ? max(0.0, min(1.0, newValue.x)) : 0.5
+            let validY = newValue.y.isFinite ? max(0.0, min(1.0, newValue.y)) : 0.5
+            let validZ = newValue.z.isFinite ? max(0.0, min(1.0, newValue.z)) : 0.5
+            positionX = validX
+            positionY = validY
+            positionZ = validZ
         }
     }
     
