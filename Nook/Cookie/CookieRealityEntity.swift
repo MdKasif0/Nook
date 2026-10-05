@@ -1054,6 +1054,145 @@ public final class CookieRealityEntity: Entity {
         setPosture(.pointing, animated: true)
         pet()
     }
+    
+    // MARK: - Autonomous Room Navigation & Interaction API
+    
+    /// Calls Cookie toward a target room coordinate.
+    @discardableResult
+    public func callCookie(to target: SIMD3<Float>) async -> Bool {
+        return await navigationController?.navigateTo(destination: target) ?? false
+    }
+    
+    /// Cookie walks to the daybed, jumps up if needed, and lounges comfortably.
+    public func goToBed() async {
+        await navigationController?.navigateTo(destination: RoomNavZone.daybed.defaultSpot)
+        await settleOnBed()
+    }
+    
+    /// Cookie approaches the desk and explores the tabletop.
+    public func goToDesk() async {
+        await navigationController?.navigateTo(destination: RoomNavZone.desk.defaultSpot)
+        await settleOnDesk()
+    }
+    
+    /// Cookie walks toward the window ledge to gaze outdoors.
+    public func goToWindow() async {
+        await navigationController?.navigateTo(destination: RoomNavZone.windowLedge.defaultSpot)
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.headModel?.orientation = simd_quatf(angle: Float.pi * 0.90, axis: [0, 1, 0])
+            self.setMood(.curious, animated: true)
+        }
+    }
+    
+    /// Cookie walks to the sunken lounge floor platform.
+    public func goToSunkenLounge() async {
+        await navigationController?.navigateTo(destination: RoomNavZone.lowerFloor.defaultSpot)
+        animationController?.playSettleReaction()
+    }
+    
+    /// Playful hop and tail twitch interaction.
+    public func play() {
+        animationController?.state.transitionToActivity(.playing)
+        setMood(.happy, animated: true)
+        swishTail()
+        
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let cur = self.position
+            let hopPeak = cur + SIMD3<Float>(0, 0.05, 0)
+            await self.animationController?.playJumpSequence(from: cur, to: hopPeak)
+            self.position = cur
+            self.setPosture(.sitting, animated: true)
+            self.animationController?.state.transitionToActivity(.sitting)
+        }
+    }
+    
+    /// Saves current location as Cookie's favorite spot.
+    public func stayHere() {
+        let curZone = CookieNavigationController.zone(for: position)
+        CookieMemoryStore.shared.updatePosition(position, rotationY: rotationAngleY, zone: curZone.rawValue)
+        blink()
+        swishTail()
+    }
+    
+    /// Applies subtle elevation, soft shadow expansion, and warm highlight without blue outline.
+    public func setSelected(_ selected: Bool) {
+        guard isSelected != selected else { return }
+        self.isSelected = selected
+        
+        let targetIntensity: Float = selected ? 1800 : 1100
+        if let glow = findEntity(named: "cookie_warm_glow") as? PointLight {
+            glow.light.intensity = targetIntensity
+        }
+        
+        let deltaY: Float = selected ? 0.012 : -0.012
+        self.position.y += deltaY
+        
+        if selected {
+            // Attentive ears
+            leftEarModel?.orientation = simd_quatf(angle: 0.60, axis: [0, 0, 1])
+            rightEarModel?.orientation = simd_quatf(angle: -0.60, axis: [0, 0, 1])
+        } else {
+            leftEarModel?.orientation = simd_quatf(angle: 0.52, axis: [0, 0, 1])
+            rightEarModel?.orientation = simd_quatf(angle: -0.52, axis: [0, 0, 1])
+        }
+    }
+    
+    /// Subtle hover response: perked ears and attentive glance.
+    public func setHovered(_ hovered: Bool) {
+        guard isHovered != hovered else { return }
+        self.isHovered = hovered
+        
+        if hovered && !isSelected {
+            leftEarModel?.orientation = simd_quatf(angle: 0.58, axis: [0, 0, 1])
+            rightEarModel?.orientation = simd_quatf(angle: -0.58, axis: [0, 0, 1])
+            blink()
+        } else if !isSelected {
+            leftEarModel?.orientation = simd_quatf(angle: 0.52, axis: [0, 0, 1])
+            rightEarModel?.orientation = simd_quatf(angle: -0.52, axis: [0, 0, 1])
+        }
+    }
+    
+    /// Settles comfortably onto the bed: turns around, sits, and eventually curls up to lie down.
+    public func settleOnBed() async {
+        // Face forward towards room center
+        let forwardRot = simd_quatf(angle: Float.pi * 0.20, axis: [0, 1, 0])
+        self.orientation = forwardRot
+        setPosture(.sitting, animated: true)
+        blink()
+        
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        setPosture(.curled, animated: true)
+        setMood(.resting, animated: true)
+        animationController?.state.transitionToActivity(.sleeping)
+        CookieMemoryStore.shared.recordSleep()
+    }
+    
+    /// Settles on the desk: sits, looks at monitor, sniffs notebook, looks at user, curls up.
+    public func settleOnDesk() async {
+        setPosture(.sitting, animated: true)
+        setMood(.curious, animated: true)
+        
+        // 1. Look toward monitor
+        headModel?.orientation = simd_quatf(angle: -0.32, axis: [0, 1, 0])
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        
+        // 2. Sniff notebook (head tilts downward)
+        headModel?.orientation = simd_quatf(angle: 0.15, axis: [1, 0, 0])
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        
+        // 3. Look at user camera
+        headModel?.orientation = simd_quatf(angle: 0.10, axis: [0, 1, 0])
+        blink()
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        
+        // Reset head and settle
+        headModel?.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+        setPosture(.curled, animated: true)
+        setMood(.idle, animated: true)
+        animationController?.state.transitionToActivity(.sitting)
+    }
 }
 
 // MARK: - Future AI Extension Point Architecture
