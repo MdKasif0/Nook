@@ -13,9 +13,9 @@ final class RoomCameraRig {
     private var cameraComponent: PerspectiveCameraComponent
     
     // Default reference composition framing
-    static let defaultCameraPosition = SIMD3<Float>(2.12, 2.78, 2.98)
-    static let defaultTargetPosition = SIMD3<Float>(-0.04, 0.68, -0.06)
-    static let defaultFieldOfView: Float = 33.0 // in degrees
+    static let defaultCameraPosition = SIMD3<Float>(2.06, 2.70, 2.90)
+    static let defaultTargetPosition = SIMD3<Float>(-0.02, 0.70, -0.04)
+    static let defaultFieldOfView: Float = 32.5 // in degrees
     
     init() {
         self.cameraEntity = Entity()
