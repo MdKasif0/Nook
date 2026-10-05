@@ -259,7 +259,7 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.about)
         }
-        .frame(width: 500, height: 350)
+        .frame(width: 520, height: 420)
     }
     
     // MARK: - Backup Export & Restore Logic
