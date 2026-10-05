@@ -17,7 +17,7 @@
       padding: var(--space-xl) var(--space-md);
     }
     .dl-card {
-      max-width: 640px;
+      max-width: 680px;
       width: 100%;
       background: var(--bg-paper);
       border: 1px solid var(--border-surface);
@@ -27,27 +27,32 @@
       text-align: center;
     }
     .dl-icon-circle {
-      width: 64px;
-      height: 64px;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
       background: var(--bg-secondary);
       border: 1px solid var(--border-surface);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      margin-bottom: var(--space-lg);
+      margin-bottom: var(--space-md);
+      overflow: hidden;
+    }
+    .dl-icon-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     .dl-title {
-      font-size: 1.75rem;
+      font-size: 1.85rem;
       font-weight: 600;
       color: var(--text-primary);
       margin-bottom: var(--space-xs);
     }
     .dl-subtitle {
-      font-size: 1rem;
+      font-size: 1.05rem;
       color: var(--text-secondary);
-      margin-bottom: var(--space-xl);
+      margin-bottom: var(--space-lg);
       line-height: 1.5;
     }
     .dl-auto-notice {
@@ -55,7 +60,7 @@
       align-items: center;
       gap: var(--space-xs);
       background: var(--bg-secondary);
-      padding: 6px 14px;
+      padding: 7px 16px;
       border-radius: 999px;
       font-size: 0.85rem;
       color: var(--text-secondary);
@@ -76,7 +81,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--space-md);
-      margin: var(--space-xl) 0;
+      margin: var(--space-xl) 0 var(--space-lg) 0;
       text-align: left;
     }
     .install-step {
@@ -102,6 +107,59 @@
       color: var(--text-secondary);
       line-height: 1.4;
     }
+
+    /* Safe Gatekeeper & First-Time Launch Guidance */
+    .security-card {
+      margin-top: var(--space-lg);
+      padding: var(--space-lg);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-surface);
+      border-radius: var(--radius-lg);
+      text-align: left;
+    }
+    .security-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      margin-bottom: 6px;
+    }
+    .security-icon {
+      font-size: 1.15rem;
+    }
+    .security-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .security-intro {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: var(--space-sm);
+    }
+    .security-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-sm);
+    }
+    .sec-step {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      background: var(--bg-paper);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-surface);
+    }
+    .sec-step strong {
+      color: var(--text-primary);
+    }
+    .security-footer-note {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+    }
+
     .dl-manual-action {
       margin-top: var(--space-lg);
       padding-top: var(--space-lg);
@@ -149,7 +207,9 @@
 
   <main class="download-page-wrap">
     <div class="dl-card">
-      <div class="dl-icon-circle" aria-hidden="true">🏠</div>
+      <div class="dl-icon-circle" aria-hidden="true">
+        <img src="../assets/nook_app_icon_128.png" alt="Nook Icon" width="68" height="68">
+      </div>
       
       <h1 class="dl-title">Thank you for welcoming Nook.</h1>
       <p class="dl-subtitle">
@@ -158,12 +218,12 @@
 
       <div class="dl-auto-notice" id="auto-dl-notice">
         <span class="spinner-dot" aria-hidden="true"></span>
-        <span id="dl-status-text">Starting download for Nook-1.0-Universal.dmg...</span>
+        <span id="dl-status-text">Starting download for Nook-1.0.0-Universal.dmg...</span>
       </div>
 
       <div>
-        <a href="#" class="button button-primary button-large" id="direct-dl-link">
-          <span>Download Nook-1.0-Universal.dmg</span>
+        <a href="Nook-1.0.0-Universal.dmg" class="button button-primary button-large" id="direct-dl-link" download="Nook-1.0.0-Universal.dmg">
+          <span>Download Nook-1.0.0-Universal.dmg</span>
           <span class="apple-logo-icon" aria-hidden="true"></span>
         </a>
       </div>
@@ -172,12 +232,12 @@
         <div class="install-step">
           <div class="step-badge">STEP 1</div>
           <div class="step-name">Open Disk Image</div>
-          <div class="step-detail">Double click the downloaded <code>Nook.dmg</code> file in your Downloads folder.</div>
+          <div class="step-detail">Double-click the downloaded <code>Nook.dmg</code> in your Downloads folder.</div>
         </div>
         <div class="install-step">
           <div class="step-badge">STEP 2</div>
           <div class="step-name">Drag to Applications</div>
-          <div class="step-detail">Drag the Nook pebble icon into your Applications folder.</div>
+          <div class="step-detail">Drag the Nook app icon into the Applications folder shortcut.</div>
         </div>
         <div class="install-step">
           <div class="step-badge">STEP 3</div>
@@ -186,8 +246,31 @@
         </div>
       </div>
 
+      <!-- Safe Gatekeeper Opening Guide -->
+      <div class="security-card">
+        <div class="security-header">
+          <span class="security-icon" aria-hidden="true">🛡️</span>
+          <h3 class="security-title">First time opening on macOS?</h3>
+        </div>
+        <p class="security-intro">
+          Because Nook is an independent application distributed directly from its website rather than through the Mac App Store, macOS Gatekeeper may present a security prompt on first launch:
+          <em>“Apple could not verify the developer of Nook”</em> or <em>“Nook was downloaded from the internet”</em>.
+        </p>
+        <div class="security-steps">
+          <div class="sec-step">
+            <strong>Safest Method:</strong> In Finder, navigate to your <strong>Applications</strong> folder. <strong>Control-click</strong> (or right-click) <strong>Nook.app</strong>, choose <strong>Open</strong> from the menu, and then click <strong>Open</strong> in the dialog. You only need to do this once.
+          </div>
+          <div class="sec-step">
+            <strong>System Settings Method:</strong> Alternatively, open <strong>System Settings</strong>  &gt; <strong>Privacy & Security</strong>, scroll down to the <em>Security</em> section, and click <strong>Open Anyway</strong>.
+          </div>
+        </div>
+        <p class="security-footer-note">
+          🔒 Nook is 100% local-first: no accounts, no cloud sync, zero telemetry, and fully sandboxed on your Mac.
+        </p>
+      </div>
+
       <div class="dl-manual-action">
-        <p>If your download did not start automatically, <a href="#" id="retry-dl-link">click here to download directly</a>.</p>
+        <p>If your download did not start automatically, <a href="Nook-1.0.0-Universal.dmg" id="retry-dl-link" download="Nook-1.0.0-Universal.dmg">click here to download directly</a>.</p>
         <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-tertiary);">
           Requires macOS 15.0 Sequoia or later. Universal binary (Apple Silicon M1/M2/M3/M4 & Intel). 100% offline & local-first.
         </p>
@@ -207,8 +290,8 @@
   <script>
     // Configurable download file URL
     const NOOK_CONFIG = {
-      downloadUrl: "https://github.com/MdKasif0/Nook/releases/download/v1.0.0/Nook-1.0-Universal.dmg",
-      fallbackLocalUrl: "../assets/Nook-1.0-Universal.dmg",
+      downloadUrl: "Nook-1.0.0-Universal.dmg",
+      fallbackLocalUrl: "Nook-1.0.0-Universal.dmg",
       version: "1.0.0",
       minMacOS: "15.0"
     };
@@ -225,12 +308,10 @@
       if (statusText) {
         statusText.textContent = "Your download has started. Follow the steps below.";
       }
-      // Trigger download
       const trigger = document.createElement("a");
       trigger.href = NOOK_CONFIG.downloadUrl;
-      trigger.download = "Nook-1.0-Universal.dmg";
+      trigger.download = "Nook-1.0.0-Universal.dmg";
       document.body.appendChild(trigger);
-      // We don't force click in sandboxed mock to prevent unwanted popups, but user can click direct button
     }, 1200);
   </script>
 </body>

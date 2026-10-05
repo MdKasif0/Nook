@@ -18,10 +18,10 @@
   window.NOOK_CONFIG = {
     // Configurable download targets
     downloadPageUrl: "downloads/index.html",
-    directDmgUrl: "https://github.com/MdKasif0/Nook/releases/download/v1.0.0/Nook-1.0-Universal.dmg",
+    directDmgUrl: "downloads/Nook-1.0.0-Universal.dmg",
     version: "1.0.0",
     minMacOS: "15.0",
-    releaseName: "Nook-1.0-Universal.dmg"
+    releaseName: "Nook-1.0.0-Universal.dmg"
   };
 
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

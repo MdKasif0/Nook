@@ -136,13 +136,12 @@ final class NookSCNView: SCNView {
     
     // MARK: - Lifecycle & Occlusion Throttling
     
-    private var windowObservers: [NSObjectProtocol] = []
-    
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         
-        windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
-        windowObservers.removeAll()
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didChangeOcclusionStateNotification, object: nil)
         
         guard let window = self.window else {
             self.rendersContinuously = false
@@ -152,27 +151,35 @@ final class NookSCNView: SCNView {
         
         self.preferredFramesPerSecond = 60
         
-        let center = NotificationCenter.default
-        let obs1 = center.addObserver(forName: NSWindow.didMiniaturizeNotification, object: window, queue: .main) { [weak self] _ in
-            self?.rendersContinuously = false
-            self?.isPlaying = false
-        }
-        let obs2 = center.addObserver(forName: NSWindow.didDeminiaturizeNotification, object: window, queue: .main) { [weak self] _ in
-            self?.rendersContinuously = true
-            self?.isPlaying = true
-        }
-        let obs3 = center.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self] _ in
-            guard let self = self, let win = self.window else { return }
-            let isVisible = win.occlusionState.contains(.visible) && !win.isMiniaturized
-            self.rendersContinuously = isVisible
-            self.isPlaying = isVisible
-        }
-        
-        windowObservers = [obs1, obs2, obs3]
+        NotificationCenter.default.addObserver(self, selector: #selector(handleWindowMiniaturize), name: NSWindow.didMiniaturizeNotification, object: window)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleWindowDeminiaturize), name: NSWindow.didDeminiaturizeNotification, object: window)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleWindowOcclusionChange), name: NSWindow.didChangeOcclusionStateNotification, object: window)
     }
     
-    deinit {
-        windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil {
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didChangeOcclusionStateNotification, object: nil)
+        }
+    }
+    
+    @objc private func handleWindowMiniaturize() {
+        self.rendersContinuously = false
+        self.isPlaying = false
+    }
+    
+    @objc private func handleWindowDeminiaturize() {
+        self.rendersContinuously = true
+        self.isPlaying = true
+    }
+    
+    @objc private func handleWindowOcclusionChange() {
+        guard let win = self.window else { return }
+        let isVisible = win.occlusionState.contains(.visible) && !win.isMiniaturized
+        self.rendersContinuously = isVisible
+        self.isPlaying = isVisible
     }
     
     // MARK: - Tracking Area for Hover
