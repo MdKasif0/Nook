@@ -83,7 +83,7 @@ export class ObjectManager {
   }
 
   registerObject(obj) {
-    this.objects.set(obj.id, obj);
+    this.objects.set(obj.itemId, obj);
     this.roomScene.interactiveObjects.add(obj);
   }
 

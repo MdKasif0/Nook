@@ -63,7 +63,7 @@ export class RoomState {
       // Collect object transforms
       const objectsRecord = {};
       for (const obj of this.objectManager.getAllObjects()) {
-        objectsRecord[obj.id] = {
+        objectsRecord[obj.itemId] = {
           position: {
             x: Number(obj.position.x.toFixed(3)),
             y: Number(obj.position.y.toFixed(3)),

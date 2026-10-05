@@ -11,7 +11,7 @@ export class InteractiveObject extends THREE.Group {
   constructor(options = {}) {
     super();
 
-    this.id = options.id || THREE.MathUtils.generateUUID();
+    this.itemId = options.id || THREE.MathUtils.generateUUID();
     this.name = options.name || 'Interactive Object';
     this.category = options.category || 'thought';
     this.objectType = options.objectType || 'pebble';
