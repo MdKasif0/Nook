@@ -90,12 +90,12 @@ enum SnapshotGenerator {
             // Dedicated close-up camera positioned to frame Cookie at 3/4 angle
             let closeCamera = Entity()
             var cam = PerspectiveCameraComponent()
-            cam.fieldOfViewInDegrees = 27.0
+            cam.fieldOfViewInDegrees = 31.0
             closeCamera.components.set(cam)
             
             let cookiePos = CookieRealityEntity.bedPerchPos
-            let cameraEye = SIMD3<Float>(cookiePos.x + 0.22, cookiePos.y + 0.16, cookiePos.z + 0.40)
-            let cameraTarget = SIMD3<Float>(cookiePos.x, cookiePos.y + 0.055, cookiePos.z)
+            let cameraEye = SIMD3<Float>(cookiePos.x + 0.22, cookiePos.y + 0.16, cookiePos.z + 0.42)
+            let cameraTarget = SIMD3<Float>(cookiePos.x - 0.02, cookiePos.y + 0.060, cookiePos.z)
             closeCamera.position = cameraEye
             closeCamera.look(at: cameraTarget, from: cameraEye, relativeTo: nil)
             coordinator.rootEntity.addChild(closeCamera)
@@ -157,6 +157,7 @@ enum SnapshotGenerator {
         
         do {
             let renderer = try RealityRenderer()
+            coordinator.cameraRig.resetToDefaultFraming(animated: false)
             renderer.entities.append(coordinator.rootEntity)
             renderer.activeCamera = coordinator.cameraRig.cameraEntity
             

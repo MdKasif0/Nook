@@ -95,8 +95,8 @@ public final class CookieRealityEntity: Entity {
     
     // MARK: - Diorama Anchor Positions
     
-    /// Default perch position on the daybed mattress surface
-    public static let bedPerchPos = SIMD3<Float>(0.48, 0.605, -0.72)
+    /// Default perch position on the daybed mattress surface (comfortably centered)
+    public static let bedPerchPos = SIMD3<Float>(0.48, 0.605, -0.66)
     public static let bedPerchRot = simd_quatf(angle: Float.pi * 0.20, axis: [0, 1, 0])
     
     /// Alert desk-observing position along the edge of the bed
@@ -148,15 +148,15 @@ public final class CookieRealityEntity: Entity {
         
         // Soft muted pastel pink inner ear cavity (#F6A8B4)
         var innerEarMat = PhysicallyBasedMaterial()
-        innerEarMat.baseColor = .init(tint: NSColor(srgbRed: 0.975, green: 0.690, blue: 0.740, alpha: 1.0))
-        innerEarMat.roughness = .init(floatLiteral: 0.78)
-        innerEarMat.specular = .init(floatLiteral: 0.08)
+        innerEarMat.baseColor = .init(tint: NSColor(srgbRed: 0.975, green: 0.700, blue: 0.745, alpha: 1.0))
+        innerEarMat.roughness = .init(floatLiteral: 0.80)
+        innerEarMat.specular = .init(floatLiteral: 0.06)
         
-        // Soft pastel pink blush cheeks (#FFB6C1)
+        // Soft pastel peach-pink blush cheeks (#FFB6C1)
         var blushCheekMat = PhysicallyBasedMaterial()
-        blushCheekMat.baseColor = .init(tint: NSColor(srgbRed: 0.990, green: 0.715, blue: 0.765, alpha: 0.85))
-        blushCheekMat.roughness = .init(floatLiteral: 0.90)
-        blushCheekMat.specular = .init(floatLiteral: 0.02)
+        blushCheekMat.baseColor = .init(tint: NSColor(srgbRed: 0.995, green: 0.700, blue: 0.740, alpha: 0.82))
+        blushCheekMat.roughness = .init(floatLiteral: 0.92)
+        blushCheekMat.specular = .init(floatLiteral: 0.0)
         
         // Large glossy obsidian black eyes with pristine specular reflection
         var glossyEyeMat = PhysicallyBasedMaterial()
@@ -232,13 +232,10 @@ public final class CookieRealityEntity: Entity {
         headRoot.addChild(headSphere)
         
         // --- 4. Ears (Organic Rounded Triangular with Recessed Muted Pink Insets) ---
-        // Tapered rounded boxes with sphere caps for smooth organic silhouette (no box edges!)
-        let earBaseMesh = MeshResource.generateBox(size: [0.038, 0.026, 0.012], cornerRadius: 0.006)
-        let earMidMesh = MeshResource.generateBox(size: [0.024, 0.022, 0.010], cornerRadius: 0.006)
-        let earApexMesh = MeshResource.generateSphere(radius: 0.0075)
-        
-        let innerEarMesh = MeshResource.generateBox(size: [0.020, 0.018, 0.004], cornerRadius: 0.0035)
-        let innerEarTipMesh = MeshResource.generateSphere(radius: 0.0050)
+        // Smooth rounded wedge with dome apex cap and recessed inner pink cavity
+        let earBaseMesh = MeshResource.generateBox(size: [0.036, 0.034, 0.012], cornerRadius: 0.008)
+        let earApexMesh = MeshResource.generateSphere(radius: 0.010)
+        let innerEarMesh = MeshResource.generateBox(size: [0.022, 0.020, 0.004], cornerRadius: 0.006)
         
         // Left Ear
         let leftEar = ModelEntity(mesh: earBaseMesh, materials: [creamFurMat])
@@ -248,24 +245,16 @@ public final class CookieRealityEntity: Entity {
         headRoot.addChild(leftEar)
         self.leftEarModel = leftEar
         
-        let leftEarMid = ModelEntity(mesh: earMidMesh, materials: [creamFurMat])
-        leftEarMid.position = [0, 0.014, 0]
-        leftEar.addChild(leftEarMid)
-        
         let leftEarApex = ModelEntity(mesh: earApexMesh, materials: [creamFurMat])
-        leftEarApex.position = [0, 0.024, 0]
-        leftEarApex.scale = [1.0, 0.9, 0.6]
+        leftEarApex.position = [0, 0.016, 0]
+        leftEarApex.scale = [0.85, 0.90, 0.45]
         leftEar.addChild(leftEarApex)
         
         let leftInnerEar = ModelEntity(mesh: innerEarMesh, materials: [innerEarMat])
         leftInnerEar.name = "LeftInnerEar"
-        leftInnerEar.position = [0, 0.005, 0.005]
+        leftInnerEar.position = [0, 0.002, 0.0045]
         leftEar.addChild(leftInnerEar)
         self.leftInnerEarModel = leftInnerEar
-        
-        let leftInnerEarTip = ModelEntity(mesh: innerEarTipMesh, materials: [innerEarMat])
-        leftInnerEarTip.position = [0, 0.014, 0.0045]
-        leftEar.addChild(leftInnerEarTip)
         
         // Right Ear
         let rightEar = ModelEntity(mesh: earBaseMesh, materials: [creamFurMat])
@@ -275,24 +264,16 @@ public final class CookieRealityEntity: Entity {
         headRoot.addChild(rightEar)
         self.rightEarModel = rightEar
         
-        let rightEarMid = ModelEntity(mesh: earMidMesh, materials: [creamFurMat])
-        rightEarMid.position = [0, 0.014, 0]
-        rightEar.addChild(rightEarMid)
-        
         let rightEarApex = ModelEntity(mesh: earApexMesh, materials: [creamFurMat])
-        rightEarApex.position = [0, 0.024, 0]
-        rightEarApex.scale = [1.0, 0.9, 0.6]
+        rightEarApex.position = [0, 0.016, 0]
+        rightEarApex.scale = [0.85, 0.90, 0.45]
         rightEar.addChild(rightEarApex)
         
         let rightInnerEar = ModelEntity(mesh: innerEarMesh, materials: [innerEarMat])
         rightInnerEar.name = "RightInnerEar"
-        rightInnerEar.position = [0, 0.005, 0.005]
+        rightInnerEar.position = [0, 0.002, 0.0045]
         rightEar.addChild(rightInnerEar)
         self.rightInnerEarModel = rightInnerEar
-        
-        let rightInnerEarTip = ModelEntity(mesh: innerEarTipMesh, materials: [innerEarMat])
-        rightInnerEarTip.position = [0, 0.014, 0.0045]
-        rightEar.addChild(rightInnerEarTip)
         
         // --- 5. Eyes (Large Glossy Black Beads with Dual Sparkling Catchlights) ---
         let eyeMesh = MeshResource.generateSphere(radius: 0.0135)
@@ -396,26 +377,26 @@ public final class CookieRealityEntity: Entity {
         mouthContainer.addChild(rightLipOuter)
         
         // --- 8. Front Paws (Left with Raised Pointing Gesture, Right Seated Forward) ---
-        let armMesh = MeshResource.generateBox(size: [0.022, 0.042, 0.022], cornerRadius: 0.010)
+        let armMesh = MeshResource.generateBox(size: [0.022, 0.046, 0.022], cornerRadius: 0.010)
         let pawTipMesh = MeshResource.generateSphere(radius: 0.013)
         
         // Left Front Paw (Cookie's right arm, viewer's left - raised horizontal pointing pose matching reference art!)
         let leftPaw = ModelEntity(mesh: armMesh, materials: [creamFurMat])
         leftPaw.name = "LeftFrontPaw"
-        leftPaw.position = [-0.042, 0.042, 0.028]
-        // Rotated around Z so +Y points sideways towards -X (viewer's left), with gentle forward/up lift
-        leftPaw.orientation = simd_quatf(angle: 1.50, axis: [0, 0, 1]) * simd_quatf(angle: 0.30, axis: [0, 1, 0]) * simd_quatf(angle: 0.10, axis: [1, 0, 0])
+        leftPaw.position = [-0.042, 0.044, 0.028]
+        // Rotated around Z by -1.48 so negative Y axis reaches out to -X (viewer's left), angled slightly forward
+        leftPaw.orientation = simd_quatf(angle: -1.46, axis: [0, 0, 1]) * simd_quatf(angle: -0.28, axis: [0, 1, 0]) * simd_quatf(angle: 0.12, axis: [1, 0, 0])
         addChild(leftPaw)
         self.leftFrontPawModel = leftPaw
         
         let leftPawTip = ModelEntity(mesh: pawTipMesh, materials: [creamFurMat])
-        leftPawTip.position = [0, -0.020, 0.002]
+        leftPawTip.position = [0, -0.022, 0.002]
         leftPaw.addChild(leftPawTip)
         
         // Adorable rounded pointing digit extended along pointing direction (-X)
-        let pointerMesh = MeshResource.generateBox(size: [0.010, 0.018, 0.010], cornerRadius: 0.004)
+        let pointerMesh = MeshResource.generateBox(size: [0.010, 0.022, 0.010], cornerRadius: 0.004)
         let leftPointer = ModelEntity(mesh: pointerMesh, materials: [creamFurMat])
-        leftPointer.position = [0, -0.030, 0.002]
+        leftPointer.position = [0, -0.034, 0.002]
         leftPaw.addChild(leftPointer)
         self.leftPawPointerModel = leftPointer
         
@@ -804,14 +785,14 @@ public final class CookieRealityEntity: Entity {
         switch posture {
         case .sitting, .pointing:
             // The signature reference pose! Left front arm raised, pointing forward!
-            leftPaw.position = [-0.040, 0.052, 0.042]
-            leftPaw.orientation = simd_quatf(angle: -Float.pi * 0.42, axis: [1, 0, 0]) * simd_quatf(angle: -Float.pi * 0.16, axis: [0, 1, 0])
-            rightPaw.position = [0.034, 0.034, 0.038]
-            rightPaw.orientation = simd_quatf(angle: -0.16, axis: [1, 0, 0])
-            leftFoot.position = [-0.038, 0.011, 0.036]
-            rightFoot.position = [0.038, 0.011, 0.036]
-            body.position = [0, 0.045, 0]
-            tailBase.orientation = simd_quatf(angle: 0.60, axis: [1, 0, 0]) * simd_quatf(angle: 0.40, axis: [0, 0, 1])
+            leftPaw.position = [-0.042, 0.044, 0.028]
+            leftPaw.orientation = simd_quatf(angle: -1.46, axis: [0, 0, 1]) * simd_quatf(angle: -0.28, axis: [0, 1, 0]) * simd_quatf(angle: 0.12, axis: [1, 0, 0])
+            rightPaw.position = [0.038, 0.028, 0.032]
+            rightPaw.orientation = simd_quatf(angle: -0.22, axis: [1, 0, 0]) * simd_quatf(angle: -0.22, axis: [0, 0, 1])
+            leftFoot.position = [-0.018, 0.010, 0.042]
+            rightFoot.position = [0.018, 0.010, 0.042]
+            body.position = [0, 0.044, 0]
+            tailBase.orientation = simd_quatf(angle: 0.55, axis: [1, 0, 0]) * simd_quatf(angle: 0.52, axis: [0, 0, 1])
             
         case .standing:
             body.position = [0, 0.054, 0]
