@@ -91,6 +91,18 @@ final class PreferencesManager {
             self.soundEffectsEnabled = false
         }
         
+        if defaults.object(forKey: Keys.cookieSoundEnabled) != nil {
+            self.cookieSoundEnabled = defaults.bool(forKey: Keys.cookieSoundEnabled)
+        } else {
+            self.cookieSoundEnabled = true
+        }
+        
+        if defaults.object(forKey: Keys.cookieSoundVolume) != nil {
+            self.cookieSoundVolume = defaults.float(forKey: Keys.cookieSoundVolume)
+        } else {
+            self.cookieSoundVolume = 0.35 // soft cute default
+        }
+        
         if defaults.object(forKey: Keys.cookieReactions) != nil {
             self.cookieReactionsEnabled = defaults.bool(forKey: Keys.cookieReactions)
         } else {
