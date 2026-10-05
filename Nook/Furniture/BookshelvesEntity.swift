@@ -1,10 +1,47 @@
 import RealityKit
 import AppKit
 
-/// Builds the built-in honey-oak shelving and pegboard system matching the reference image:
-/// - Pegboard mounted on the Left Wall above the desk with white headphones & pinned polaroids
-/// - Upper shelf above desk along Left Wall with books and plant
-/// - Tall built-in bookcase on the Back Wall between desk and bed with storage box, cat figurine, alarm clock, books, and under-shelf lighting
+/// Builds the built-in shelving, pegboard, and decor hierarchy matching the reference image:
+///
+/// ShelfArea
+/// ├── Shelf (Honey-oak shelves & pegboard - Immovable)
+/// ├── Books (Hardcover book rows - Movable)
+/// ├── Plants (Potted shelf plant - Movable)
+/// ├── Clock (Vintage brass alarm clock - Movable)
+/// └── Decorations (Storage box, cat figurine - Movable)
+@MainActor
+final class ShelfAreaEntity: Entity {
+    
+    let shelves: BookshelvesEntity
+    let clock: ShelfAlarmClockEntity
+    let catFigurine: ShelfCatFigurineEntity
+    let storageBox: ShelfStorageBoxEntity
+    let books: ShelfBooksEntity
+    let shelfPlant: ShelfPlantEntity
+    
+    required init() {
+        self.shelves = BookshelvesEntity()
+        self.clock = ShelfAlarmClockEntity()
+        self.catFigurine = ShelfCatFigurineEntity()
+        self.storageBox = ShelfStorageBoxEntity()
+        self.books = ShelfBooksEntity()
+        self.shelfPlant = ShelfPlantEntity()
+        
+        super.init()
+        self.name = "shelf_area"
+        
+        // Assemble hierarchy under ShelfArea
+        addChild(shelves)
+        addChild(clock)
+        addChild(catFigurine)
+        addChild(storageBox)
+        addChild(books)
+        addChild(shelfPlant)
+    }
+}
+
+// MARK: - Built-in Shelves & Pegboard Structure (Immovable)
+
 @MainActor
 final class BookshelvesEntity: Entity {
     
@@ -12,7 +49,7 @@ final class BookshelvesEntity: Entity {
     
     required init() {
         super.init()
-        self.name = "built_in_shelving"
+        self.name = "built_in_shelving_structure"
         buildShelving()
     }
     
@@ -33,22 +70,6 @@ final class BookshelvesEntity: Entity {
         pegboard.position = [leftWallX + 0.01, floorY + DeskEntity.deskHeight + 0.32, -0.32]
         pegboard.name = "desk_pegboard"
         addChild(pegboard)
-        
-        // White Over-Ear Headphones hanging on peg
-        let headphoneMesh = MeshResource.generateCylinder(height: 0.04, radius: 0.035)
-        let leftCup = ModelEntity(mesh: headphoneMesh, materials: [mats.creamLinenFabric])
-        leftCup.position = [0.025, 0.06, 0.15]
-        
-        let rightCup = ModelEntity(mesh: headphoneMesh, materials: [mats.creamLinenFabric])
-        rightCup.position = [0.025, 0.06, 0.23]
-        
-        let headband = ModelEntity(mesh: .generateCylinder(height: 0.08, radius: 0.005), materials: [mats.brushedAluminum])
-        headband.position = [0.025, 0.10, 0.19]
-        headband.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
-        
-        pegboard.addChild(leftCup)
-        pegboard.addChild(rightCup)
-        pegboard.addChild(headband)
         
         // Pinned Polaroid Photo Prints on Pegboard
         let photo1 = ModelEntity(mesh: .generateBox(size: [0.003, 0.07, 0.06], cornerRadius: 0.002), materials: [mats.creamLinenFabric])
@@ -75,17 +96,6 @@ final class BookshelvesEntity: Entity {
         upperDeskShelf.name = "shelf_desk_upper"
         addChild(upperDeskShelf)
         
-        // Books on Upper Desk Shelf
-        buildBooksRowZ(on: upperDeskShelf, startZ: -0.35, count: 7, materials: mats)
-        
-        // Potted Plant on Upper Desk Shelf
-        let shelfPlantPot = ModelEntity(mesh: .generateCylinder(height: 0.06, radius: 0.038), materials: [mats.glazedWhiteCeramic])
-        shelfPlantPot.position = [0, shelfThickness * 0.5 + 0.03, 0.25]
-        let shelfFoliage = ModelEntity(mesh: .generateSphere(radius: 0.042), materials: [mats.foliageLight])
-        shelfFoliage.position = [0, 0.035, 0]
-        shelfPlantPot.addChild(shelfFoliage)
-        upperDeskShelf.addChild(shelfPlantPot)
-        
         // 3. Tall Built-in Bookcase on Back Wall (between desk corner and bed)
         let bookcaseWidth: Float = 0.55  // along X
         let bookcaseCenterX: Float = -0.35
@@ -103,37 +113,6 @@ final class BookshelvesEntity: Entity {
             shelf.position = [bookcaseCenterX, y, backWallZ + shelfDepth * 0.5]
             shelf.name = "bookcase_shelf_\(i + 1)"
             addChild(shelf)
-            
-            if i == 0 {
-                // Lower shelf: Books and vintage brass alarm clock
-                buildBooksRowX(on: shelf, startX: -0.22, count: 5, materials: mats)
-                
-                let clock = buildAlarmClock(materials: mats)
-                clock.position = [0.15, shelfThickness * 0.5 + 0.05, 0]
-                shelf.addChild(clock)
-            } else if i == 1 {
-                // Middle shelf: Stack of horizontal books and cute ceramic cat head
-                buildBooksRowX(on: shelf, startX: 0.02, count: 4, materials: mats)
-                
-                for b in 0..<3 {
-                    let book = ModelEntity(
-                        mesh: .generateBox(size: [0.14, 0.022, 0.11], cornerRadius: 0.003),
-                        materials: [b % 2 == 0 ? mats.terracottaClay : mats.sageGreenFabric]
-                    )
-                    book.position = [-0.14, shelfThickness * 0.5 + 0.011 + Float(b) * 0.024, 0]
-                    shelf.addChild(book)
-                }
-            } else if i == 2 {
-                // Top shelf: Lidded storage box and white cat figurine
-                let boxMesh = MeshResource.generateBox(size: [0.22, 0.14, 0.16], cornerRadius: 0.008)
-                let storageBox = ModelEntity(mesh: boxMesh, materials: [mats.honeyOakWood])
-                storageBox.position = [0.10, shelfThickness * 0.5 + 0.07, 0]
-                shelf.addChild(storageBox)
-                
-                let catFigurine = buildCatHeadFigurine(materials: mats)
-                catFigurine.position = [-0.14, shelfThickness * 0.5 + 0.045, 0]
-                shelf.addChild(catFigurine)
-            }
         }
         
         // 4. Built-in Under-Shelf Warm LED Light Strip
@@ -145,77 +124,209 @@ final class BookshelvesEntity: Entity {
         light.name = "under_shelf_light"
         addChild(light)
         self.shelfLight = light
-    }
-    
-    private func buildBooksRowZ(on parent: Entity, startZ: Float, count: Int, materials: RoomMaterials) {
-        let bookMaterials = [materials.creamLinenFabric, materials.terracottaClay, materials.sageGreenFabric, materials.honeyOakWood]
-        var curZ = startZ
-        for i in 0..<count {
-            let depth: Float = Float.random(in: 0.025...0.038)
-            let height: Float = Float.random(in: 0.14...0.19)
-            let width: Float = 0.13
-            let mat = bookMaterials[i % bookMaterials.count]
-            let book = ModelEntity(mesh: .generateBox(size: [width, height, depth], cornerRadius: 0.003), materials: [mat])
-            book.position = [0, 0.014 + height * 0.5, curZ + depth * 0.5]
-            parent.addChild(book)
-            curZ += depth + 0.003
-        }
-    }
-    
-    private func buildBooksRowX(on parent: Entity, startX: Float, count: Int, materials: RoomMaterials) {
-        let bookMaterials = [materials.creamLinenFabric, materials.terracottaClay, materials.sageGreenFabric, materials.honeyOakWood]
-        var curX = startX
-        for i in 0..<count {
-            let width: Float = Float.random(in: 0.025...0.038)
-            let height: Float = Float.random(in: 0.14...0.19)
-            let depth: Float = 0.13
-            let mat = bookMaterials[i % bookMaterials.count]
-            let book = ModelEntity(mesh: .generateBox(size: [width, height, depth], cornerRadius: 0.003), materials: [mat])
-            book.position = [curX + width * 0.5, 0.014 + height * 0.5, 0]
-            parent.addChild(book)
-            curX += width + 0.003
-        }
-    }
-    
-    private func buildAlarmClock(materials: RoomMaterials) -> Entity {
-        let clockRoot = Entity()
-        clockRoot.name = "alarm_clock"
-        let body = ModelEntity(mesh: .generateCylinder(height: 0.035, radius: 0.04), materials: [materials.warmBrass])
-        body.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
-        clockRoot.addChild(body)
         
-        let face = ModelEntity(mesh: .generatePlane(width: 0.07, depth: 0.07, cornerRadius: 0.035), materials: [materials.creamLinenFabric])
+        // Immovable component
+        self.components.set(InteractivePropComponent(
+            propId: "prop_shelving_structure",
+            displayName: "Built-in Bookcase",
+            accessibilityLabel: "Honey oak wall bookcase and pegboard",
+            category: .immovable,
+            allowsDragging: false,
+            allowsRotation: false,
+            defaultPosition: [0, 0, 0],
+            restingSurfaceY: floorY
+        ))
+    }
+}
+
+// MARK: - Vintage Brass Alarm Clock (Movable)
+
+@MainActor
+final class ShelfAlarmClockEntity: Entity {
+    static let defaultPos = SIMD3<Float>(-0.20, RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.35 + 0.05, -1.06)
+    
+    required init() {
+        super.init()
+        self.name = "prop_alarm_clock"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
+        let body = ModelEntity(mesh: .generateCylinder(height: 0.035, radius: 0.04), materials: [mats.warmBrass])
+        body.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
+        addChild(body)
+        
+        let face = ModelEntity(mesh: .generatePlane(width: 0.07, depth: 0.07, cornerRadius: 0.035), materials: [mats.creamLinenFabric])
         face.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [1, 0, 0])
         face.position = [0, 0, 0.018]
-        clockRoot.addChild(face)
+        addChild(face)
         
-        let leftBell = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [materials.warmBrass])
+        let leftBell = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [mats.warmBrass])
         leftBell.position = [-0.025, 0.045, 0]
-        clockRoot.addChild(leftBell)
+        addChild(leftBell)
         
-        let rightBell = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [materials.warmBrass])
+        let rightBell = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [mats.warmBrass])
         rightBell.position = [0.025, 0.045, 0]
-        clockRoot.addChild(rightBell)
+        addChild(rightBell)
         
-        return clockRoot
+        let colShape = ShapeResource.generateBox(size: [0.10, 0.12, 0.08])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_alarm_clock",
+            displayName: "Alarm Clock",
+            accessibilityLabel: "Vintage brass twin-bell alarm clock",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.35
+        ))
     }
+}
+
+// MARK: - Ceramic Cat Figurine (Movable)
+
+@MainActor
+final class ShelfCatFigurineEntity: Entity {
+    static let defaultPos = SIMD3<Float>(-0.49, RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.88 + 0.045, -1.06)
     
-    private func buildCatHeadFigurine(materials: RoomMaterials) -> Entity {
-        let catRoot = Entity()
-        catRoot.name = "cat_figurine"
-        let head = ModelEntity(mesh: .generateSphere(radius: 0.042), materials: [materials.glazedWhiteCeramic])
-        catRoot.addChild(head)
+    required init() {
+        super.init()
+        self.name = "prop_cat_figurine"
+        self.position = Self.defaultPos
         
-        let leftEar = ModelEntity(mesh: .generateBox(size: [0.022, 0.028, 0.018], cornerRadius: 0.004), materials: [materials.glazedWhiteCeramic])
+        let mats = RoomMaterials.shared
+        let head = ModelEntity(mesh: .generateSphere(radius: 0.042), materials: [mats.glazedWhiteCeramic])
+        addChild(head)
+        
+        let leftEar = ModelEntity(mesh: .generateBox(size: [0.022, 0.028, 0.018], cornerRadius: 0.004), materials: [mats.glazedWhiteCeramic])
         leftEar.position = [-0.025, 0.038, 0]
         leftEar.orientation = simd_quatf(angle: Float.pi * 0.2, axis: [0, 0, 1])
-        catRoot.addChild(leftEar)
+        addChild(leftEar)
         
-        let rightEar = ModelEntity(mesh: .generateBox(size: [0.022, 0.028, 0.018], cornerRadius: 0.004), materials: [materials.glazedWhiteCeramic])
+        let rightEar = ModelEntity(mesh: .generateBox(size: [0.022, 0.028, 0.018], cornerRadius: 0.004), materials: [mats.glazedWhiteCeramic])
         rightEar.position = [0.025, 0.038, 0]
         rightEar.orientation = simd_quatf(angle: -Float.pi * 0.2, axis: [0, 0, 1])
-        catRoot.addChild(rightEar)
+        addChild(rightEar)
         
-        return catRoot
+        let colShape = ShapeResource.generateSphere(radius: 0.06)
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_cat_figurine",
+            displayName: "Cat Figurine",
+            accessibilityLabel: "White glazed ceramic cat figurine",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.88
+        ))
+    }
+}
+
+// MARK: - Honey Oak Storage Box (Movable)
+
+@MainActor
+final class ShelfStorageBoxEntity: Entity {
+    static let defaultPos = SIMD3<Float>(-0.25, RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.88 + 0.07, -1.06)
+    
+    required init() {
+        super.init()
+        self.name = "prop_storage_box"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
+        let boxMesh = MeshResource.generateBox(size: [0.22, 0.14, 0.16], cornerRadius: 0.008)
+        let storageBox = ModelEntity(mesh: boxMesh, materials: [mats.honeyOakWood])
+        addChild(storageBox)
+        
+        let colShape = ShapeResource.generateBox(size: [0.24, 0.16, 0.18])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_storage_box",
+            displayName: "Storage Box",
+            accessibilityLabel: "Honey oak lidded storage box",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.88
+        ))
+    }
+}
+
+// MARK: - Stack of Shelf Books (Movable)
+
+@MainActor
+final class ShelfBooksEntity: Entity {
+    static let defaultPos = SIMD3<Float>(-0.35, RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.60 + 0.05, -1.06)
+    
+    required init() {
+        super.init()
+        self.name = "prop_shelf_books"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
+        for b in 0..<3 {
+            let book = ModelEntity(
+                mesh: .generateBox(size: [0.14, 0.022, 0.11], cornerRadius: 0.003),
+                materials: [b % 2 == 0 ? mats.terracottaClay : mats.sageGreenFabric]
+            )
+            book.position = [0, Float(b) * 0.025, 0]
+            addChild(book)
+        }
+        
+        let colShape = ShapeResource.generateBox(size: [0.16, 0.10, 0.14])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_shelf_books",
+            displayName: "Shelf Books",
+            accessibilityLabel: "Stack of colorful hardcover books",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.60
+        ))
+    }
+}
+
+// MARK: - Shelf Potted Plant (Movable)
+
+@MainActor
+final class ShelfPlantEntity: Entity {
+    static let defaultPos = SIMD3<Float>(-1.06, RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.60 + 0.05, -0.07)
+    
+    required init() {
+        super.init()
+        self.name = "prop_shelf_plant"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
+        let pot = ModelEntity(mesh: .generateCylinder(height: 0.06, radius: 0.038), materials: [mats.glazedWhiteCeramic])
+        pot.position = [0, 0.03, 0]
+        addChild(pot)
+        
+        let foliage = ModelEntity(mesh: .generateSphere(radius: 0.042), materials: [mats.foliageLight])
+        foliage.position = [0, 0.065, 0]
+        addChild(foliage)
+        
+        let colShape = ShapeResource.generateCylinder(height: 0.12, radius: 0.05)
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_shelf_plant",
+            displayName: "Shelf Plant",
+            accessibilityLabel: "Small white ceramic potted plant on wall shelf",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            allowsScaling: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + DeskEntity.deskHeight + 0.60
+        ))
     }
 }

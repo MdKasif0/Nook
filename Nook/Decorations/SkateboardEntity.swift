@@ -6,21 +6,23 @@ import AppKit
 /// - Natural honey-oak underside and beveled edge
 /// - Dual silver/aluminum trucks with axle pins
 /// - Four miniature polyurethane wheels
+/// - Collision & InputTarget components for physical dragging and rotation
 @MainActor
 final class SkateboardEntity: Entity {
     
+    static let defaultPos = SIMD3<Float>(0.08, RoomArchitectureEntity.upperFloorY + 0.025, 0.44)
+    static let defaultRot = simd_quatf(angle: -Float.pi * 0.16, axis: [0, 1, 0])
+    
     required init() {
         super.init()
-        self.name = "skateboard"
+        self.name = "prop_skateboard"
         buildSkateboard()
     }
     
     private func buildSkateboard() {
         let mats = RoomMaterials.shared
-        // Positioned on the upper platform edge near the steps
-        // X = +0.08, Z = +0.44
-        self.position = [0.08, RoomArchitectureEntity.upperFloorY + 0.025, 0.44]
-        self.orientation = simd_quatf(angle: -Float.pi * 0.16, axis: [0, 1, 0])
+        self.position = Self.defaultPos
+        self.orientation = Self.defaultRot
         
         let deckLength: Float = 0.44
         let deckWidth: Float = 0.12
@@ -68,5 +70,20 @@ final class SkateboardEntity: Entity {
             wheel.position = [0, -0.006, w.z]
             w.truck.addChild(wheel)
         }
+        
+        let colShape = ShapeResource.generateBox(size: [0.46, 0.06, 0.16])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_skateboard",
+            displayName: "Skateboard",
+            accessibilityLabel: "Honey oak skateboard with black grip tape and white wheels",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            defaultOrientation: Self.defaultRot,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY
+        ))
     }
 }

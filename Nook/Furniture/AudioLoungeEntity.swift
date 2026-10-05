@@ -1,105 +1,138 @@
 import RealityKit
 import AppKit
 
-/// Builds the audio & lounge setup matching the reference image:
-/// - Muted sage green upholstered bench / low ottoman near the foot of the bed
-/// - Vintage retro suitcase turntable / record player
-/// - Semi-gloss black vinyl record with red center label
-/// - Brass tonearm and miniature speed control dials
-/// - Stack of vinyl album sleeves resting on the bench
-/// - White fluffy boucle round floor pouf / beanbag with daisy center button
+/// Builds the vinyl listening setup hierarchy matching the reference image:
+///
+/// RecordArea
+/// ├── Ottoman (Sage green upholstered bench - Immovable)
+/// ├── RecordPlayer (Vintage suitcase turntable - Movable, Interactive)
+/// ├── Vinyl (Spinning vinyl record inside player)
+/// └── Records (Stack of vinyl album sleeves - Movable)
 @MainActor
-final class AudioLoungeEntity: Entity {
+final class RecordAreaEntity: Entity {
     
-    private(set) var vinylRecordEntity: ModelEntity?
+    let bench: RecordBenchEntity
+    let recordPlayer: RecordPlayerEntity
+    let albumStack: RecordAlbumsEntity
+    
+    required init() {
+        self.bench = RecordBenchEntity()
+        self.recordPlayer = RecordPlayerEntity()
+        self.albumStack = RecordAlbumsEntity()
+        
+        super.init()
+        self.name = "record_area"
+        
+        // Assemble hierarchy under RecordArea
+        addChild(bench)
+        addChild(recordPlayer)
+        addChild(albumStack)
+    }
+}
+
+// MARK: - Muted Sage Green Bench / Ottoman (Immovable)
+
+@MainActor
+final class RecordBenchEntity: Entity {
+    static let benchOrigin = SIMD3<Float>(0.78, RoomArchitectureEntity.upperFloorY, -0.18)
+    static let benchWidth: Float = 0.38
+    static let benchLength: Float = 0.52
+    static let benchHeight: Float = 0.22
+    static let legHeight: Float = 0.10
     
     required init() {
         super.init()
-        self.name = "audio_lounge_setup"
-        buildAudioLounge()
-    }
-    
-    private func buildAudioLounge() {
+        self.name = "record_bench"
+        self.position = Self.benchOrigin
+        
         let mats = RoomMaterials.shared
-        let upperFloorY = RoomArchitectureEntity.upperFloorY
-        let lowerFloorY = RoomArchitectureEntity.lowerFloorY
-        
-        // 1. Muted Sage Green Upholstered Bench / Ottoman
-        // Sits at the foot of the bed on the right side: X = +0.78, Z = -0.18
-        let benchWidth: Float = 0.38   // along X
-        let benchLength: Float = 0.52  // along Z
-        let benchHeight: Float = 0.22
-        let legHeight: Float = 0.10
-        
-        let benchRoot = Entity()
-        benchRoot.position = [0.78, upperFloorY, -0.18]
-        benchRoot.name = "record_bench"
-        addChild(benchRoot)
         
         // 4 Honey Oak Wooden Legs
         let legRadius: Float = 0.016
-        let legMesh = MeshResource.generateCylinder(height: legHeight, radius: legRadius)
+        let legMesh = MeshResource.generateCylinder(height: Self.legHeight, radius: legRadius)
         let legPositions: [SIMD3<Float>] = [
-            [-benchWidth * 0.5 + 0.04, legHeight * 0.5, -benchLength * 0.5 + 0.04],
-            [benchWidth * 0.5 - 0.04, legHeight * 0.5, -benchLength * 0.5 + 0.04],
-            [-benchWidth * 0.5 + 0.04, legHeight * 0.5, benchLength * 0.5 - 0.04],
-            [benchWidth * 0.5 - 0.04, legHeight * 0.5, benchLength * 0.5 - 0.04]
+            [-Self.benchWidth * 0.5 + 0.04, Self.legHeight * 0.5, -Self.benchLength * 0.5 + 0.04],
+            [Self.benchWidth * 0.5 - 0.04, Self.legHeight * 0.5, -Self.benchLength * 0.5 + 0.04],
+            [-Self.benchWidth * 0.5 + 0.04, Self.legHeight * 0.5, Self.benchLength * 0.5 - 0.04],
+            [Self.benchWidth * 0.5 - 0.04, Self.legHeight * 0.5, Self.benchLength * 0.5 - 0.04]
         ]
         for pos in legPositions {
             let leg = ModelEntity(mesh: legMesh, materials: [mats.honeyOakWood])
             leg.position = pos
-            benchRoot.addChild(leg)
+            addChild(leg)
         }
         
         // Wooden frame base
-        let frameMesh = MeshResource.generateBox(size: [benchWidth, 0.025, benchLength], cornerRadius: 0.005)
+        let frameMesh = MeshResource.generateBox(size: [Self.benchWidth, 0.025, Self.benchLength], cornerRadius: 0.005)
         let benchFrame = ModelEntity(mesh: frameMesh, materials: [mats.honeyOakWood])
-        benchFrame.position = [0, legHeight + 0.012, 0]
-        benchRoot.addChild(benchFrame)
+        benchFrame.position = [0, Self.legHeight + 0.012, 0]
+        addChild(benchFrame)
         
         // Thick Sage Green Upholstered Cushion
-        let cushionHeight: Float = benchHeight - legHeight - 0.025
-        let cushionMesh = MeshResource.generateBox(size: [benchWidth - 0.02, cushionHeight, benchLength - 0.02], cornerRadius: 0.02)
+        let cushionHeight: Float = Self.benchHeight - Self.legHeight - 0.025
+        let cushionMesh = MeshResource.generateBox(size: [Self.benchWidth - 0.02, cushionHeight, Self.benchLength - 0.02], cornerRadius: 0.02)
         let cushion = ModelEntity(mesh: cushionMesh, materials: [mats.sageGreenFabric])
-        cushion.position = [0, legHeight + 0.025 + cushionHeight * 0.5, 0]
-        benchRoot.addChild(cushion)
+        cushion.position = [0, Self.legHeight + 0.025 + cushionHeight * 0.5, 0]
+        addChild(cushion)
         
-        // 2. Vintage Suitcase Turntable (Record Player)
+        self.components.set(InteractivePropComponent(
+            propId: "prop_record_bench",
+            displayName: "Upholstered Bench",
+            accessibilityLabel: "Sage green upholstered wooden bench",
+            category: .immovable,
+            allowsDragging: false,
+            allowsRotation: false,
+            defaultPosition: Self.benchOrigin,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY
+        ))
+    }
+}
+
+// MARK: - Vintage Suitcase Record Player (Movable, Interactive)
+
+@MainActor
+final class RecordPlayerEntity: Entity {
+    static let defaultPos = SIMD3<Float>(0.78, RoomArchitectureEntity.upperFloorY + RecordBenchEntity.benchHeight, -0.24)
+    
+    private(set) var vinylRecord: ModelEntity?
+    private(set) var isSpinning: Bool = true
+    
+    required init() {
+        super.init()
+        self.name = "prop_record_player"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
         let playerWidth: Float = 0.26
         let playerLength: Float = 0.28
         let playerHeight: Float = 0.07
-        let playerY: Float = legHeight + 0.025 + cushionHeight
         
-        let playerRoot = Entity()
-        playerRoot.position = [0, playerY, -0.06]
-        playerRoot.name = "record_player"
-        benchRoot.addChild(playerRoot)
-        
-        // Chassis (cream/pastel)
+        // Chassis (cream linen/pastel)
         let caseMesh = MeshResource.generateBox(size: [playerWidth, playerHeight, playerLength], cornerRadius: 0.012)
         let playerCase = ModelEntity(mesh: caseMesh, materials: [mats.creamLinenFabric])
         playerCase.position = [0, playerHeight * 0.5, 0]
-        playerRoot.addChild(playerCase)
+        addChild(playerCase)
         
         // Open lid propped up at 80 degrees
         let lidMesh = MeshResource.generateBox(size: [playerWidth, 0.012, playerLength], cornerRadius: 0.008)
         let lid = ModelEntity(mesh: lidMesh, materials: [mats.creamLinenFabric])
         lid.position = [0, playerHeight + 0.10, -playerLength * 0.5 + 0.01]
         lid.orientation = simd_quatf(angle: -Float.pi * 0.42, axis: [1, 0, 0])
-        playerRoot.addChild(lid)
+        addChild(lid)
         
         // Turntable Platter
         let platterMesh = MeshResource.generateCylinder(height: 0.006, radius: 0.09)
         let platter = ModelEntity(mesh: platterMesh, materials: [mats.brushedAluminum])
         platter.position = [-0.02, playerHeight + 0.004, 0]
-        playerRoot.addChild(platter)
+        addChild(platter)
         
         // Black Vinyl Record
         let vinylMesh = MeshResource.generateCylinder(height: 0.003, radius: 0.085)
         let vinyl = ModelEntity(mesh: vinylMesh, materials: [mats.vinylRecord])
         vinyl.position = [0, 0.004, 0]
+        vinyl.name = "spinning_vinyl"
         platter.addChild(vinyl)
-        self.vinylRecordEntity = vinyl
+        self.vinylRecord = vinyl
         
         // Red Center Record Label
         let labelMesh = MeshResource.generateCylinder(height: 0.002, radius: 0.028)
@@ -114,7 +147,7 @@ final class AudioLoungeEntity: Entity {
         // Brass Tonearm
         let armBase = ModelEntity(mesh: .generateCylinder(height: 0.02, radius: 0.008), materials: [mats.warmBrass])
         armBase.position = [0.08, playerHeight + 0.01, -0.06]
-        playerRoot.addChild(armBase)
+        addChild(armBase)
         
         let armTube = ModelEntity(mesh: .generateCylinder(height: 0.11, radius: 0.003), materials: [mats.warmBrass])
         armTube.position = [-0.035, 0.018, 0.035]
@@ -125,47 +158,65 @@ final class AudioLoungeEntity: Entity {
         let dialMesh = MeshResource.generateCylinder(height: 0.008, radius: 0.007)
         let dial1 = ModelEntity(mesh: dialMesh, materials: [mats.warmBrass])
         dial1.position = [0.08, playerHeight + 0.005, 0.06]
-        playerRoot.addChild(dial1)
+        addChild(dial1)
         
         let dial2 = ModelEntity(mesh: dialMesh, materials: [mats.warmBrass])
         dial2.position = [0.08, playerHeight + 0.005, 0.09]
-        playerRoot.addChild(dial2)
+        addChild(dial2)
         
-        // 3. Stack of Vinyl Record Albums on the bench
+        let colShape = ShapeResource.generateBox(size: [0.30, 0.22, 0.30])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_record_player",
+            displayName: "Record Player",
+            accessibilityLabel: "Vintage turntable playing vinyl record",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + RecordBenchEntity.benchHeight
+        ))
+    }
+    
+    func togglePlayback() {
+        isSpinning.toggle()
+    }
+}
+
+// MARK: - Stack of Vinyl Record Albums (Movable)
+
+@MainActor
+final class RecordAlbumsEntity: Entity {
+    static let defaultPos = SIMD3<Float>(0.78, RoomArchitectureEntity.upperFloorY + RecordBenchEntity.benchHeight, -0.02)
+    
+    required init() {
+        super.init()
+        self.name = "prop_record_albums"
+        self.position = Self.defaultPos
+        
+        let mats = RoomMaterials.shared
         for i in 0..<3 {
             let albumMesh = MeshResource.generateBox(size: [0.16, 0.012, 0.16], cornerRadius: 0.003)
             let albumMat = (i == 0) ? mats.terracottaClay : ((i == 1) ? mats.creamLinenFabric : mats.sageGreenFabric)
             let album = ModelEntity(mesh: albumMesh, materials: [albumMat])
-            album.position = [0, playerY + 0.006 + Float(i) * 0.013, 0.16]
+            album.position = [0, Float(i) * 0.014, 0]
             album.orientation = simd_quatf(angle: Float(i) * 0.06, axis: [0, 1, 0])
-            benchRoot.addChild(album)
+            addChild(album)
         }
         
-        // 4. Boucle Daisy Floor Pouf / Beanbag (Lower platform foreground right)
-        // Positioned at X = +0.75, Z = +0.62, Y = lowerFloorY
-        let poufRoot = Entity()
-        poufRoot.position = [0.75, lowerFloorY, 0.62]
-        poufRoot.name = "boucle_pouf"
-        addChild(poufRoot)
-        
-        let poufRadius: Float = 0.22
-        let poufHeight: Float = 0.16
-        let poufMesh = MeshResource.generateBox(size: [poufRadius * 2.0, poufHeight, poufRadius * 2.0], cornerRadius: 0.08)
-        let pouf = ModelEntity(mesh: poufMesh, materials: [mats.whiteBoucleFabric])
-        pouf.position = [0, poufHeight * 0.5, 0]
-        poufRoot.addChild(pouf)
-        
-        // Flower / Daisy tufting button on top center
-        let button = ModelEntity(mesh: .generateCylinder(height: 0.018, radius: 0.038), materials: [mats.daisyYellow])
-        button.position = [0, poufHeight + 0.002, 0]
-        poufRoot.addChild(button)
-        
-        let petalMesh = MeshResource.generateSphere(radius: 0.024)
-        for i in 0..<6 {
-            let angle = Float(i) * (Float.pi * 2.0 / 6.0)
-            let petal = ModelEntity(mesh: petalMesh, materials: [mats.whiteBoucleFabric])
-            petal.position = [cos(angle) * 0.055, poufHeight, sin(angle) * 0.055]
-            poufRoot.addChild(petal)
-        }
+        let colShape = ShapeResource.generateBox(size: [0.18, 0.06, 0.18])
+        self.components.set(CollisionComponent(shapes: [colShape]))
+        self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_record_albums",
+            displayName: "Vinyl Records",
+            accessibilityLabel: "Stack of collectible vinyl album sleeves",
+            category: .movable,
+            allowsDragging: true,
+            allowsRotation: true,
+            defaultPosition: Self.defaultPos,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + RecordBenchEntity.benchHeight
+        ))
     }
 }
