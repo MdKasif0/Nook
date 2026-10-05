@@ -1311,7 +1311,7 @@ final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
         }.count
         
         if creations >= 3 {
-            return .excited
+            return .curious
         }
         return .idle
     }

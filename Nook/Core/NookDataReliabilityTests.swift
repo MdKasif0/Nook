@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import RealityKit
 import CryptoKit
+import AppKit
 
 /// Comprehensive test suite verifying Nook's local-first data reliability:
 /// - Create
@@ -1404,18 +1405,18 @@ final class NookDataReliabilityTests {
     private static func testCookieBehaviorEngineAndDifferentiatedReactions() throws {
         let state = CookieState()
         let controller = CookieBehaviorController(state: state)
-        let entity = CookieRealityEntity(state: state)
+        let entity = CookieRealityEntity()
         controller.bind(entity: entity)
         
         // 1. Differentiated Thought Reactions: Idea (curious look)
         entity.position = SIMD3<Float>(0.08, 0.160, -0.10)
         let newIdeaPos = SIMD3<Float>(-0.60, 0.880, -0.15)
-        controller.handleEvent(.thoughtCreated(title: "Deep Design", itemType: .idea, objectType: .sketch, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Deep Design", itemType: .idea, objectType: .paperNote, position: newIdeaPos))
         
         // 2. Rapid Creations Excitation: 3 creations in quick succession trigger celebration
-        controller.handleEvent(.thoughtCreated(title: "Idea 1", itemType: .thought, objectType: .note, position: newIdeaPos))
-        controller.handleEvent(.thoughtCreated(title: "Idea 2", itemType: .thought, objectType: .note, position: newIdeaPos))
-        controller.handleEvent(.thoughtCreated(title: "Idea 3", itemType: .thought, objectType: .note, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Idea 1", itemType: .thought, objectType: .paperNote, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Idea 2", itemType: .thought, objectType: .paperNote, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Idea 3", itemType: .thought, objectType: .paperNote, position: newIdeaPos))
         
         // 3. Object Proximity Movement:
         let nearPos = entity.position + SIMD3<Float>(0.15, 0, 0.15)
@@ -1424,8 +1425,8 @@ final class NookDataReliabilityTests {
         // Object moved uncomfortably close (< 0.14m): Cookie takes a safe cute step back
         let tooClosePos = entity.position + SIMD3<Float>(0.05, 0, 0.05)
         controller.handleEvent(.objectMoved(id: "test_prop_close", position: tooClosePos))
-        guard CookieNavigationController.isValidWalkable(position: entity.position) else {
-            throw TestError("Entity stepped into non-walkable coordinate")
+        guard !CookieNavigationController.isObstacle(x: entity.position.x, z: entity.position.z) else {
+            throw TestError("Entity stepped into obstacle coordinate")
         }
         
         // 4. Toy Drag Play Reaction
@@ -1444,7 +1445,7 @@ final class NookDataReliabilityTests {
     private static func testCookieSleepWakeSettleAndRestLocations() throws {
         let state = CookieState()
         let controller = CookieBehaviorController(state: state)
-        let entity = CookieRealityEntity(state: state)
+        let entity = CookieRealityEntity()
         controller.bind(entity: entity)
         
         // 1. Preferred Rest Locations Contextual Selection:
@@ -1483,10 +1484,8 @@ final class NookDataReliabilityTests {
     private static func testCookieComplete29StepBehaviorFlow() throws {
         let state = CookieState()
         let controller = CookieBehaviorController(state: state)
-        let entity = CookieRealityEntity(state: state)
+        let entity = CookieRealityEntity()
         controller.bind(entity: entity)
-        let nav = CookieNavigationController(entity: entity)
-        entity.navigationController = nav
         let audio = CookieAudioController.shared
         let prefs = PreferencesManager.shared
         
@@ -1498,7 +1497,7 @@ final class NookDataReliabilityTests {
         
         // Step 3: Create a thought
         let thoughtPos = SIMD3<Float>(-0.70, 0.880, -0.15)
-        controller.handleEvent(.thoughtCreated(title: "Morning Idea", itemType: .idea, objectType: .sketch, position: thoughtPos))
+        controller.handleEvent(.thoughtCreated(title: "Morning Idea", itemType: .idea, objectType: .paperNote, position: thoughtPos))
         
         // Step 4: Cookie notices it
         guard state.activity != .sleeping else { throw TestError("Step 4: Cookie was asleep when thought created") }
@@ -1522,8 +1521,8 @@ final class NookDataReliabilityTests {
         controller.handleEvent(.cookieCalled(targetPosition: callTarget))
         
         // Step 10: Cookie walks toward target
-        guard CookieNavigationController.isValidWalkable(position: callTarget) else {
-            throw TestError("Step 10: Call target was not walkable")
+        guard !CookieNavigationController.isObstacle(x: callTarget.x, z: callTarget.z) else {
+            throw TestError("Step 10: Call target was inside obstacle")
         }
         
         // Step 11: Move Cookie onto the bed
@@ -1560,6 +1559,7 @@ final class NookDataReliabilityTests {
         entity.play()
         
         // Step 21: Hear a soft meow
+        audio.resetCooldowns()
         let playedMeow = audio.play(.softMeow, force: true)
         guard playedMeow else { throw TestError("Step 21: Failed to play soft meow") }
         

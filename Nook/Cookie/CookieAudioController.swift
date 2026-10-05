@@ -52,6 +52,11 @@ public final class CookieAudioController {
         preloadPurrPlayer()
     }
     
+    /// Resets all internal vocalization cooldowns (useful for clean test isolation or modal transitions).
+    public func resetCooldowns() {
+        lastVocalizationTime = .distantPast
+    }
+    
     // MARK: - Resource Resolution
     
     private func audioURL(for vocalization: CookieVocalization) -> URL? {
@@ -76,14 +81,16 @@ public final class CookieAudioController {
     
     /// Plays a specific cat vocalization with optional cooldown bypass for explicit user interactions.
     @discardableResult
-    public func play(_ vocalization: CookieVocalization, force: Bool = false) -> Bool {
+    public func play(_ vocalization: CookieVocalization, force: Bool = false, bypassDebounce: Bool = false) -> Bool {
         guard PreferencesManager.shared.cookieSoundEnabled else { return false }
         
         let now = Date()
         let elapsed = now.timeIntervalSince(lastVocalizationTime)
         
         if force {
-            guard elapsed >= minDebounce else { return false }
+            if !bypassDebounce {
+                guard elapsed >= minDebounce else { return false }
+            }
         } else {
             guard elapsed >= minAutonomousCooldown else { return false }
         }

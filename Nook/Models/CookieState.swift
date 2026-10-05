@@ -118,7 +118,7 @@ public struct CookieStateMachine: Sendable {
         case .idle:
             // Idle can branch into any active, observational, or resting state
             return [
-                .walking, .running, .curious, .happy, .sleepy, .playing,
+                .walking, .running, .curious, .happy, .sleepy, .sleeping, .playing,
                 .beingDragged, .jumping, .sitting, .lyingDown, .grooming, .lookingAround
             ].contains(target)
             
@@ -204,6 +204,9 @@ public final class CookieState {
     public func transitionToActivity(_ newActivity: CookieActivity) -> Bool {
         guard canTransition(to: newActivity) else { return false }
         self.activity = newActivity
+        if newActivity != .sleeping {
+            self.isSleeping = false
+        }
         
         switch newActivity {
         case .idle:

@@ -581,6 +581,8 @@ public final class CookieBehaviorController {
     private func handleCookiePetted() {
         guard let entity = self.entity else { return }
         
+        self.state.transition(to: .happy, posture: .sitting)
+        
         activeReactionTask?.cancel()
         activeReactionTask = Task { @MainActor [weak self] in
             guard let self = self else { return }
@@ -592,12 +594,13 @@ public final class CookieBehaviorController {
             entity.leftEyeModel?.scale = [1.08, 0.20, 1.0]
             entity.rightEyeModel?.scale = [1.08, 0.20, 1.0]
             self.audio.startPurring()
-            entity.swishTail()
+            entity.swishTail(.happy)
             
             try? await Task.sleep(nanoseconds: 2_600_000_000)
             
             self.audio.stopPurring()
             entity.setMood(.idle, animated: true)
+            self.state.transition(to: .idle, posture: .sitting)
             CookieMemoryStore.shared.recordPet()
         }
     }
