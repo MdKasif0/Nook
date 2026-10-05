@@ -14,8 +14,8 @@ final class RoomMaterials {
     
     // MARK: - Core Color Palette
     
-    static let honeyWoodColor = NSColor(red: 0.82, green: 0.58, blue: 0.36, alpha: 1.0)
-    static let honeyWoodDarkColor = NSColor(red: 0.72, green: 0.48, blue: 0.28, alpha: 1.0)
+    static let honeyWoodColor = NSColor(red: 0.88, green: 0.68, blue: 0.44, alpha: 1.0)
+    static let honeyWoodDarkColor = NSColor(red: 0.78, green: 0.56, blue: 0.34, alpha: 1.0)
     static let ivoryWallColor = NSColor(red: 0.96, green: 0.94, blue: 0.90, alpha: 1.0)
     static let creamFabricColor = NSColor(red: 0.96, green: 0.95, blue: 0.91, alpha: 1.0)
     static let sageGreenColor = NSColor(red: 0.56, green: 0.64, blue: 0.53, alpha: 1.0)
@@ -249,7 +249,7 @@ final class RoomMaterials {
            let tex = try? TextureResource(image: cg, options: .init(semantic: .color)) {
             mat.baseColor = .init(texture: .init(tex))
             mat.emissiveColor = .init(texture: .init(tex))
-            mat.emissiveIntensity = 0.4
+            mat.emissiveIntensity = 0.85
         } else {
             mat.baseColor = .init(tint: NSColor(red: 0.98, green: 0.96, blue: 0.93, alpha: 1.0))
         }
@@ -278,7 +278,7 @@ final class RoomMaterials {
            let tex = try? TextureResource(image: cg, options: .init(semantic: .color)) {
             mat.baseColor = .init(texture: .init(tex))
             mat.emissiveColor = .init(texture: .init(tex))
-            mat.emissiveIntensity = 0.3
+            mat.emissiveIntensity = 0.75
         } else {
             mat.baseColor = .init(tint: NSColor(red: 0.52, green: 0.65, blue: 0.48, alpha: 1.0))
         }

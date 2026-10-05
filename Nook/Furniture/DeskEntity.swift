@@ -86,18 +86,20 @@ final class DeskEntity: Entity {
         // Stand base
         let standBase = ModelEntity(mesh: .generateBox(size: [0.14, 0.008, 0.16], cornerRadius: 0.005), materials: [mats.brushedAluminum])
         standBase.position = [monitorCenter.x, Self.deskHeight + 0.004, monitorCenter.z]
+        standBase.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
         addChild(standBase)
         
         // Stand upright post
         let standPost = ModelEntity(mesh: .generateBox(size: [0.015, 0.18, 0.035], cornerRadius: 0.004), materials: [mats.brushedAluminum])
-        standPost.position = [monitorCenter.x - 0.03, Self.deskHeight + 0.09, monitorCenter.z]
+        standPost.position = [monitorCenter.x - 0.02, Self.deskHeight + 0.09, monitorCenter.z - 0.01]
+        standPost.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
         addChild(standPost)
         
         // Monitor casing
         let casingMesh = MeshResource.generateBox(size: [monitorDepth, monitorHeight, monitorWidth], cornerRadius: 0.008)
         let monitorCasing = ModelEntity(mesh: casingMesh, materials: [mats.brushedAluminum])
         monitorCasing.position = monitorCenter
-        monitorCasing.orientation = simd_quatf(angle: Float.pi * 0.12, axis: [0, 1, 0])
+        monitorCasing.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
         monitorCasing.name = "desktop_monitor"
         addChild(monitorCasing)
         
@@ -109,13 +111,13 @@ final class DeskEntity: Entity {
         monitorCasing.addChild(screenEntity)
         
         // 5. Open Silver Laptop (Beside monitor at Z = 0.08)
-        let laptopCenter = SIMD3<Float>(-0.02, Self.deskHeight, 0.06)
+        let laptopCenter = SIMD3<Float>(0.02, Self.deskHeight, 0.06)
         let laptopBase = ModelEntity(
             mesh: .generateBox(size: [0.17, 0.010, 0.24], cornerRadius: 0.005),
             materials: [mats.brushedAluminum]
         )
         laptopBase.position = [laptopCenter.x, laptopCenter.y + 0.005, laptopCenter.z]
-        laptopBase.orientation = simd_quatf(angle: Float.pi * 0.18, axis: [0, 1, 0])
+        laptopBase.orientation = simd_quatf(angle: Float.pi * 0.24, axis: [0, 1, 0])
         laptopBase.name = "laptop"
         addChild(laptopBase)
         
@@ -141,7 +143,8 @@ final class DeskEntity: Entity {
             mesh: .generateBox(size: [0.12, 0.008, 0.32], cornerRadius: 0.004),
             materials: [mats.creamLinenFabric]
         )
-        keyboard.position = [0.08, Self.deskHeight + 0.006, -0.18]
+        keyboard.position = [0.08, Self.deskHeight + 0.006, -0.22]
+        keyboard.orientation = simd_quatf(angle: Float.pi * 0.06, axis: [0, 1, 0])
         keyboard.name = "keyboard"
         addChild(keyboard)
         

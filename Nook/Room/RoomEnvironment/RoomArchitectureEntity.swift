@@ -83,12 +83,41 @@ final class RoomArchitectureEntity: Entity {
         leftWallEntity.name = "left_wall"
         addChild(leftWallEntity)
         
-        // 6. Back Wall (Ivory Plaster, runs from X = -1.25 to X = +1.15 at Z = -1.20)
-        let backWallMesh = MeshResource.generateBox(size: [Self.wallSpan, Self.wallHeight, Self.wallThickness], cornerRadius: 0.01)
-        let backWallEntity = ModelEntity(mesh: backWallMesh, materials: [mats.ivoryPlasterWall])
-        backWallEntity.position = [0, Self.upperFloorY + Self.wallHeight * 0.5, -Self.wallSpan * 0.5]
-        backWallEntity.name = "back_wall"
-        addChild(backWallEntity)
+        // 6. Back Wall with Real Window Opening Aperture
+        // The window cutout is centered at X = 0.55, Y = 1.25, size: 0.86m x 0.96m
+        let backWallRoot = Entity()
+        backWallRoot.name = "back_wall"
+        addChild(backWallRoot)
+        
+        let wallZ = -Self.wallSpan * 0.5
+        
+        // 6a. Left section of back wall (behind bookcase & headboard, X = -1.225 to 0.12)
+        let leftSectionWidth: Float = 1.345
+        let leftSectionMesh = MeshResource.generateBox(size: [leftSectionWidth, Self.wallHeight, Self.wallThickness], cornerRadius: 0.01)
+        let leftSection = ModelEntity(mesh: leftSectionMesh, materials: [mats.ivoryPlasterWall])
+        leftSection.position = [-Self.wallSpan * 0.5 + leftSectionWidth * 0.5, Self.upperFloorY + Self.wallHeight * 0.5, wallZ]
+        backWallRoot.addChild(leftSection)
+        
+        // 6b. Right section of back wall (to right of window, X = 0.98 to 1.225)
+        let rightSectionWidth: Float = 0.245
+        let rightSectionMesh = MeshResource.generateBox(size: [rightSectionWidth, Self.wallHeight, Self.wallThickness], cornerRadius: 0.01)
+        let rightSection = ModelEntity(mesh: rightSectionMesh, materials: [mats.ivoryPlasterWall])
+        rightSection.position = [Self.wallSpan * 0.5 - rightSectionWidth * 0.5, Self.upperFloorY + Self.wallHeight * 0.5, wallZ]
+        backWallRoot.addChild(rightSection)
+        
+        // 6c. Sill / spandrel section (under window, X = 0.12 to 0.98, below Y = 0.77)
+        let sillSectionHeight: Float = 0.61
+        let sillSectionMesh = MeshResource.generateBox(size: [0.86, sillSectionHeight, Self.wallThickness], cornerRadius: 0.005)
+        let sillSection = ModelEntity(mesh: sillSectionMesh, materials: [mats.ivoryPlasterWall])
+        sillSection.position = [0.55, Self.upperFloorY + sillSectionHeight * 0.5, wallZ]
+        backWallRoot.addChild(sillSection)
+        
+        // 6d. Header section (above window, X = 0.12 to 0.98, above Y = 1.73)
+        let headerSectionHeight: Float = 0.28
+        let headerSectionMesh = MeshResource.generateBox(size: [0.86, headerSectionHeight, Self.wallThickness], cornerRadius: 0.005)
+        let headerSection = ModelEntity(mesh: headerSectionMesh, materials: [mats.ivoryPlasterWall])
+        headerSection.position = [0.55, Self.upperFloorY + Self.wallHeight - headerSectionHeight * 0.5, wallZ]
+        backWallRoot.addChild(headerSection)
         
         // 7. Thick Rounded Honey-Oak Top Trim Beams
         // Left Wall Top Trim

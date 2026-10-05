@@ -19,26 +19,26 @@ final class RoomLightingSystem {
         self.rootEntity = root
         
         // 1. Primary Directional Sunlight (Streaming through the right window)
-        // Positioned pointing from (+X, +Y, +Z) diagonally down towards (-X, -Y, -Z)
+        // Positioned outside window pointing down-forward into the room towards bed and desk
         let sun = DirectionalLight()
-        sun.light.color = .init(red: 1.0, green: 0.94, blue: 0.86, alpha: 1.0)
-        sun.light.intensity = 2600
+        sun.light.color = .init(red: 1.0, green: 0.94, blue: 0.84, alpha: 1.0)
+        sun.light.intensity = 2800
         sun.shadow = DirectionalLightComponent.Shadow(
             shadowProjection: .automatic(maximumDistance: 8.0),
             depthBias: 0.0015
         )
-        // Window sun orientation: Angled down from the right wall window
-        sun.orientation = simd_quatf(angle: -Float.pi * 0.32, axis: [1, 0, 0]) * simd_quatf(angle: Float.pi * 0.42, axis: [0, 1, 0])
+        sun.position = [1.8, 2.8, -2.4]
+        sun.look(at: [0.15, 0.30, 0.10], from: sun.position, relativeTo: nil)
         sun.name = "sun_directional_light"
         root.addChild(sun)
         self.sunLight = sun
         
-        // 2. Ambient Fill Light (Soft warm cream, prevents pitch black shadows)
+        // 2. Open Front Key/Fill Light (Streaming into the open-front dollhouse from camera angle)
         let ambient = DirectionalLight()
-        ambient.light.color = .init(red: 0.98, green: 0.95, blue: 0.90, alpha: 1.0)
-        ambient.light.intensity = 850
-        // Opposite angle to fill shadow sides gently
-        ambient.orientation = simd_quatf(angle: Float.pi * 0.28, axis: [1, 0, 0]) * simd_quatf(angle: -Float.pi * 0.35, axis: [0, 1, 0])
+        ambient.light.color = .init(red: 1.0, green: 0.97, blue: 0.92, alpha: 1.0)
+        ambient.light.intensity = 2400
+        ambient.position = [2.2, 2.8, 2.8]
+        ambient.look(at: [-0.10, 0.50, -0.10], from: ambient.position, relativeTo: nil)
         ambient.name = "ambient_fill_light"
         root.addChild(ambient)
         self.ambientLight = ambient
@@ -46,11 +46,21 @@ final class RoomLightingSystem {
         // 3. Bounce Fill Light (Warm golden under-bounce from wooden floor)
         let bounce = DirectionalLight()
         bounce.light.color = .init(red: 1.0, green: 0.88, blue: 0.72, alpha: 1.0)
-        bounce.light.intensity = 450
-        bounce.orientation = simd_quatf(angle: Float.pi * 0.45, axis: [1, 0, 0])
+        bounce.light.intensity = 950
+        bounce.position = [0, -1.0, 0]
+        bounce.look(at: [0, 1.0, 0], from: bounce.position, relativeTo: nil)
         bounce.name = "floor_bounce_light"
         root.addChild(bounce)
         self.bounceFillLight = bounce
+        
+        // 4. Window Glow Illumination (Golden aura around curtains and bed)
+        let windowGlow = PointLight()
+        windowGlow.light.color = .init(red: 1.0, green: 0.92, blue: 0.78, alpha: 1.0)
+        windowGlow.light.intensity = 1800
+        windowGlow.light.attenuationRadius = 2.5
+        windowGlow.position = [0.55, 1.25, -1.05]
+        windowGlow.name = "window_glow_light"
+        root.addChild(windowGlow)
     }
     
     /// Updates illumination according to the current RoomTimeOfDay

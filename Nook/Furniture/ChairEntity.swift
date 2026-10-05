@@ -20,10 +20,10 @@ final class ChairEntity: Entity {
         let mats = RoomMaterials.shared
         let floorY = RoomArchitectureEntity.upperFloorY
         
-        // Positioned directly in front of the desk, angled slightly towards it
-        // X = -0.58, Z = -0.05
-        self.position = [-0.58, floorY, -0.05]
-        self.orientation = simd_quatf(angle: -Float.pi * 0.18, axis: [0, 1, 0])
+        // Positioned directly in front of the desk, facing the desk
+        // X = -0.46, Z = -0.25
+        self.position = [-0.46, floorY, -0.25]
+        self.orientation = simd_quatf(angle: -Float.pi * 0.45, axis: [0, 1, 0])
         
         // 1. Five-Point Star Base & Caster Wheels
         let baseRadius: Float = 0.22
@@ -37,7 +37,6 @@ final class ChairEntity: Entity {
             leg.orientation = simd_quatf(angle: -angle, axis: [0, 1, 0])
             addChild(leg)
             
-            // Caster wheel at the tip
             let wheelMesh = MeshResource.generateCylinder(height: 0.015, radius: 0.018)
             let wheel = ModelEntity(mesh: wheelMesh, materials: [mats.vinylRecord])
             wheel.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 0, 1])
@@ -66,12 +65,10 @@ final class ChairEntity: Entity {
         let backThickness: Float = 0.035
         let backMesh = MeshResource.generateBox(size: [backWidth, backHeight, backThickness], cornerRadius: 0.02)
         let backrest = ModelEntity(mesh: backMesh, materials: [mats.sageGreenFabric])
-        // Tilted slightly back
         backrest.position = [0, 0.44, -seatDepth * 0.5 + 0.02]
         backrest.orientation = simd_quatf(angle: -Float.pi * 0.08, axis: [1, 0, 0])
         addChild(backrest)
         
-        // Back frame spine
         let spineMesh = MeshResource.generateBox(size: [0.035, 0.28, 0.025], cornerRadius: 0.005)
         let spine = ModelEntity(mesh: spineMesh, materials: [mats.creamLinenFabric])
         spine.position = [0, 0.38, -seatDepth * 0.5 - 0.01]
@@ -81,7 +78,6 @@ final class ChairEntity: Entity {
         let armrestMesh = MeshResource.generateBox(size: [0.045, 0.018, 0.22], cornerRadius: 0.008)
         let armPostMesh = MeshResource.generateCylinder(height: 0.16, radius: 0.01)
         
-        // Left armrest
         let leftPost = ModelEntity(mesh: armPostMesh, materials: [mats.creamLinenFabric])
         leftPost.position = [-seatWidth * 0.5 - 0.02, 0.33, 0]
         addChild(leftPost)
@@ -90,7 +86,6 @@ final class ChairEntity: Entity {
         leftPad.position = [-seatWidth * 0.5 - 0.02, 0.41, 0]
         addChild(leftPad)
         
-        // Right armrest
         let rightPost = ModelEntity(mesh: armPostMesh, materials: [mats.creamLinenFabric])
         rightPost.position = [seatWidth * 0.5 + 0.02, 0.33, 0]
         addChild(rightPost)

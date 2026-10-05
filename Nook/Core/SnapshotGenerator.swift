@@ -102,7 +102,9 @@ enum SnapshotGenerator {
             semaphore.wait()
             
             guard let ci = CIImage(mtlTexture: texture, options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]) else { return }
-            let rep = NSCIImageRep(ciImage: ci)
+            // Metal textures are top-left origin; CoreGraphics/CIImage expects bottom-left. Flip vertically:
+            let flippedCI = ci.transformed(by: CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -CGFloat(height)))
+            let rep = NSCIImageRep(ciImage: flippedCI)
             let nsImage = NSImage(size: NSSize(width: width, height: height))
             nsImage.addRepresentation(rep)
             guard let tiff = nsImage.tiffRepresentation,
