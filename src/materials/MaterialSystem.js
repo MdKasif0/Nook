@@ -27,6 +27,11 @@ export class MaterialSystem {
     return this.materials;
   }
 
+  static get(name) {
+    const mats = this.getMaterials();
+    return mats[name] || null;
+  }
+
   static buildAllMaterials() {
     // 1. Generate procedural PBR maps
     const woodColorMap = TextureGenerator.createHoneyWoodTexture(1024, 1024);
@@ -55,7 +60,7 @@ export class MaterialSystem {
         color: 0xffffff,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.45, 0.45),
+        normalScale: new THREE.Vector2(0.28, 0.28),
         roughnessMap: woodRoughnessMap,
         roughness: 0.52,
         metalness: 0.02
@@ -66,7 +71,7 @@ export class MaterialSystem {
         color: 0xfff3e3,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.35, 0.35),
+        normalScale: new THREE.Vector2(0.22, 0.22),
         roughnessMap: woodRoughnessMap,
         roughness: 0.48,
         metalness: 0.01
@@ -77,7 +82,7 @@ export class MaterialSystem {
         color: 0xead3ba,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.65, 0.65),
+        normalScale: new THREE.Vector2(0.30, 0.30),
         roughnessMap: woodRoughnessMap,
         roughness: 0.54,
         metalness: 0.03
@@ -88,7 +93,7 @@ export class MaterialSystem {
         color: 0xffffff,
         map: floorPlanksColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.55, 0.55),
+        normalScale: new THREE.Vector2(0.25, 0.25),
         roughnessMap: woodRoughnessMap,
         roughness: 0.50,
         metalness: 0.02
@@ -98,7 +103,7 @@ export class MaterialSystem {
         color: 0xfef5e7,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.38, 0.38),
+        normalScale: new THREE.Vector2(0.20, 0.20),
         roughnessMap: woodRoughnessMap,
         roughness: 0.46,
         metalness: 0.01
@@ -108,7 +113,7 @@ export class MaterialSystem {
         color: 0xfff0dc,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.42, 0.42),
+        normalScale: new THREE.Vector2(0.24, 0.24),
         roughnessMap: woodRoughnessMap,
         roughness: 0.52,
         metalness: 0.02
@@ -118,7 +123,7 @@ export class MaterialSystem {
         color: 0xfaedd9,
         map: woodColorMap,
         normalMap: woodNormalMap,
-        normalScale: new THREE.Vector2(0.45, 0.45),
+        normalScale: new THREE.Vector2(0.25, 0.25),
         roughnessMap: woodRoughnessMap,
         roughness: 0.50,
         metalness: 0.02

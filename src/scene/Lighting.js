@@ -48,9 +48,9 @@ export class Lighting {
     this.sunlight.shadow.camera.right = shadowExtent;
     this.sunlight.shadow.camera.top = shadowExtent;
     this.sunlight.shadow.camera.bottom = -shadowExtent;
-    this.sunlight.shadow.bias = -0.0002;
-    this.sunlight.shadow.normalBias = 0.032;
-    this.sunlight.shadow.radius = 3.2;
+    this.sunlight.shadow.bias = -0.0001;
+    this.sunlight.shadow.normalBias = 0.015;
+    this.sunlight.shadow.radius = 3.6;
 
     this.group.add(this.sunlight);
 

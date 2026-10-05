@@ -869,11 +869,14 @@ export class TextureGenerator {
    */
   static createWoodNormalMap(width = 512, height = 512) {
     return this.createHeightToNormalMap((x, y, w, h) => {
-      const grain = Math.sin(y * 0.28 + Math.sin(x * 0.04) * 3.5) * 0.4;
-      const micro = Math.sin(y * 0.85) * 0.35 + (Math.sin(x * 0.12 * y * 0.01) * 0.15);
-      const pore = (y % 4 === 0) ? (Math.sin(x * 0.2) * 0.2) : 0;
-      return grain + micro + pore;
-    }, width, height, 2.5);
+      const u = x / w;
+      const v = y / h;
+      // Smooth longitudinal wood fibers running along Y
+      const fiber = Math.sin(u * Math.PI * 40 + Math.sin(v * Math.PI * 4) * 1.2) * 0.35;
+      const subFiber = Math.sin(u * Math.PI * 80 + Math.cos(v * Math.PI * 8) * 0.8) * 0.15;
+      const wave = Math.sin(v * Math.PI * 2 + u * Math.PI * 2) * 0.08;
+      return fiber + subFiber + wave;
+    }, width, height, 1.0);
   }
 
   /**
@@ -885,16 +888,16 @@ export class TextureGenerator {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // Base semi-matte roughness (~0.48)
-    ctx.fillStyle = '#7a7a7a';
+    // Base semi-matte roughness (~0.52)
+    ctx.fillStyle = '#858585';
     ctx.fillRect(0, 0, width, height);
 
-    // Grain line roughness modulation
-    ctx.globalAlpha = 0.22;
-    for (let y = 0; y < height; y += 3) {
-      const isPore = y % 6 === 0;
-      ctx.fillStyle = isPore ? '#a8a8a8' : '#5c5c5c';
-      ctx.fillRect(0, y, width, 2);
+    // Subtle organic longitudinal grain roughness variation
+    ctx.globalAlpha = 0.08;
+    for (let x = 0; x < width; x += 4) {
+      const tone = Math.sin(x * 0.15) * 20 + Math.sin(x * 0.05) * 15;
+      ctx.fillStyle = tone > 0 ? '#9c9c9c' : '#707070';
+      ctx.fillRect(x, 0, 3, height);
     }
 
     ctx.globalAlpha = 1.0;
