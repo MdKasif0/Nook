@@ -314,7 +314,7 @@ final class ShelfPlantEntity: Entity {
         foliage.position = [0, 0.065, 0]
         addChild(foliage)
         
-        let colShape = ShapeResource.generateCylinder(height: 0.12, radius: 0.05)
+        let colShape = ShapeResource.generateBox(size: [0.10, 0.12, 0.10])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(

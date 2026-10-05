@@ -437,7 +437,7 @@ final class DeskLampEntity: Entity {
         lampBase.addChild(light)
         self.lampLight = light
         
-        let colShape = ShapeResource.generateCylinder(height: 0.28, radius: 0.08)
+        let colShape = ShapeResource.generateBox(size: [0.16, 0.28, 0.16])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
@@ -480,7 +480,7 @@ final class DeskMugEntity: Entity {
         mug.position = [0, 0.038, 0]
         addChild(mug)
         
-        let colShape = ShapeResource.generateCylinder(height: 0.08, radius: 0.045)
+        let colShape = ShapeResource.generateBox(size: [0.09, 0.08, 0.09])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
@@ -519,7 +519,7 @@ final class DeskPencilCupEntity: Entity {
             cup.addChild(pencil)
         }
         
-        let colShape = ShapeResource.generateCylinder(height: 0.12, radius: 0.04)
+        let colShape = ShapeResource.generateBox(size: [0.08, 0.12, 0.08])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
@@ -555,7 +555,7 @@ final class DeskPlantEntity: Entity {
         deskFoliage.position = [0, 0.03, 0]
         deskPlantPot.addChild(deskFoliage)
         
-        let colShape = ShapeResource.generateCylinder(height: 0.09, radius: 0.04)
+        let colShape = ShapeResource.generateBox(size: [0.08, 0.09, 0.08])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(

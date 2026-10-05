@@ -254,8 +254,8 @@ final class RoomInteractionSystem {
         } else {
             // Movable diorama room prop:
             // Register Undo with native macOS UndoManager
-            undoManager?.registerUndo(withTarget: coordinator!) { [weak coordinator] coord in
-                coord?.applyPropTransform(startTransform, animated: true)
+            undoManager?.registerUndo(withTarget: coordinator!) { coord in
+                coord.applyPropTransform(startTransform, animated: true)
             }
             
             // Persist transform in SwiftData RoomState
@@ -290,8 +290,8 @@ final class RoomInteractionSystem {
             scale: entity.scale
         )
         
-        undoManager?.registerUndo(withTarget: coordinator!) { [weak coordinator] coord in
-            coord?.applyPropTransform(oldTransform, animated: true)
+        undoManager?.registerUndo(withTarget: coordinator!) { coord in
+            coord.applyPropTransform(oldTransform, animated: true)
         }
         
         coordinator?.savePropTransform(newTransform)
@@ -322,8 +322,8 @@ final class RoomInteractionSystem {
             scale: entity.scale
         )
         
-        undoManager?.registerUndo(withTarget: coordinator!) { [weak coordinator] coord in
-            coord?.applyPropTransform(oldTransform, animated: true)
+        undoManager?.registerUndo(withTarget: coordinator!) { coord in
+            coord.applyPropTransform(oldTransform, animated: true)
         }
         
         coordinator?.savePropTransform(newTransform)
@@ -350,8 +350,8 @@ final class RoomInteractionSystem {
             isCustomized: false
         )
         
-        undoManager?.registerUndo(withTarget: coordinator!) { [weak coordinator] coord in
-            coord?.applyPropTransform(oldTransform, animated: true)
+        undoManager?.registerUndo(withTarget: coordinator!) { coord in
+            coord.applyPropTransform(oldTransform, animated: true)
         }
         
         coordinator?.resetPropTransform(id: id)

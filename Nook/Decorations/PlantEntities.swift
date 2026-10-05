@@ -85,7 +85,7 @@ final class BouclePoufEntity: Entity {
             addChild(petal)
         }
         
-        let colShape = ShapeResource.generateCylinder(height: 0.20, radius: 0.24)
+        let colShape = ShapeResource.generateBox(size: [0.46, 0.20, 0.46])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
@@ -148,7 +148,7 @@ final class MonsteraPlantEntity: Entity {
             addChild(stalk)
         }
         
-        let colShape = ShapeResource.generateCylinder(height: 0.42, radius: 0.18)
+        let colShape = ShapeResource.generateBox(size: [0.36, 0.42, 0.36])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
@@ -197,7 +197,7 @@ final class DeskFloorPlantEntity: Entity {
         leafyPlant.position = [0, standHeight + 0.12, 0]
         addChild(leafyPlant)
         
-        let colShape = ShapeResource.generateCylinder(height: 0.32, radius: 0.12)
+        let colShape = ShapeResource.generateBox(size: [0.24, 0.32, 0.24])
         self.components.set(CollisionComponent(shapes: [colShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(

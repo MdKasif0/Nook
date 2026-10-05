@@ -93,6 +93,7 @@ public struct InteractivePropComponent: Component {
     }
     
     /// Reads current transform from an entity and creates a Codable RoomPropTransform
+    @MainActor
     public func currentTransform(for entity: Entity) -> RoomPropTransform {
         RoomPropTransform(
             propId: propId,
@@ -104,6 +105,7 @@ public struct InteractivePropComponent: Component {
     }
     
     /// Resets entity to its designated default transform
+    @MainActor
     public func applyDefaultTransform(to entity: Entity) {
         entity.position = defaultPosition
         entity.orientation = defaultOrientation
