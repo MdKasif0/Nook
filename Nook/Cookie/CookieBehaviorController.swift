@@ -60,7 +60,7 @@ public final class CookieBehaviorController {
         self.entity = entity
     }
     
-    public func bind(node: CookieNode) {
+    func bind(node: CookieNode) {
         // Backward compatibility stub for SceneKit prototype view
     }
     
