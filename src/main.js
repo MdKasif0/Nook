@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { LIGHTING_CONFIG, PALETTE } from './utils/Constants.js';
 import { Camera } from './scene/Camera.js';
 import { RoomScene } from './scene/RoomScene.js';
-import { PlacementManager } from './objects/PlacementManager.js';
+import { SurfaceManager } from './interaction/SurfaceManager.js';
 import { ObjectManager } from './objects/ObjectManager.js';
 import { CookieController } from './cookie/CookieController.js';
 import { COOKIE_LOCATIONS } from './cookie/CookieNavigation.js';
@@ -100,11 +100,16 @@ class NookApplication {
     // 2. Room Scene & Architecture
     this.roomScene = new RoomScene();
 
-    // 3. Placement Manager (Droppable / Walkable surfaces)
-    this.placementManager = new PlacementManager(this.roomScene);
+    // 3. Surface Manager (Physical surface bounds, snap heights, allowed object types)
+    this.surfaceManager = new SurfaceManager(this.roomScene);
 
-    // 4. Object Manager (Tactile interactive thoughts and room props)
-    this.objectManager = new ObjectManager(this.roomScene, this.placementManager);
+    // 4. Object Manager (Tactile interactive props and miniature thoughts)
+    this.objectManager = new ObjectManager(this.roomScene, this.surfaceManager);
+
+    // Register all movable and special props created by FurnitureBuilder
+    if (this.roomScene.furnitureBuilder && this.roomScene.furnitureBuilder.movableProps) {
+      this.objectManager.initMovableProps(this.roomScene.furnitureBuilder.movableProps);
+    }
 
     // 5. Cookie the Calico Companion Cat
     this.cookie = new CookieController(this.roomScene);
@@ -122,29 +127,35 @@ class NookApplication {
     // 1. Raycast Manager
     this.raycastManager = new RaycastManager(this.canvas, this.cameraInstance, this.objectManager);
 
-    // 2. Drag Manager
+    // 2. Room State Persistence & Undo History
+    this.roomState = new RoomState(this.objectManager, this.roomScene.lighting, this.cookie);
+
+    // 3. Drag Manager (Tactile 3D direct-manipulation controller)
     this.dragManager = new DragManager(
       this.canvas,
       this.cameraInstance,
       this.raycastManager,
-      this.placementManager
+      this.surfaceManager,
+      this.objectManager,
+      this.roomState
     );
 
-    // 3. Selection Manager
+    // 4. Selection Manager (Active focus, keyboard navigation, nudging & rotation)
     this.selectionManager = new SelectionManager(
       this.canvas,
       this.cameraInstance,
       this.raycastManager,
       this.dragManager,
-      this.objectManager
+      this.objectManager,
+      this.surfaceManager,
+      this.roomState
     );
 
-    // 4. Room State Persistence
-    this.roomState = new RoomState(this.objectManager, this.roomScene.lighting, this.cookie);
-
     // Auto-save on drag completion
-    this.dragManager.onDragEndCallback = () => {
-      this.roomState.saveState();
+    this.dragManager.onDragEndCallback = (draggedObj, surfaceResult, isValid) => {
+      if (isValid) {
+        this.roomState.saveState();
+      }
     };
   }
 
@@ -169,40 +180,170 @@ class NookApplication {
 
       if (hit && hit.interactiveObject) {
         const obj = hit.interactiveObject;
+        this.selectionManager.select(obj);
+
+        const menuItems = [];
+
+        // Special Actions first if available
         if (obj.itemId === 'prop_cookie') {
-          // Cookie Specific Context Actions
-          this.contextMenu.show(e.clientX, e.clientY, [
-            {
-              label: 'Pet Cookie 🐾',
-              icon: '❤️',
-              action: () => this.cookie.behavior.pet()
-            }
-          ]);
-        } else {
-          // General Object Context Actions
-          this.contextMenu.show(e.clientX, e.clientY, [
-            {
-              label: `Focus "${obj.name}"`,
-              icon: '🔍',
-              action: () => {
-                this.selectionManager.select(obj);
-                this.cameraInstance.focusOn(obj.position);
+          menuItems.push({
+            label: 'Pet Cookie 🐾',
+            icon: '❤️',
+            action: () => this.cookie.behavior.pet()
+          });
+        } else if (obj.objectType === 'lamp') {
+          const isLampOn = this.roomScene.lighting && this.roomScene.lighting.isDeskLampOn;
+          menuItems.push({
+            label: isLampOn ? 'Turn Off Lamp' : 'Turn On Lamp',
+            icon: '💡',
+            action: () => {
+              if (this.roomScene && this.roomScene.lighting) {
+                this.roomScene.lighting.toggleDeskLamp();
+                this.roomState.saveState();
               }
             }
-          ]);
+          });
+        } else if (obj.objectType === 'record_player') {
+          menuItems.push({
+            label: obj.isSpinning ? 'Pause Record' : 'Play Vinyl 🎵',
+            icon: '💿',
+            action: () => {
+              obj.triggerSpecialAction();
+            }
+          });
         }
+
+        if (menuItems.length > 0) {
+          menuItems.push({ separator: true });
+        }
+
+        // Standard Actions for movable objects:
+        // Move
+        if (obj.isMovable) {
+          menuItems.push({
+            label: 'Move',
+            icon: '✥',
+            action: () => {
+              this.selectionManager.select(obj);
+              obj.targetElevation = 0.12;
+              setTimeout(() => { obj.targetElevation = 0.075; }, 300);
+            }
+          });
+        }
+
+        // Rotate
+        if (obj.isRotatable) {
+          menuItems.push({
+            label: 'Rotate 45° (R)',
+            icon: '↻',
+            action: () => {
+              const prevRot = obj.rotation.clone();
+              obj.rotateBy(Math.PI * 0.25);
+              this.roomState.pushUndo({
+                type: 'rotate',
+                objectId: obj.itemId,
+                previousRotation: prevRot,
+                newRotation: obj.rotation.clone()
+              });
+              this.roomState.saveState();
+            }
+          });
+        }
+
+        // Reset Position
+        if (obj.isMovable) {
+          menuItems.push({
+            label: 'Reset Position',
+            icon: '↺',
+            action: () => {
+              const prevPos = obj.position.clone();
+              const prevRot = obj.rotation.clone();
+              obj.resetToDefault();
+              this.roomState.pushUndo({
+                type: 'move',
+                objectId: obj.itemId,
+                previousPosition: prevPos,
+                previousRotation: prevRot,
+                newPosition: obj.defaultPosition.clone(),
+                newRotation: obj.defaultRotation.clone()
+              });
+              this.roomState.saveState();
+            }
+          });
+        }
+
+        // Duplicate
+        if (obj.isDuplicatable) {
+          menuItems.push({
+            label: 'Duplicate',
+            icon: '⧉',
+            action: () => {
+              const dup = this.objectManager.duplicateObject(obj.itemId);
+              if (dup) {
+                this.selectionManager.select(dup);
+                this.roomState.pushUndo({
+                  type: 'delete',
+                  objectId: dup.itemId,
+                  objectInstance: dup,
+                  previousPosition: dup.position.clone(),
+                  previousRotation: dup.rotation.clone()
+                });
+                this.roomState.saveState();
+              }
+            }
+          });
+        }
+
+        // Delete
+        if (obj.isDeletable) {
+          menuItems.push({ separator: true });
+          menuItems.push({
+            label: 'Delete',
+            icon: '🗑️',
+            danger: true,
+            action: () => {
+              this.roomState.pushUndo({
+                type: 'delete',
+                objectId: obj.itemId,
+                objectInstance: obj,
+                previousPosition: obj.position.clone(),
+                previousRotation: obj.rotation.clone()
+              });
+              this.selectionManager.deselect();
+              this.objectManager.removeObject(obj.itemId);
+              this.roomState.saveState();
+            }
+          });
+        }
+
+        this.contextMenu.show(e.clientX, e.clientY, menuItems);
       } else {
         // Room Context Menu (Empty Space)
-        this.contextMenu.show(e.clientX, e.clientY, [
+        const emptyItems = [
           {
-            label: 'Reset Reference Camera',
+            label: 'Reset Reference Camera (Esc)',
             icon: '🎥',
             action: () => {
               this.selectionManager.deselect();
               this.cameraInstance.resetCamera();
             }
           }
-        ]);
+        ];
+
+        if (this.roomState && this.roomState.undoStack.length > 0) {
+          emptyItems.push({
+            label: 'Undo (Cmd+Z)',
+            icon: '↶',
+            action: () => {
+              const undone = this.roomState.undo();
+              if (undone && undone.object) {
+                this.selectionManager.select(undone.object);
+              }
+            }
+          });
+        }
+
+        this.contextMenu.show(e.clientX, e.clientY, emptyItems);
       }
     });
 

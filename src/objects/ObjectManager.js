@@ -32,7 +32,15 @@ export class ObjectManager {
     this.registerObject(pebble);
   }
 
+  initMovableProps(propsList) {
+    if (!propsList) return;
+    for (const prop of propsList) {
+      this.registerObject(prop);
+    }
+  }
+
   registerObject(obj) {
+    if (!obj) return;
     this.objects.set(obj.itemId, obj);
     this.roomScene.interactiveObjects.add(obj);
   }
@@ -42,7 +50,45 @@ export class ObjectManager {
     if (obj) {
       this.roomScene.interactiveObjects.remove(obj);
       this.objects.delete(id);
+      return obj;
     }
+    return null;
+  }
+
+  duplicateObject(id) {
+    const original = this.objects.get(id);
+    if (!original || !original.isDuplicatable) return null;
+
+    const duplicate = new InteractiveObject({
+      name: `${original.name} Copy`,
+      accessibilityLabel: `${original.accessibilityLabel} (Copy)`,
+      category: original.category,
+      objectType: original.objectType,
+      collisionRadius: original.collisionRadius,
+      isMovable: original.isMovable,
+      isDraggable: original.isDraggable,
+      isSelectable: original.isSelectable,
+      isRotatable: original.isRotatable,
+      isDeletable: true,
+      isDuplicatable: true,
+      specialAction: original.specialAction
+    });
+
+    // Clone visual meshes
+    for (const child of original.visualRoot.children) {
+      const cloned = child.clone(true);
+      duplicate.visualRoot.add(cloned);
+    }
+
+    // Offset position slightly on the surface
+    const offsetPos = original.position.clone();
+    offsetPos.x += 0.22;
+    offsetPos.z += 0.15;
+    duplicate.setDefaultTransform(offsetPos, original.rotation.clone());
+    duplicate.cacheMaterials();
+
+    this.registerObject(duplicate);
+    return duplicate;
   }
 
   getObjectById(id) {
