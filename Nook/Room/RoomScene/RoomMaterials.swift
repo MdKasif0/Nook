@@ -206,6 +206,10 @@ final class RoomMaterials {
         let height = 320
         let image = NSImage(size: NSSize(width: width, height: height))
         image.lockFocus()
+        if let context = NSGraphicsContext.current?.cgContext {
+            context.translateBy(x: 0, y: CGFloat(height))
+            context.scaleBy(x: 1.0, y: -1.0)
+        }
         
         // Warm cream backdrop
         NSColor(red: 0.98, green: 0.96, blue: 0.93, alpha: 1.0).setFill()
@@ -263,6 +267,10 @@ final class RoomMaterials {
         let height = 160
         let image = NSImage(size: NSSize(width: width, height: height))
         image.lockFocus()
+        if let context = NSGraphicsContext.current?.cgContext {
+            context.translateBy(x: 0, y: CGFloat(height))
+            context.scaleBy(x: 1.0, y: -1.0)
+        }
         
         // Calming green nature gradient
         let gradient = NSGradient(
