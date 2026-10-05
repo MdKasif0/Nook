@@ -85,22 +85,20 @@ struct SearchPaletteView: View {
                 
                 // Results List
                 if searchResults.isEmpty {
-                    VStack(spacing: NookDesign.Spacing.xs) {
-                        Image(systemName: "tray")
-                            .font(.system(size: 20))
+                    VStack(spacing: NookDesign.Spacing.sm) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 20, weight: .light))
                             .foregroundStyle(NookDesign.Colors.textTertiary)
-                            .padding(.top, NookDesign.Spacing.lg)
+                            .padding(.top, NookDesign.Spacing.xl)
                         
-                        Text("No matching thoughts found")
-                            .font(NookDesign.Typography.caption)
+                        Text("No thoughts match that.")
+                            .font(NookDesign.Typography.subheading)
                             .foregroundStyle(NookDesign.Colors.textSecondary)
-                        
-                        Text("Search matches title, content, item category, or physical object type")
-                            .font(NookDesign.Typography.caption)
-                            .foregroundStyle(NookDesign.Colors.textTertiary)
-                            .padding(.bottom, NookDesign.Spacing.lg)
+                            .padding(.bottom, NookDesign.Spacing.xl)
                     }
                     .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("No thoughts match that.")
                 } else {
                     ScrollViewReader { proxy in
                         ScrollView {
@@ -178,6 +176,24 @@ struct SearchPaletteView: View {
         .onChange(of: query) { _, _ in
             selectedIndex = 0
         }
+        .onKeyPress(.downArrow) {
+            if !searchResults.isEmpty {
+                selectedIndex = min(searchResults.count - 1, selectedIndex + 1)
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(.upArrow) {
+            if !searchResults.isEmpty {
+                selectedIndex = max(0, selectedIndex - 1)
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(.escape) {
+            onClose()
+            return .handled
+        }
     }
     
     // MARK: - Result Row
@@ -253,6 +269,9 @@ struct SearchPaletteView: View {
         .background(isSelected ? NookDesign.Colors.olive.opacity(0.12) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous))
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.objectType.displayName)")
+        .accessibilityHint("Press Enter to focus this object in your room")
     }
     
     private func selectCurrent() {
