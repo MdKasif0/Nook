@@ -23,6 +23,7 @@ struct RoomSceneView: NSViewRepresentable {
         view.backgroundColor = NSColor(red: 0.988, green: 0.98, blue: 0.965, alpha: 1.0)
         view.antialiasingMode = .multisampling4X
         view.autoenablesDefaultLighting = false
+        view.preferredFramesPerSecond = 60
         view.rendersContinuously = true
         view.onItemMoved = onItemMoved
         view.onOpenItem = onOpenItem

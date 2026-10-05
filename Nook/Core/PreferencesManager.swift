@@ -1,12 +1,14 @@
 import SwiftUI
 import ServiceManagement
 import SwiftData
+import os
 
 /// Manages application-wide user preferences using UserDefaults and native macOS APIs.
 @MainActor
 @Observable
 final class PreferencesManager {
     static let shared = PreferencesManager()
+    private static let logger = Logger(subsystem: "com.nook.app", category: "Preferences")
     
     private let defaults = UserDefaults.standard
     
@@ -94,7 +96,7 @@ final class PreferencesManager {
                     }
                 }
             } catch {
-                print("[PreferencesManager] Launch at login registration failed: \(error)")
+                Self.logger.error("Launch at login registration failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
