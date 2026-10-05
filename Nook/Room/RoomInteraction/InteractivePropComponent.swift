@@ -16,7 +16,7 @@ public enum PropCategory: String, Codable, Sendable {
 ///
 /// Stores metadata including human-readable accessibility label, movement constraints,
 /// default reset transform, and interaction flags.
-public struct InteractivePropComponent: Component, Codable {
+public struct InteractivePropComponent: Component {
     
     /// Unique identifier for this prop (e.g., "desk_lamp", "skateboard", "daisy_pillow")
     public var propId: String
