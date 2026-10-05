@@ -60,6 +60,10 @@ public final class CookieBehaviorController {
         self.entity = entity
     }
     
+    public func bind(node: CookieNode) {
+        // Backward compatibility stub for SceneKit prototype view
+    }
+    
     // MARK: - Room Event Subscription
     
     private func setupEventSubscription() {
