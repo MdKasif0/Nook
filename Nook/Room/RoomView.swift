@@ -156,9 +156,15 @@ struct RoomView: View {
                         
                         Spacer()
                         
-                        // Selected Item Floating Inspector Card (Bottom Right)
+                        // Selected Item or Prop Floating Inspector Card (Bottom Right)
                         if let item = selectedItem {
                             selectedItemInspector(for: item)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                    removal: .opacity.combined(with: .scale(scale: 0.96))
+                                ))
+                        } else if let prop = selectedPropInfo {
+                            selectedPropInspector(for: prop)
                                 .transition(.asymmetric(
                                     insertion: .opacity.combined(with: .move(edge: .trailing)),
                                     removal: .opacity.combined(with: .scale(scale: 0.96))
@@ -210,6 +216,23 @@ struct RoomView: View {
             sceneController.onPetCookie = {
                 handleCookieInteraction()
             }
+            sceneController.onPropSelected = { id in
+                withAnimation(NookDesign.Animation.springy) {
+                    if let id = id, let entity = sceneController.findPropEntity(id: id) {
+                        selectedPropInfo = entity.components[InteractivePropComponent.self]
+                    } else {
+                        selectedPropInfo = nil
+                    }
+                }
+            }
+            sceneController.onPropTransformSaved = { transform in
+                currentRoomState.setPropTransform(transform)
+                PersistenceController.shared.safeSave(context: modelContext, appState: appState)
+            }
+            sceneController.onPropTransformReset = { propId in
+                currentRoomState.resetPropTransform(propId: propId)
+                PersistenceController.shared.safeSave(context: modelContext, appState: appState)
+            }
             sceneController.applySavedRoomState(currentRoomState)
             RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
             GlobalShortcutManager.shared.onEscapePressed = { [weak appState] in
@@ -219,6 +242,13 @@ struct RoomView: View {
                 }
                 if isEditingSelectedItem {
                     isEditingSelectedItem = false
+                    return true
+                }
+                if selectedPropInfo != nil {
+                    withAnimation(NookDesign.Animation.springy) {
+                        sceneController.interactionSystem?.clearPropSelection()
+                        selectedPropInfo = nil
+                    }
                     return true
                 }
                 if sceneController.selectedItemID != nil {
