@@ -1357,6 +1357,8 @@ final class NookDataReliabilityTests {
         guard arcY >= 0.12 else {
             throw TestError("Jump arc height \(arcY) is too flat")
         }
+    }
+    
     // MARK: - Step 3: Cookie Personality, Behaviors & Audio Tests
     
     private static func testCookieAudioVocalizationsAndPurr() throws {
