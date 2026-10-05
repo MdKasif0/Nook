@@ -18,6 +18,7 @@ final class PreferencesManager {
         static let launchAtLogin = "nook_launch_at_login"
         static let soundEffects = "nook_sound_effects"
         static let cookieReactions = "nook_cookie_reactions"
+        static let autoCheckUpdates = "nook_auto_check_updates"
     }
     
     // MARK: - Settings Properties
@@ -54,6 +55,13 @@ final class PreferencesManager {
     var cookieReactionsEnabled: Bool {
         didSet {
             defaults.set(cookieReactionsEnabled, forKey: Keys.cookieReactions)
+        }
+    }
+    
+    /// Whether Nook automatically checks for updates via the Sparkle AppCast feed.
+    var autoCheckUpdates: Bool {
+        didSet {
+            defaults.set(autoCheckUpdates, forKey: Keys.autoCheckUpdates)
         }
     }
     
