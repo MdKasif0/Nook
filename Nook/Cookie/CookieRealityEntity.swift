@@ -516,12 +516,12 @@ public final class CookieRealityEntity: Entity {
             displayName: "Cookie",
             accessibilityLabel: "Cookie the cream kitten",
             category: .special,
-            allowsDragging: false,
-            allowsRotation: false,
+            allowsDragging: true,
+            allowsRotation: true,
             allowsScaling: false,
             defaultPosition: Self.bedPerchPos,
             defaultOrientation: Self.bedPerchRot,
-            restingSurfaceY: Self.bedPerchPos.y
+            restingSurfaceY: self.position.y
         ))
     }
     
