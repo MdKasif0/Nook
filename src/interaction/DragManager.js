@@ -133,17 +133,21 @@ export class DragManager {
 
       // 3. Drop settle or Invalid rebound
       if (isValid) {
-        this.draggedObject.onDragEnd(surfaceResult.position, true);
+        const targetRot = typeof this.draggedObject.adaptOrientationToSurface === 'function'
+          ? this.draggedObject.adaptOrientationToSurface(surfaceResult.surface.id)
+          : this.draggedObject.rotation.clone();
+
+        this.draggedObject.onDragEnd(surfaceResult.position, true, targetRot);
 
         // Record undo action if position moved
-        if (this.roomState && this.initialObjectPos.distanceTo(surfaceResult.position) > 0.04) {
+        if (this.roomState && (this.initialObjectPos.distanceTo(surfaceResult.position) > 0.04 || !this.initialObjectRot.equals(targetRot))) {
           this.roomState.pushUndo({
             type: 'move',
             objectId: this.draggedObject.itemId,
             previousPosition: this.initialObjectPos.clone(),
             previousRotation: this.initialObjectRot.clone(),
             newPosition: surfaceResult.position.clone(),
-            newRotation: this.draggedObject.rotation.clone()
+            newRotation: targetRot.clone()
           });
         }
       } else {
