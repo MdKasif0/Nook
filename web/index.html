@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nook — A tiny room for everything on your mind</title>
+  <meta name="description" content="Turn thoughts, ideas, notes, and little moments into physical objects inside a miniature diorama room on your Mac. Local-first, private, and calm.">
+  <meta name="author" content="Nook">
+  
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Nook — A tiny room for everything on your mind">
+  <meta property="og:description" content="Turn thoughts, ideas, notes, and little moments into a place that feels like yours. A calm, local-first Mac application.">
+  <meta property="og:image" content="assets/nook_room_hero.jpg">
+  
+  <!-- Favicon / Apple Touch Icon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23879178'/><ellipse cx='50' cy='54' rx='28' ry='18' fill='%23FCFAF6'/><circle cx='62' cy='46' r='4' fill='%23B8795F'/></svg>">
+  
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Ambient Dust Particles Canvas -->
+  <canvas id="ambient-dust" aria-hidden="true"></canvas>
+
+  <!-- Navigation -->
+  <header class="site-header" id="site-header">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand" aria-label="Nook Home">
+        <span class="brand-pebble" aria-hidden="true"></span>
+        <span class="brand-text">Nook</span>
+      </a>
+
+      <nav class="nav-links" id="nav-links" aria-label="Main Navigation">
+        <a href="#philosophy" class="nav-link">Philosophy</a>
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="#cookie" class="nav-link">Meet Cookie</a>
+        <a href="#privacy" class="nav-link">Privacy</a>
+        <a href="#download" class="nav-link">Download</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="#download" class="button button-nav download-cta-btn" id="nav-download-btn">
+          <span>Download for Mac</span>
+          <span class="apple-logo-icon" aria-hidden="true"></span>
+        </a>
+        <button class="mobile-toggle" id="mobile-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle navigation menu">
+          <span class="toggle-bar"></span>
+          <span class="toggle-bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    
+    <!-- Hero Section -->
+    <section class="section hero-section" id="hero">
+      <div class="container hero-container">
+        
+        <div class="hero-badge reveal-item">
+          <span class="badge-dot"></span>
+          <span>Crafted natively for macOS</span>
+        </div>
+
+        <h1 class="hero-headline reveal-item">
+          A tiny room for everything on your mind.
+        </h1>
+
+        <p class="hero-subheadline reveal-item">
+          Turn thoughts, ideas, notes, and little moments into a place that feels like yours.
+        </p>
+
+        <div class="hero-actions reveal-item">
+          <a href="#download" class="button button-primary download-cta-btn" id="hero-download-btn">
+            <span class="btn-text">Download Nook for Mac</span>
+            <span class="apple-logo-icon" aria-hidden="true"></span>
+          </a>
+          <a href="#how-it-works" class="button button-secondary">
+            <span>See how it works</span>
+            <span class="arrow-icon" aria-hidden="true">↓</span>
+          </a>
+        </div>
+
+        <p class="hero-meta reveal-item">
+          Requires macOS 15 Sequoia or later &bull; Apple Silicon & Intel Universal
+        </p>
+
+        <!-- The Miniature Room Visual Showcase -->
+        <div class="room-showcase reveal-item" id="room-showcase">
+          <div class="room-window-chrome">
+            <div class="window-buttons" aria-hidden="true">
+              <span class="window-dot dot-close"></span>
+              <span class="window-dot dot-minimize"></span>
+              <span class="window-dot dot-expand"></span>
+            </div>
+            
+            <div class="window-title-bar">
+              <span class="window-title-icon" aria-hidden="true">🏠</span>
+              <span class="window-title-text">Nook — Your Miniature Room</span>
+            </div>
+
+            <!-- Lighting Mode Selector Bar -->
+            <div class="lighting-controls" role="group" aria-label="Room Lighting Environment">
+              <button class="lighting-btn active" data-time="morning" id="light-morning" aria-pressed="true">
+                <span class="light-icon">☀️</span>
+                <span class="light-label">Morning</span>
+              </button>
+              <button class="lighting-btn" data-time="afternoon" id="light-afternoon" aria-pressed="false">
+                <span class="light-icon">🌤️</span>
+                <span class="light-label">Afternoon</span>
+              </button>
+              <button class="lighting-btn" data-time="evening" id="light-evening" aria-pressed="false">
+                <span class="light-icon">🌅</span>
+                <span class="light-label">Evening</span>
+              </button>
+              <button class="lighting-btn" data-time="night" id="light-night" aria-pressed="false">
+                <span class="light-icon">🌙</span>
+                <span class="light-label">Night</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="room-viewport" id="room-viewport">
+            <img 
+              src="assets/nook_room_hero.jpg" 
+              alt="High-resolution render of Nook's isometric miniature room with oak desk, monstera plant, books, pebble, and sleeping cat Cookie in warm daylight" 
+              class="room-hero-img" 
+              id="room-main-image"
+              width="1280" 
+              height="720"
+              loading="eager"
+              fetchpriority="high"
+            >
+
+            <!-- Room Ambient Lighting Filter Overlay -->
+            <div class="lighting-ambient-overlay" id="lighting-ambient-overlay" aria-hidden="true"></div>
+
+            <!-- Interactive Hotspots on the Room -->
+            <div class="room-hotspots" aria-label="Interactive Room Objects">
+              <button class="hotspot hotspot-pebble" id="hotspot-pebble" aria-label="Inspect Pebble on wooden desk" data-object="pebble">
+                <span class="hotspot-pulse"></span>
+                <span class="hotspot-badge">Smooth Pebble</span>
+              </button>
+
+              <button class="hotspot hotspot-cookie" id="hotspot-cookie" aria-label="Visit Cookie resting on the bed" data-object="cookie">
+                <span class="hotspot-pulse"></span>
+                <span class="hotspot-badge">Cookie &bull; Resting</span>
+              </button>
+
+              <button class="hotspot hotspot-plant" id="hotspot-plant" aria-label="Inspect Desk Plant" data-object="plant">
+                <span class="hotspot-pulse"></span>
+                <span class="hotspot-badge">Potted Monstera</span>
+              </button>
+
+              <button class="hotspot hotspot-books" id="hotspot-books" aria-label="Inspect Bookshelf" data-object="books">
+                <span class="hotspot-pulse"></span>
+                <span class="hotspot-badge">Bookshelf</span>
+              </button>
+            </div>
+
+            <!-- Floating Interactive Card Popup -->
+            <div class="interactive-preview-popover" id="interactive-preview-popover" role="dialog" aria-hidden="true">
+              <div class="popover-header">
+                <div class="popover-tag" id="popover-tag">Object</div>
+                <button class="popover-close-btn" id="popover-close-btn" aria-label="Close object preview">×</button>
+              </div>
+              <h4 class="popover-title" id="popover-title">Pebble</h4>
+              <p class="popover-body" id="popover-body">A smooth, grounding river stone resting on your desk.</p>
+              <div class="popover-footer" id="popover-footer">
+                <span class="popover-hint">Click objects to inspect them</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="room-caption">
+            <span>Every thought you capture exists as a physical object inside this miniature room.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Product Philosophy Section -->
+    <section class="section philosophy-section" id="philosophy">
+      <div class="container">
+        
+        <div class="section-intro text-center">
+          <span class="eyebrow">Product Philosophy</span>
+          <h2 class="section-heading">Your thoughts shouldn’t feel like files.</h2>
+          <p class="section-subheading">
+            In standard productivity tools, ideas are rows in a database, nested markdown files, or cards on a board. 
+            Nook replaces endless hierarchies with physical tactile presence.
+          </p>
+        </div>
+
+        <div class="philosophy-grid">
+          <div class="philosophy-card philosophy-card-traditional reveal-item">
+            <div class="card-pill pill-muted">Traditional Tools</div>
+            <h3 class="card-title">Spreadsheets & Databases</h3>
+            <p class="card-desc">
+              Rows, columns, tags, search queries, and nested subfolders. When you revisit them, they feel like work waiting to be audited.
+            </p>
+            <div class="mockup-database" aria-hidden="true">
+              <div class="db-row"><span class="db-check"></span><span class="db-line"></span><span class="db-tag">#tag_4</span></div>
+              <div class="db-row"><span class="db-check"></span><span class="db-line short"></span><span class="db-tag">#status</span></div>
+              <div class="db-row"><span class="db-check"></span><span class="db-line medium"></span><span class="db-tag">#priority</span></div>
+            </div>
+          </div>
+
+          <div class="philosophy-card philosophy-card-nook reveal-item">
+            <div class="card-pill pill-olive">The Nook Way</div>
+            <h3 class="card-title">A Living Miniature Room</h3>
+            <p class="card-desc">
+              Your thoughts become smooth river stones, folded cream parchment, buttery sticky notes, and Polaroid prints you can arrange, pick up, or look over.
+            </p>
+            <div class="mockup-objects-mini" aria-hidden="true">
+              <div class="mini-obj mini-pebble" title="Pebble"></div>
+              <div class="mini-obj mini-note" title="Note"></div>
+              <div class="mini-obj mini-polaroid" title="Polaroid"></div>
+              <div class="mini-obj mini-bookmark" title="Bookmark"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section how-it-works-section" id="how-it-works">
+      <div class="container">
+        
+        <div class="section-intro text-center">
+          <span class="eyebrow">Simple & Delightful</span>
+          <h2 class="section-heading">Three simple steps.</h2>
+          <p class="section-subheading">
+            Zero setup, no onboarding tutorial, no learning curve. The room teaches the product.
+          </p>
+        </div>
+
+        <div class="steps-grid">
+          
+          <!-- Step 1: Capture -->
+          <div class="step-card reveal-item" id="step-1">
+            <div class="step-number">01</div>
+            <div class="step-content">
+              <h3 class="step-title">Capture</h3>
+              <p class="step-description">
+                Press <kbd class="keyboard-key">⌘</kbd><kbd class="keyboard-key">⇧</kbd><kbd class="keyboard-key">Space</kbd> from anywhere on your Mac. A floating piece of tactile paper appears over your desktop.
+              </p>
+            </div>
+            <div class="step-visual">
+              <img 
+                src="assets/nook_quick_capture.png" 
+                alt="Quick capture window floating with title and tactile object picker" 
+                class="step-image" 
+                loading="lazy"
+                width="500"
+                height="420"
+              >
+            </div>
+          </div>
+
+          <!-- Step 2: Choose -->
+          <div class="step-card reveal-item" id="step-2">
+            <div class="step-number">02</div>
+            <div class="step-content">
+              <h3 class="step-title">Choose</h3>
+              <p class="step-description">
+                Pick the little object that represents what you’re thinking about. A smooth stone for a grounding idea, a warm paper note for reflections, or a Polaroid for a memory.
+              </p>
+            </div>
+            
+            <!-- Interactive Object Picker Demo -->
+            <div class="interactive-picker-widget" aria-label="Interactive Physical Object Selector Demo">
+              <div class="picker-tabs" role="tablist">
+                <button class="picker-tab active" data-type="pebble" role="tab" aria-selected="true">
+                  <span class="picker-tab-icon">🪨</span>
+                  <span class="picker-tab-title">Pebble</span>
+                </button>
+                <button class="picker-tab" data-type="paperNote" role="tab" aria-selected="false">
+                  <span class="picker-tab-icon">📄</span>
+                  <span class="picker-tab-title">Paper Note</span>
+                </button>
+                <button class="picker-tab" data-type="stickyNote" role="tab" aria-selected="false">
+                  <span class="picker-tab-icon">📌</span>
+                  <span class="picker-tab-title">Sticky Note</span>
+                </button>
+                <button class="picker-tab" data-type="card" role="tab" aria-selected="false">
+                  <span class="picker-tab-icon">📇</span>
+                  <span class="picker-tab-title">Small Card</span>
+                </button>
+                <button class="picker-tab" data-type="polaroid" role="tab" aria-selected="false">
+                  <span class="picker-tab-icon">🖼️</span>
+                  <span class="picker-tab-title">Polaroid</span>
+                </button>
+                <button class="picker-tab" data-type="bookmark" role="tab" aria-selected="false">
+                  <span class="picker-tab-icon">🔖</span>
+                  <span class="picker-tab-title">Bookmark</span>
+                </button>
+              </div>
+
+              <div class="picker-preview-box">
+                <div class="picker-preview-avatar" id="picker-preview-avatar">
+                  <div class="avatar-shape shape-pebble"></div>
+                </div>
+                <div class="picker-preview-text">
+                  <h4 class="picker-object-name" id="picker-object-name">Smooth River Pebble</h4>
+                  <p class="picker-object-sub" id="picker-object-sub">A grounding, smooth river stone that settles peacefully on your desk.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Keep -->
+          <div class="step-card reveal-item" id="step-3">
+            <div class="step-number">03</div>
+            <div class="step-content">
+              <h3 class="step-title">Keep</h3>
+              <p class="step-description">
+                Your thought finds its physical place inside your room. Drag it across the desk surface, move it to the bookshelf, or inspect it with native macOS keyboard shortcuts.
+              </p>
+            </div>
+            <div class="step-visual">
+              <img 
+                src="assets/nook_thought_detail.png" 
+                alt="Tactile reader sheet displaying thought title, timestamp, and edit actions" 
+                class="step-image" 
+                loading="lazy"
+                width="520"
+                height="460"
+              >
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Cookie Section -->
+    <section class="section cookie-section" id="cookie">
+      <div class="container cookie-container">
+        
+        <div class="cookie-text-col reveal-item">
+          <span class="eyebrow">Your Companion</span>
+          <h2 class="section-heading">Meet Cookie.</h2>
+          <p class="section-subheading">
+            Cookie is a tiny cat who lives permanently inside your Nook room.
+          </p>
+          <p class="cookie-body">
+            Cookie isn't an AI assistant. Cookie will never suggest corporate workflow hacks, summarize emails, or interrupt your focus.
+          </p>
+          <p class="cookie-body">
+            Cookie communicates through quiet curiosity, rhythmic naps on the linen blanket, stretching, and purring when you place a thought.
+          </p>
+
+          <!-- Interactive Cookie State Controller -->
+          <div class="cookie-state-tabs" role="group" aria-label="Cookie Companion States">
+            <span class="state-label">Watch Cookie:</span>
+            <button class="state-tab active" data-state="sleeping" id="cookie-btn-sleeping">
+              <span>Sleeping</span>
+            </button>
+            <button class="state-tab" data-state="curious" id="cookie-btn-curious">
+              <span>Curious</span>
+            </button>
+            <button class="state-tab" data-state="happy" id="cookie-btn-happy">
+              <span>Happy</span>
+            </button>
+          </div>
+
+          <div class="cookie-interactive-actions">
+            <button class="button button-secondary button-pet" id="pet-cookie-btn">
+              <span>Pet Cookie</span>
+              <span class="paw-icon" aria-hidden="true">🐾</span>
+            </button>
+            <span class="pet-feedback-bubble" id="pet-feedback-bubble" aria-live="polite">Purr...</span>
+          </div>
+        </div>
+
+        <div class="cookie-visual-col reveal-item">
+          <div class="cookie-frame">
+            <img 
+              src="assets/cookie_sleeping.jpg" 
+              alt="Cookie the tiny cat curled up asleep on a sage green linen blanket" 
+              class="cookie-main-img" 
+              id="cookie-display-img"
+              width="600" 
+              height="600"
+              loading="lazy"
+            >
+            <div class="cookie-status-tag" id="cookie-status-tag">
+              <span class="status-indicator"></span>
+              <span class="status-text">Cookie is sleeping soundly</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Local-First & Privacy Section -->
+    <section class="section privacy-section" id="privacy">
+      <div class="container">
+        
+        <div class="section-intro text-center">
+          <span class="eyebrow">Local-First Architecture</span>
+          <h2 class="section-heading">Your thoughts stay on your Mac.</h2>
+          <p class="section-subheading">
+            Nook has no backend server, no cloud database, no accounts, and no telemetry.
+            Your ideas belong exclusively to you.
+          </p>
+        </div>
+
+        <div class="privacy-pillars-grid">
+          
+          <div class="pillar-card reveal-item">
+            <div class="pillar-icon" aria-hidden="true">🔒</div>
+            <h3 class="pillar-title">No Account Required</h3>
+            <p class="pillar-desc">
+              No sign-up form, no password, no email collection. Launch Nook and your room is already waiting.
+            </p>
+          </div>
+
+          <div class="pillar-card reveal-item">
+            <div class="pillar-icon" aria-hidden="true">💾</div>
+            <h3 class="pillar-title">Native SwiftData Storage</h3>
+            <p class="pillar-desc">
+              All thoughts, positions, and objects are persisted directly in macOS SwiftData SQLite storage on your hard drive.
+            </p>
+          </div>
+
+          <div class="pillar-card reveal-item">
+            <div class="pillar-icon" aria-hidden="true">✈️</div>
+            <h3 class="pillar-title">100% Offline by Design</h3>
+            <p class="pillar-desc">
+              Works seamlessly on airplanes, remote trails, or disconnected cafes without asking for a Wi-Fi connection.
+            </p>
+          </div>
+
+          <div class="pillar-card reveal-item">
+            <div class="pillar-icon" aria-hidden="true">🛡️</div>
+            <h3 class="pillar-title">Zero Data Selling</h3>
+            <p class="pillar-desc">
+              There is no analytics tracker, no behavioral telemetry, and no ad network. We cannot read your thoughts even if we wanted to.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="search-spotlight-banner reveal-item">
+          <div class="banner-content">
+            <span class="banner-badge">Instant Local Search</span>
+            <h3 class="banner-title">Lightning fast. Zero network requests.</h3>
+            <p class="banner-desc">
+              Press <kbd class="keyboard-key">⌘</kbd><kbd class="keyboard-key">K</kbd> anytime. Nook's in-memory inverted token index instantly locates thoughts across your desk and shelves.
+            </p>
+          </div>
+          <div class="banner-visual">
+            <img 
+              src="assets/nook_search_palette.png" 
+              alt="Search command palette showing clean search results and keyboard navigation" 
+              class="search-palette-preview" 
+              loading="lazy"
+              width="580"
+              height="300"
+            >
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- macOS Download Section -->
+    <section class="section download-section" id="download">
+      <div class="container download-container">
+        
+        <div class="download-card reveal-item">
+          <div class="download-badge">
+            <span class="badge-icon"></span>
+            <span>Universal Binary</span>
+          </div>
+
+          <h2 class="download-headline">Nook is made for Mac.</h2>
+          <p class="download-subheadline">
+            Experience a miniature physical place for your thoughts. Free to download and use locally forever.
+          </p>
+
+          <div class="download-action-group">
+            <a href="downloads/index.html" class="button button-primary button-large download-cta-btn" id="main-download-btn">
+              <span class="btn-text">Download Nook for macOS</span>
+              <span class="apple-logo-icon" aria-hidden="true"></span>
+            </a>
+            <span class="download-version-note" id="download-version-note">
+              Version 1.0 &bull; Requires macOS 15 or later
+            </span>
+          </div>
+
+          <div class="mac-specs-grid">
+            <div class="spec-item">
+              <span class="spec-label">Architecture</span>
+              <span class="spec-value">Apple Silicon (M1/M2/M3/M4) & Intel</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Engine</span>
+              <span class="spec-value">Swift 5.10 & Metal SceneKit</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Format</span>
+              <span class="spec-value">Universal Disk Image (.dmg)</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">License</span>
+              <span class="spec-value">Personal Local-First Edition</span>
+            </div>
+          </div>
+
+          <!-- Shortcuts Mini Reference -->
+          <div class="shortcuts-strip">
+            <span class="strip-title">Mac Shortcuts:</span>
+            <span class="strip-item"><kbd>⌘⇧Space</kbd> Quick Thought</span>
+            <span class="strip-item"><kbd>⌘K</kbd> Search</span>
+            <span class="strip-item"><kbd>⌘Z</kbd> Undo</span>
+            <span class="strip-item"><kbd>Tab</kbd> Navigate Objects</span>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <span class="brand-pebble" aria-hidden="true"></span>
+            <span class="brand-name">Nook</span>
+          </div>
+          <p class="footer-tagline">A tiny room for everything on your mind.</p>
+        </div>
+
+        <nav class="footer-links" aria-label="Footer Navigation">
+          <div class="footer-col">
+            <span class="footer-col-title">App</span>
+            <a href="#how-it-works">How it works</a>
+            <a href="#cookie">Meet Cookie</a>
+            <a href="#philosophy">Philosophy</a>
+            <a href="#download">Download</a>
+          </div>
+          <div class="footer-col">
+            <span class="footer-col-title">Privacy & Open</span>
+            <a href="#privacy">Privacy Promise</a>
+            <a href="downloads/index.html">Direct DMG</a>
+            <a href="https://github.com/MdKasif0/Nook" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
+          <div class="footer-col">
+            <span class="footer-col-title">Contact</span>
+            <a href="mailto:hello@nook.app">hello@nook.app</a>
+            <a href="#hero">Back to top ↑</a>
+          </div>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="copyright">&copy; 2026 Nook. Built with care for Mac. Local-first, always.</p>
+        <p class="footer-note">Designed with Apple San Francisco typography & natural materials.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>
