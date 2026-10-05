@@ -86,28 +86,28 @@ final class DeskEntity: Entity {
         // Stand base
         let standBase = ModelEntity(mesh: .generateBox(size: [0.14, 0.008, 0.16], cornerRadius: 0.005), materials: [mats.brushedAluminum])
         standBase.position = [monitorCenter.x, Self.deskHeight + 0.004, monitorCenter.z]
-        standBase.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
+        standBase.orientation = simd_quatf(angle: -Float.pi * 0.28, axis: [0, 1, 0])
         addChild(standBase)
         
         // Stand upright post
         let standPost = ModelEntity(mesh: .generateBox(size: [0.015, 0.18, 0.035], cornerRadius: 0.004), materials: [mats.brushedAluminum])
         standPost.position = [monitorCenter.x - 0.02, Self.deskHeight + 0.09, monitorCenter.z - 0.01]
-        standPost.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
+        standPost.orientation = simd_quatf(angle: -Float.pi * 0.28, axis: [0, 1, 0])
         addChild(standPost)
         
         // Monitor casing
         let casingMesh = MeshResource.generateBox(size: [monitorDepth, monitorHeight, monitorWidth], cornerRadius: 0.008)
         let monitorCasing = ModelEntity(mesh: casingMesh, materials: [mats.brushedAluminum])
         monitorCasing.position = monitorCenter
-        monitorCasing.orientation = simd_quatf(angle: Float.pi * 0.22, axis: [0, 1, 0])
+        monitorCasing.orientation = simd_quatf(angle: -Float.pi * 0.28, axis: [0, 1, 0])
         monitorCasing.name = "desktop_monitor"
         addChild(monitorCasing)
         
         // Screen with "hello ♡" procedural texture
         let screenMesh = MeshResource.generatePlane(width: monitorWidth - 0.02, depth: monitorHeight - 0.02, cornerRadius: 0.004)
         let screenEntity = ModelEntity(mesh: screenMesh, materials: [mats.monitorScreenMaterial])
-        screenEntity.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 0, 1]) * simd_quatf(angle: Float.pi * 0.5, axis: [0, 1, 0])
-        screenEntity.position = [monitorDepth * 0.5 + 0.001, 0, 0]
+        screenEntity.orientation = simd_quatf(angle: -Float.pi * 0.5, axis: [0, 1, 0]) * simd_quatf(angle: -Float.pi * 0.5, axis: [1, 0, 0])
+        screenEntity.position = [monitorDepth * 0.5 + 0.002, 0, 0]
         monitorCasing.addChild(screenEntity)
         
         // 5. Open Silver Laptop (Beside monitor at Z = 0.08)
@@ -117,7 +117,7 @@ final class DeskEntity: Entity {
             materials: [mats.brushedAluminum]
         )
         laptopBase.position = [laptopCenter.x, laptopCenter.y + 0.005, laptopCenter.z]
-        laptopBase.orientation = simd_quatf(angle: Float.pi * 0.24, axis: [0, 1, 0])
+        laptopBase.orientation = simd_quatf(angle: -Float.pi * 0.22, axis: [0, 1, 0])
         laptopBase.name = "laptop"
         addChild(laptopBase)
         
@@ -134,8 +134,8 @@ final class DeskEntity: Entity {
             mesh: .generatePlane(width: 0.22, depth: 0.14, cornerRadius: 0.003),
             materials: [mats.laptopScreenMaterial]
         )
-        laptopDisplay.orientation = simd_quatf(angle: Float.pi * 0.5, axis: [0, 0, 1]) * simd_quatf(angle: Float.pi * 0.5, axis: [0, 1, 0])
-        laptopDisplay.position = [0.004, 0, 0]
+        laptopDisplay.orientation = simd_quatf(angle: -Float.pi * 0.5, axis: [0, 1, 0]) * simd_quatf(angle: -Float.pi * 0.5, axis: [1, 0, 0])
+        laptopDisplay.position = [0.005, 0, 0]
         laptopScreen.addChild(laptopDisplay)
         
         // 6. Keyboard & Mouse (In front of monitor/laptop)

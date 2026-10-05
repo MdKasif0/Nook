@@ -19,7 +19,7 @@ final class RoomLightingSystem {
         self.rootEntity = root
         
         // 1. Primary Directional Sunlight (Streaming through the right window)
-        // Positioned outside window pointing down-forward into the room towards bed and desk
+        // Light travels down-left towards back-left wall so foreground floor remains brightly sunlit
         let sun = DirectionalLight()
         sun.light.color = .init(red: 1.0, green: 0.94, blue: 0.84, alpha: 1.0)
         sun.light.intensity = 2800
@@ -27,8 +27,8 @@ final class RoomLightingSystem {
             shadowProjection: .automatic(maximumDistance: 8.0),
             depthBias: 0.0015
         )
-        sun.position = [1.8, 2.8, -2.4]
-        sun.look(at: [0.15, 0.30, 0.10], from: sun.position, relativeTo: nil)
+        sun.position = [2.6, 3.4, 0.8]
+        sun.look(at: [-0.30, 0.35, -0.40], from: sun.position, relativeTo: nil)
         sun.name = "sun_directional_light"
         root.addChild(sun)
         self.sunLight = sun
