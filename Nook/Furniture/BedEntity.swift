@@ -73,10 +73,10 @@ final class BedEntity: Entity {
         sagePillow.orientation = simd_quatf(angle: Float.pi * 0.12, axis: [0, 0, 1]) * simd_quatf(angle: -Float.pi * 0.1, axis: [0, 1, 0])
         addChild(sagePillow)
         
-        // Adorable Daisy Flower Pillow (White petals with yellow center)
+        // Adorable Daisy Flower Pillow (White petals with yellow center, propped up facing camera)
         let daisyEntity = buildDaisyPillow(materials: mats)
-        daisyEntity.position = [-Self.bedLength * 0.5 + 0.30, Self.frameHeight + mattressHeight + 0.06, -0.12]
-        daisyEntity.orientation = simd_quatf(angle: Float.pi * 0.10, axis: [0, 0, 1])
+        daisyEntity.position = [-Self.bedLength * 0.5 + 0.38, Self.frameHeight + mattressHeight + 0.08, -0.05]
+        daisyEntity.orientation = simd_quatf(angle: Float.pi * 0.38, axis: [1, 0, 0]) * simd_quatf(angle: Float.pi * 0.18, axis: [0, 1, 0])
         daisyEntity.name = "daisy_pillow_bed"
         addChild(daisyEntity)
         
