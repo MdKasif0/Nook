@@ -87,10 +87,12 @@ export class RoomScene {
     woodTexture.repeat.set(2, 2);
 
     const floorPlanksTexture = TextureGenerator.createFloorPlanksTexture(1024, 1024, 12);
-    floorPlanksTexture.repeat.set(2, 2);
+    floorPlanksTexture.repeat.set(3, 3);
 
     const wallTexture = TextureGenerator.createWallCreamTexture(512, 512);
     wallTexture.repeat.set(4, 4);
+
+    const outdoorTexture = TextureGenerator.createOutdoorViewTexture(512, 512);
 
     return {
       // Warm Ivory / Cream Plaster (#F7F1E6 / #F4EBDD)
@@ -101,28 +103,28 @@ export class RoomScene {
         metalness: 0.01
       }),
 
-      // Warm Natural Honey Wood (Semi-matte finish, subtle grain)
+      // Warm Natural Honey Wood (Semi-matte finish, subtle grain - unmultiplied to preserve blonde honey oak)
       woodHoney: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodHoney,
+        color: 0xffffff,
         map: woodTexture,
-        roughness: 0.52,
-        metalness: 0.03
+        roughness: 0.54,
+        metalness: 0.02
       }),
 
       // Slightly deeper honey oak for structural trims, beams, and bevels
       woodTrim: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodTrim,
+        color: 0xf3e6d5,
         map: woodTexture,
-        roughness: 0.48,
-        metalness: 0.04
+        roughness: 0.50,
+        metalness: 0.03
       }),
 
       // Floor Planks (Warm honey oak with board grooves)
       floorPlanks: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodPlanks,
+        color: 0xffffff,
         map: floorPlanksTexture,
-        roughness: 0.46,
-        metalness: 0.03
+        roughness: 0.48,
+        metalness: 0.02
       }),
 
       // Window Glass
@@ -137,7 +139,7 @@ export class RoomScene {
 
       // Outdoor Sky & Foliage Backdrop
       outdoorSky: new THREE.MeshBasicMaterial({
-        color: PALETTE.outdoorSky
+        map: outdoorTexture
       }),
 
       // Studio Pedestal / Table surface underneath diorama
@@ -454,6 +456,13 @@ export class RoomScene {
     centerMullion.castShadow = true;
     rightWallGroup.add(centerMullion);
 
+    // Horizontal Transom Muntin Bar (Craftsman division at ~68% height matching reference)
+    const transomGeo = new THREE.BoxGeometry(frameDepth * 0.7, winConfig.mullionWidth, winConfig.width - frameThick * 2);
+    const transomBar = new THREE.Mesh(transomGeo, this.materials.woodHoney);
+    transomBar.position.set(wallX, winConfig.sillY + winConfig.height * 0.68, winConfig.centerZ);
+    transomBar.castShadow = true;
+    rightWallGroup.add(transomBar);
+
     // Window Glass Panes (Warm sunlight pours through)
     const glassGeo = new THREE.BoxGeometry(0.015, winConfig.height - frameThick * 2, winConfig.width - frameThick * 2);
     const glass = new THREE.Mesh(glassGeo, this.materials.windowGlass);
@@ -591,6 +600,13 @@ export class RoomScene {
     pinboard.position.set(-2.8, 3.2, backZ + 0.015);
     pinboard.receiveShadow = true;
     shelfGroup.add(pinboard);
+
+    // Connecting bridge beam linking desk shelving to center bookcase (as in nook-room.jpeg)
+    const bridgeGeo = new THREE.BoxGeometry(1.2, 0.06, 0.35);
+    const bridge = new THREE.Mesh(bridgeGeo, trimMat);
+    bridge.position.set(-0.4, 4.8, backZ + 0.175);
+    bridge.castShadow = true;
+    shelfGroup.add(bridge);
 
     this.architecture.add(shelfGroup);
   }

@@ -104,11 +104,11 @@ export const PALETTE = {
 // NookMainCamera reference configuration
 export const CAMERA_CONFIG = {
   name: 'NookMainCamera',
-  fov: 32,
+  fov: 33,
   near: 0.1,
   far: 80.0,
-  defaultPosition: [-5.2, 9.4, 14.8],
-  defaultTarget: [0.2, 1.8, -0.2],
+  defaultPosition: [-4.9, 7.5, 14.8],
+  defaultTarget: [0.1, 1.75, -0.2],
   minDistance: 6.0,
   maxDistance: 24.0,
   minPolarAngle: Math.PI * 0.18,
