@@ -162,6 +162,38 @@ To notarize the packaged DMG so that Gatekeeper opens it without warnings:
 
 ---
 
+## Hosting the Marketing Website on Netlify
+
+The Nook website is built with pure, lightweight Vanilla HTML5, CSS3, and JavaScript, designed to be deployed directly to Netlify without needing Node.js build pipelines or external dependencies.
+
+The repository includes a ready-to-use [`netlify.toml`](netlify.toml) configuration that configures:
+* **Publish Directory**: `web`
+* **Clean Redirects**: `/download` → `/downloads/` and `/dmg` → direct DMG binary
+* **Edge Caching & Security**: High-performance HTTP headers and automatic MIME typing for `.dmg` disk image downloads
+
+### Deployment Options:
+
+#### Option 1: Git Integration (Recommended)
+1. Push your repository to GitHub.
+2. In the [Netlify Dashboard](https://app.netlify.com/), click **Add new site** > **Import an existing project**.
+3. Select your repository (`MdKasif0/Nook`). Netlify will automatically detect `netlify.toml`.
+4. Click **Deploy Nook**. Every `git push` to `main` will instantly trigger a fresh deployment to the global edge network.
+
+#### Option 2: Netlify CLI
+Deploy directly from your terminal:
+```bash
+# Preview deployment
+npx netlify-cli deploy --dir=web
+
+# Production deployment
+npx netlify-cli deploy --dir=web --prod
+```
+
+#### Option 3: Manual Drag & Drop
+Drag and drop the [`web/`](web/) folder into [app.netlify.com/drop](https://app.netlify.com/drop) for instant deployment.
+
+---
+
 ## Privacy Architecture
 
 Privacy is foundational to Nook:
