@@ -46,6 +46,13 @@ struct NookApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 980, height: 650)
         .commands {
+            // Check for Updates in App menu
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    NookUpdateManager.shared.checkForUpdates(userInitiated: true)
+                }
+            }
+            
             // New Thought (⌘N) and Quick Thought (⌘⇧Space)
             CommandGroup(replacing: .newItem) {
                 Button("New Thought in Room") {
