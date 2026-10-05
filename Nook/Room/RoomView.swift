@@ -79,6 +79,18 @@ struct RoomView: View {
                                 Label("Rotate 45°", systemImage: "rotate.right")
                             }
                         }
+                        if prop.allowsScaling {
+                            Button {
+                                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 1.08, undoManager: undoManager)
+                            } label: {
+                                Label("Slightly Enlarge", systemImage: "plus.magnifyingglass")
+                            }
+                            Button {
+                                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 0.92, undoManager: undoManager)
+                            } label: {
+                                Label("Slightly Shrink", systemImage: "minus.magnifyingglass")
+                            }
+                        }
                         Button {
                             sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
                         } label: {
