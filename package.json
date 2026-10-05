@@ -1,0 +1,25 @@
+{
+  "name": "nook",
+  "version": "1.0.0",
+  "description": "A calm, native macOS application where your thoughts, notes, ideas, and memories live as tactile physical objects inside a realistic miniature 3D diorama room on your Mac.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdKasif0/Nook.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MdKasif0/Nook/issues"
+  },
+  "homepage": "https://github.com/MdKasif0/Nook#readme",
+  "dependencies": {
+    "three": "^0.186.1",
+    "vite": "^8.3.2"
+  }
+}
