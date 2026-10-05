@@ -253,6 +253,7 @@ final class RoomInteractionSystem {
             
             // Cookie companion notices object movement
             coordinator?.cookie?.curiousLook(at: target.position)
+            RoomEventBus.shared.publish(.objectMoved(id: target.name, position: target.position))
         }
     }
     
@@ -271,6 +272,7 @@ final class RoomInteractionSystem {
             let zone = CookieNavigationController.zone(for: safePos)
             cookie?.animationController?.onDragEnd(at: safePos)
             CookieMemoryStore.shared.updatePosition(safePos, rotationY: cookie?.rotationAngleY ?? 0, zone: zone.rawValue)
+            RoomEventBus.shared.publish(.cookieDragged(startPosition: startTransform.position, endPosition: safePos))
             
             if zone == .daybed {
                 Task { @MainActor in
@@ -296,6 +298,7 @@ final class RoomInteractionSystem {
         
         // Smoothly settle down to resting surface
         target.position.y = restingY
+        RoomEventBus.shared.publish(.objectDropped(id: target.name, position: target.position))
         
         let newTransform = RoomPropTransform(
             propId: startTransform.propId,

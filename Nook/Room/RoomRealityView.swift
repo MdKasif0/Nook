@@ -93,6 +93,20 @@ struct RoomRealityView: View {
                 coordinator.resetCameraFraming()
             }
         }
+        // 5. Cursor Proximity Gaze: Cookie occasionally notices cursor when near
+        .onContinuousHover { phase in
+            switch phase {
+            case .active(let location):
+                let normX = Float((location.x - 450) / 450.0)
+                let normY = Float((location.y - 350) / 350.0)
+                let estimatedX = (normX - normY) * 0.85
+                let estimatedZ = (normX + normY) * 0.85
+                let estimatedPos = SIMD3<Float>(estimatedX, 0.50, estimatedZ)
+                coordinator.cookieController.handleCursorHover(at: estimatedPos)
+            case .ended:
+                break
+            }
+        }
         .background(Color(red: 0.98, green: 0.965, blue: 0.945))
     }
 }
