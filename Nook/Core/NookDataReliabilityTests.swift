@@ -828,6 +828,56 @@ final class NookDataReliabilityTests {
         }
     }
     
+    private static func testPropScalingConstraintsAndUndo() throws {
+        let coordinator = RoomSceneCoordinator()
+        let interaction = coordinator.interactionSystem!
+        
+        // 1. Scalable entity test (monstera plant)
+        guard let plant = coordinator.findPropEntity(id: "prop_monstera") else {
+            throw TestError("Monstera plant entity not found.")
+        }
+        let initialScale = plant.scale
+        let undoManager = UndoManager()
+        
+        // 2. Scale up by 1.1x
+        interaction.scaleProp(id: "prop_monstera", factor: 1.1, undoManager: undoManager)
+        let scaledUp = plant.scale
+        guard scaledUp.x > initialScale.x && abs(scaledUp.x - initialScale.x * 1.1) < 0.01 else {
+            throw TestError("Scaling did not apply correctly to monstera plant.")
+        }
+        // Verify proportions are preserved uniformly
+        guard abs(scaledUp.x - scaledUp.y) < 0.01 && abs(scaledUp.y - scaledUp.z) < 0.01 else {
+            throw TestError("Scaling did not preserve uniform proportions.")
+        }
+        
+        // 3. Test max constraint (e.g. attempting 5.0x scale cannot exceed 1.25x)
+        interaction.scaleProp(id: "prop_monstera", factor: 5.0, undoManager: undoManager)
+        let maxClamped = plant.scale
+        guard maxClamped.x <= initialScale.x * 1.251 else {
+            throw TestError("Scale constraint failed: allowed scale to exceed max limit (1.25x).")
+        }
+        
+        // 4. Test undo reverts back
+        guard undoManager.canUndo else {
+            throw TestError("UndoManager has no undo actions registered after scaling.")
+        }
+        undoManager.undo() // undo clamped scale
+        undoManager.undo() // undo 1.1x scale
+        guard abs(plant.scale.x - initialScale.x) < 0.001 else {
+            throw TestError("UndoManager failed to revert monstera plant scale back to initial scale.")
+        }
+        
+        // 5. Test immovable entity rejects scaling
+        guard let desk = coordinator.deskArea?.deskEntity else {
+            throw TestError("Desk entity not found.")
+        }
+        let deskInitialScale = desk.scale
+        interaction.scaleProp(id: "prop_desk", factor: 1.5, undoManager: undoManager)
+        guard abs(desk.scale.x - deskInitialScale.x) < 0.001 else {
+            throw TestError("Desk structure should not allow scaling.")
+        }
+    }
+    
     // MARK: - Helper Container
     
     private static func createInMemoryContainer() throws -> ModelContainer {
