@@ -59,7 +59,11 @@ final class NookDataReliabilityTests {
             ("Cookie State Machine & Contradiction Rejection", testCookieStateMachineDeterministicTransitions),
             ("Cookie Navigation Zones & Obstacle Avoidance", testCookieNavigationZonesAndObstacleAvoidance),
             ("Cookie Local Memory Persistence Across Restarts", testCookieMemoryPersistenceAcrossRestarts),
-            ("Cookie 5-Stage Jump Parabolic Trajectory", testCookieParabolicJumpTrajectory)
+            ("Cookie 5-Stage Jump Parabolic Trajectory", testCookieParabolicJumpTrajectory),
+            ("Cookie Audio Vocalizations & Purr Lifecycle", testCookieAudioVocalizationsAndPurr),
+            ("Cookie Behavior Engine & Differentiated Reactions", testCookieBehaviorEngineAndDifferentiatedReactions),
+            ("Cookie Sleep Wake Settle & Rest Locations", testCookieSleepWakeSettleAndRestLocations),
+            ("Cookie Complete 29-Step Behavior Test Flow", testCookieComplete29StepBehaviorFlow)
         ]
         
         for (name, testBlock) in tests {

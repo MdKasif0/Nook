@@ -47,6 +47,7 @@ public final class CookieBehaviorController {
     public static let chairRestLocation = SIMD3<Float>(-0.42, 0.160, -0.20)
     public static let plantInspectLocation = SIMD3<Float>(-0.28, 0.160, -0.05)
     
+    @MainActor
     public enum PreferredRestLocation: String, CaseIterable, Sendable {
         case bed = "Bed"
         case catCushion = "Cat Cushion"
