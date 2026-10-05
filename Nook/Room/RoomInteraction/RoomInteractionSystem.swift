@@ -356,6 +356,41 @@ final class RoomInteractionSystem {
         
         coordinator?.resetPropTransform(id: id)
     }
+    
+    func scaleProp(id: String, factor: Float, undoManager: UndoManager?) {
+        guard let entity = coordinator?.findPropEntity(id: id),
+              let prop = entity.components[InteractivePropComponent.self],
+              prop.allowsScaling else { return }
+        
+        let oldTransform = RoomPropTransform(
+            propId: id,
+            position: entity.position,
+            orientation: entity.orientation,
+            scale: entity.scale
+        )
+        
+        // Constrain min and max scale while preserving proportions
+        let minRatio: Float = 0.85
+        let maxRatio: Float = 1.25
+        let currentRatio = entity.scale.x / max(prop.defaultScale.x, 0.001)
+        let targetRatio = min(max(currentRatio * factor, minRatio), maxRatio)
+        let newScale = prop.defaultScale * targetRatio
+        
+        entity.scale = newScale
+        
+        let newTransform = RoomPropTransform(
+            propId: id,
+            position: entity.position,
+            orientation: entity.orientation,
+            scale: entity.scale
+        )
+        
+        undoManager?.registerUndo(withTarget: coordinator!) { coord in
+            coord.applyPropTransform(oldTransform, animated: true)
+        }
+        
+        coordinator?.savePropTransform(newTransform)
+    }
 }
 
 // MARK: - Entity Hierarchy Traversal Helpers
