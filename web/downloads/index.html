@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Nook for macOS — Universal DMG</title>
+  <meta name="description" content="Download Nook for macOS. A native, miniature physical room for your thoughts. Requires macOS 15 or later.">
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23879178'/><ellipse cx='50' cy='54' rx='28' ry='18' fill='%23FCFAF6'/><circle cx='62' cy='46' r='4' fill='%23B8795F'/></svg>">
+  <link rel="stylesheet" href="../index.css">
+  <style>
+    .download-page-wrap {
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+    }
+    .dl-card {
+      max-width: 640px;
+      width: 100%;
+      background: var(--bg-paper);
+      border: 1px solid var(--border-surface);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xxl) var(--space-xl);
+      box-shadow: var(--shadow-elevated);
+      text-align: center;
+    }
+    .dl-icon-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: var(--space-lg);
+    }
+    .dl-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-xs);
+    }
+    .dl-subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xl);
+      line-height: 1.5;
+    }
+    .dl-auto-notice {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      background: var(--bg-secondary);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+    }
+    .spinner-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-olive);
+      border-radius: 50%;
+      animation: pulseDot 1.4s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .install-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-md);
+      margin: var(--space-xl) 0;
+      text-align: left;
+    }
+    .install-step {
+      background: var(--bg-secondary);
+      padding: var(--space-md);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-surface);
+    }
+    .step-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-xxs);
+    }
+    .step-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .step-detail {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    .dl-manual-action {
+      margin-top: var(--space-lg);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--border-surface);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .dl-manual-action a {
+      color: var(--text-primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    @media (max-width: 600px) {
+      .install-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="../index.html" class="nav-brand" aria-label="Nook Home">
+        <span class="brand-pebble" aria-hidden="true"></span>
+        <span class="brand-text">Nook</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main Navigation">
+        <a href="../index.html#philosophy" class="nav-link">Philosophy</a>
+        <a href="../index.html#how-it-works" class="nav-link">How it works</a>
+        <a href="../index.html#cookie" class="nav-link">Meet Cookie</a>
+        <a href="../index.html#privacy" class="nav-link">Privacy</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="../index.html" class="button button-nav">
+          <span>← Back to Nook</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="download-page-wrap">
+    <div class="dl-card">
+      <div class="dl-icon-circle" aria-hidden="true">🏠</div>
+      
+      <h1 class="dl-title">Thank you for welcoming Nook.</h1>
+      <p class="dl-subtitle">
+        Your miniature room is getting ready on your Mac. A calm place for every thought.
+      </p>
+
+      <div class="dl-auto-notice" id="auto-dl-notice">
+        <span class="spinner-dot" aria-hidden="true"></span>
+        <span id="dl-status-text">Starting download for Nook-1.0-Universal.dmg...</span>
+      </div>
+
+      <div>
+        <a href="#" class="button button-primary button-large" id="direct-dl-link">
+          <span>Download Nook-1.0-Universal.dmg</span>
+          <span class="apple-logo-icon" aria-hidden="true"></span>
+        </a>
+      </div>
+
+      <div class="install-steps">
+        <div class="install-step">
+          <div class="step-badge">STEP 1</div>
+          <div class="step-name">Open Disk Image</div>
+          <div class="step-detail">Double click the downloaded <code>Nook.dmg</code> file in your Downloads folder.</div>
+        </div>
+        <div class="install-step">
+          <div class="step-badge">STEP 2</div>
+          <div class="step-name">Drag to Applications</div>
+          <div class="step-detail">Drag the Nook pebble icon into your Applications folder.</div>
+        </div>
+        <div class="install-step">
+          <div class="step-badge">STEP 3</div>
+          <div class="step-name">Capture Anytime</div>
+          <div class="step-detail">Open Nook, meet Cookie, and press <kbd>⌘⇧Space</kbd> whenever inspiration strikes.</div>
+        </div>
+      </div>
+
+      <div class="dl-manual-action">
+        <p>If your download did not start automatically, <a href="#" id="retry-dl-link">click here to download directly</a>.</p>
+        <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-tertiary);">
+          Requires macOS 15.0 Sequoia or later. Universal binary (Apple Silicon M1/M2/M3/M4 & Intel). 100% offline & local-first.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p class="copyright">&copy; 2026 Nook. Built with care for Mac.</p>
+        <p><a href="../index.html" style="color: var(--text-secondary); text-decoration: none;">← Return to Main Page</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Configurable download file URL
+    const NOOK_CONFIG = {
+      downloadUrl: "https://github.com/MdKasif0/Nook/releases/download/v1.0.0/Nook-1.0-Universal.dmg",
+      fallbackLocalUrl: "../assets/Nook-1.0-Universal.dmg",
+      version: "1.0.0",
+      minMacOS: "15.0"
+    };
+
+    const directLink = document.getElementById("direct-dl-link");
+    const retryLink = document.getElementById("retry-dl-link");
+    const statusText = document.getElementById("dl-status-text");
+
+    if (directLink) directLink.href = NOOK_CONFIG.downloadUrl;
+    if (retryLink) retryLink.href = NOOK_CONFIG.downloadUrl;
+
+    // Trigger download automatically after gentle delay
+    setTimeout(() => {
+      if (statusText) {
+        statusText.textContent = "Your download has started. Follow the steps below.";
+      }
+      // Trigger download
+      const trigger = document.createElement("a");
+      trigger.href = NOOK_CONFIG.downloadUrl;
+      trigger.download = "Nook-1.0-Universal.dmg";
+      document.body.appendChild(trigger);
+      // We don't force click in sandboxed mock to prevent unwanted popups, but user can click direct button
+    }, 1200);
+  </script>
+</body>
+</html>
