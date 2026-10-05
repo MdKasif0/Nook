@@ -23,10 +23,10 @@ final class RoomLightingSystem {
         let sun = DirectionalLight()
         sun.light.color = .init(red: 1.0, green: 0.94, blue: 0.84, alpha: 1.0)
         sun.light.intensity = 2800
-        sun.shadow = DirectionalLightComponent.Shadow(
-            shadowProjection: .automatic(maximumDistance: 8.0),
-            depthBias: 0.0015
-        )
+        // sun.shadow = DirectionalLightComponent.Shadow(
+        //     shadowProjection: .automatic(maximumDistance: 3.5),
+        //     depthBias: 0.05
+        // )
         sun.position = [2.6, 3.4, 0.8]
         sun.look(at: [-0.30, 0.35, -0.40], from: sun.position, relativeTo: nil)
         sun.name = "sun_directional_light"

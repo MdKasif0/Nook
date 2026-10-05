@@ -54,7 +54,8 @@ final class NookDataReliabilityTests {
             ("All Object Representations 3D Geometry", testAllObjectRepresentations3DGeneration),
             ("Crowded Surface Intelligent Fallback Placement", testCrowdedSurfaceFallbackPlacement),
             ("Camera Exploration Clamping & Reset View", testCameraExplorationClampingAndReset),
-            ("Cookie Deterministic State Transitions", testCookieDeterministicStateTransitions)
+            ("Cookie Deterministic State Transitions", testCookieDeterministicStateTransitions),
+            ("Cookie Anatomical Rig & Facial Expressions", testCookieAnatomicalRigAndFacialExpressions)
         ]
         
         for (name, testBlock) in tests {
@@ -1195,6 +1196,48 @@ final class NookDataReliabilityTests {
         guard mood == .curious else {
             throw TestError("LocalDeterministicCookieIntelligence did not evaluate to curious on 3 creations")
         }
+    }
+    
+    private static func testCookieAnatomicalRigAndFacialExpressions() throws {
+        let cookie = CookieRealityEntity()
+        
+        // 1. Verify complete anatomical rig structure
+        guard cookie.bodyModel != nil else { throw TestError("BodyModel is missing") }
+        guard cookie.bellyModel != nil else { throw TestError("BellyModel is missing") }
+        guard cookie.headModel != nil else { throw TestError("HeadModel is missing") }
+        guard cookie.leftEarModel != nil && cookie.leftInnerEarModel != nil else { throw TestError("LeftEar or LeftInnerEar missing") }
+        guard cookie.rightEarModel != nil && cookie.rightInnerEarModel != nil else { throw TestError("RightEar or RightInnerEar missing") }
+        guard cookie.leftEyeModel != nil && cookie.leftEyeGlintModel != nil else { throw TestError("LeftEye or LeftEyeGlint missing") }
+        guard cookie.rightEyeModel != nil && cookie.rightEyeGlintModel != nil else { throw TestError("RightEye or RightEyeGlint missing") }
+        guard cookie.muzzleModel != nil else { throw TestError("MuzzleModel is missing") }
+        guard cookie.mouthModel != nil && cookie.leftLipModel != nil && cookie.rightLipModel != nil else { throw TestError("Mouth ω curves missing") }
+        guard cookie.leftCheekModel != nil && cookie.rightCheekModel != nil else { throw TestError("LeftCheek or RightCheek blush missing") }
+        guard cookie.leftFrontPawModel != nil && cookie.leftPawPointerModel != nil else { throw TestError("LeftFrontPaw or LeftPawPointer missing") }
+        guard cookie.rightFrontPawModel != nil else { throw TestError("RightFrontPaw missing") }
+        guard cookie.leftFootModel != nil && cookie.rightFootModel != nil else { throw TestError("LeftFoot or RightFoot missing") }
+        guard cookie.tailModel != nil && cookie.tailBaseModel != nil && cookie.tailMidModel != nil && cookie.tailTipModel != nil else { throw TestError("Tail chain missing") }
+        
+        // 2. Verify all required emotional states
+        for mood in CookieMood.allCases {
+            cookie.setMood(mood, animated: false)
+            guard cookie.currentMood == mood else {
+                throw TestError("Failed transition to mood: \(mood)")
+            }
+        }
+        
+        // 3. Verify all physical postures
+        for posture in CookiePosture.allCases {
+            cookie.setPosture(posture, animated: false)
+            guard cookie.currentPosture == posture else {
+                throw TestError("Failed transition to posture: \(posture)")
+            }
+        }
+        
+        // 4. Verify interactive and expressive triggers
+        cookie.pointAt(target: SIMD3<Float>(0, 0.72, 0))
+        cookie.swishTail()
+        cookie.blink()
+        cookie.pet()
     }
     
     // MARK: - Helper Container

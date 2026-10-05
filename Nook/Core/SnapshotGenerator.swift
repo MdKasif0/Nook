@@ -69,6 +69,74 @@ enum SnapshotGenerator {
         
         // 6. RealityKit 3D Miniature Room Diorama
         renderRoomSnapshot(to: "\(artifactDir)/nook_reality_room.png")
+        
+        // 7. Cookie the Cat Character Close-Up
+        renderCookieCloseUpSnapshot(to: "\(artifactDir)/nook_cookie_character.png")
+    }
+    
+    static func renderCookieCloseUpSnapshot(to path: String) {
+        let coordinator = RoomSceneCoordinator()
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let width = 1400
+        let height = 1400
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: width, height: height, mipmapped: false)
+        desc.usage = [.renderTarget, .shaderRead]
+        guard let texture = device.makeTexture(descriptor: desc) else { return }
+        
+        do {
+            let renderer = try RealityRenderer()
+            renderer.entities.append(coordinator.rootEntity)
+            
+            // Dedicated close-up camera positioned to frame Cookie at 3/4 angle
+            let closeCamera = Entity()
+            var cam = PerspectiveCameraComponent()
+            cam.fieldOfViewInDegrees = 27.0
+            closeCamera.components.set(cam)
+            
+            let cookiePos = CookieRealityEntity.bedPerchPos
+            let cameraEye = SIMD3<Float>(cookiePos.x + 0.22, cookiePos.y + 0.16, cookiePos.z + 0.40)
+            let cameraTarget = SIMD3<Float>(cookiePos.x, cookiePos.y + 0.055, cookiePos.z)
+            closeCamera.position = cameraEye
+            closeCamera.look(at: cameraTarget, from: cameraEye, relativeTo: nil)
+            coordinator.rootEntity.addChild(closeCamera)
+            renderer.activeCamera = closeCamera
+            
+            let outputDesc = RealityRenderer.CameraOutput.Descriptor.singleProjection(colorTexture: texture)
+            let cameraOutput = try RealityRenderer.CameraOutput(outputDesc)
+            
+            let semaphore = DispatchSemaphore(value: 0)
+            try renderer.updateAndRender(deltaTime: 0.016, cameraOutput: cameraOutput, onComplete: { _ in
+                semaphore.signal()
+            })
+            semaphore.wait()
+            
+            guard let ci = CIImage(mtlTexture: texture, options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]) else { return }
+            let flipTransform = CGAffineTransform(1, 0, 0, -1, 0, CGFloat(height))
+            let flippedCI = ci.transformed(by: flipTransform)
+            let bg = CIImage(color: CIColor(red: 0.94, green: 0.92, blue: 0.88, alpha: 1.0)).cropped(to: CGRect(x: 0, y: 0, width: width, height: height))
+            let compositedCI = flippedCI.composited(over: bg)
+            let rep = NSCIImageRep(ciImage: compositedCI)
+            let nsImage = NSImage(size: NSSize(width: width, height: height))
+            nsImage.addRepresentation(rep)
+            guard let tiff = nsImage.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiff),
+                  let png = bitmap.representation(using: .png, properties: [:]) else { return }
+            let targetURL = URL(fileURLWithPath: path)
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(targetURL.lastPathComponent)
+            do {
+                try png.write(to: targetURL)
+                print("Successfully rendered Cookie close-up snapshot to: \(targetURL.path)")
+            } catch {
+                do {
+                    try png.write(to: tempURL)
+                    print("Rendered Cookie close-up snapshot to sandbox temp: \(tempURL.path)")
+                } catch {
+                    print("Failed to write Cookie close-up snapshot: \(error)")
+                }
+            }
+        } catch {
+            print("Error rendering Cookie close-up snapshot: \(error)")
+        }
     }
     
     static func renderRoomSnapshot(to path: String) {
@@ -102,9 +170,11 @@ enum SnapshotGenerator {
             semaphore.wait()
             
             guard let ci = CIImage(mtlTexture: texture, options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]) else { return }
-            // Metal textures are top-left origin; CoreGraphics/CIImage expects bottom-left. Flip vertically:
-            let flippedCI = ci.transformed(by: CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -CGFloat(height)))
-            let rep = NSCIImageRep(ciImage: flippedCI)
+            let flipTransform = CGAffineTransform(1, 0, 0, -1, 0, CGFloat(height))
+            let flippedCI = ci.transformed(by: flipTransform)
+            let bg = CIImage(color: CIColor(red: 0.94, green: 0.92, blue: 0.88, alpha: 1.0)).cropped(to: CGRect(x: 0, y: 0, width: width, height: height))
+            let compositedCI = flippedCI.composited(over: bg)
+            let rep = NSCIImageRep(ciImage: compositedCI)
             let nsImage = NSImage(size: NSSize(width: width, height: height))
             nsImage.addRepresentation(rep)
             guard let tiff = nsImage.tiffRepresentation,
