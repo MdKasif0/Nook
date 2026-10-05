@@ -27,7 +27,7 @@ struct RoomView: View {
     
     @Query private var roomStates: [RoomState]
     
-    @State private var sceneController = RoomSceneController()
+    @State private var sceneController = RoomSceneCoordinator()
     @State private var isShowingNewItemSheet = false
     @State private var cookieToastMessage: String?
     @State private var cookieToastDismissTask: Task<Void, Never>?
@@ -61,35 +61,12 @@ struct RoomView: View {
     
     var body: some View {
         ZStack {
-            // 3D Miniature Diorama Room
-            RoomSceneView(
-                controller: sceneController,
-                onSelectItem: { id in
-                    withAnimation(NookDesign.Animation.springy) {
-                        selectItem(id)
-                    }
-                },
-                onItemMoved: { id, newPosition in
-                    handleItemMoved(id: id, newPosition: newPosition)
-                },
-                onOpenItem: { id in
-                    hasInteractedWithObject = true
-                    if let item = items.first(where: { $0.id == id }) {
-                        detailItem = item
-                    }
-                },
-                onToggleLamp: {
-                    sceneController.toggleDeskLamp()
-                    persistRoomState()
-                },
-                onPetCookie: {
-                    handleCookieInteraction()
-                }
-            )
-            .ignoresSafeArea()
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel("Miniature Room with \(items.count) \(items.count == 1 ? "thought" : "thoughts")")
-            .accessibilityHint("Use Tab or arrow keys to cycle through objects. Press Return to open.")
+            // 3D Miniature Diorama Room (Native RealityKit RealityView)
+            RoomRealityView(coordinator: sceneController)
+                .ignoresSafeArea()
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Miniature Room with \(items.count) \(items.count == 1 ? "thought" : "thoughts")")
+                .accessibilityHint("Use Tab or arrow keys to cycle through objects. Press Return to open.")
             
             // Floating Overlays & Controls
             VStack(spacing: 0) {
@@ -177,6 +154,26 @@ struct RoomView: View {
         }
         .onAppear {
             isRoomFocused = true
+            sceneController.onSelectItem = { id in
+                withAnimation(NookDesign.Animation.springy) {
+                    selectItem(id)
+                }
+            }
+            sceneController.onItemMoved = { id, newPosition in
+                handleItemMoved(id: id, newPosition: newPosition)
+            }
+            sceneController.onOpenItem = { id in
+                hasInteractedWithObject = true
+                if let item = items.first(where: { $0.id == id }) {
+                    detailItem = item
+                }
+            }
+            sceneController.onToggleLamp = {
+                persistRoomState()
+            }
+            sceneController.onPetCookie = {
+                handleCookieInteraction()
+            }
             sceneController.applySavedRoomState(currentRoomState)
             RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
             GlobalShortcutManager.shared.onEscapePressed = { [weak appState] in

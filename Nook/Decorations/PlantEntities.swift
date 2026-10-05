@@ -36,7 +36,7 @@ final class PlantEntities: Entity {
             (0.04, 0.12, 0.70)
         ]
         
-        for (i, v) in vineOffsets.enumerated() {
+        for (_, v) in vineOffsets.enumerated() {
             let strand = Entity()
             strand.position = [v.x, 0, v.z]
             

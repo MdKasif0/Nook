@@ -64,6 +64,10 @@ final class RoomSceneCoordinator {
     
     var hoveredItemID: UUID?
     
+    // Cookie State-Driven Behavior Engine
+    let cookieController = CookieBehaviorController()
+    private var hasConfiguredFromSavedState = false
+    
     // Callbacks to SwiftUI layer
     var onSelectItem: ((UUID?) -> Void)?
     var onItemMoved: ((UUID, RoomPosition) -> Void)?
@@ -78,6 +82,42 @@ final class RoomSceneCoordinator {
         buildScene()
         self.interactionSystem?.coordinator = self
         startRecordSpinAnimation()
+    }
+    
+    // MARK: - Persistence Synchronization
+    
+    func applySavedRoomState(_ roomState: RoomState) {
+        guard !hasConfiguredFromSavedState else { return }
+        hasConfiguredFromSavedState = true
+        
+        self.timeOfDay = roomState.timeOfDay
+        self.isDeskLampOn = roomState.isDeskLampOn
+        self.isWallSconceOn = roomState.isWallSconceOn
+        self.isRecordSpinning = roomState.isRecordSpinning
+    }
+    
+    func syncToRoomState(_ roomState: RoomState) {
+        roomState.timeOfDay = self.timeOfDay
+        roomState.isDeskLampOn = self.isDeskLampOn
+        roomState.isWallSconceOn = self.isWallSconceOn
+        roomState.isRecordSpinning = self.isRecordSpinning
+        roomState.cookieLastInteractedAt = cookieController.state.lastInteraction
+        roomState.updatedAt = .now
+    }
+    
+    func setTimeOfDay(_ tod: RoomTimeOfDay) {
+        withAnimation(NookDesign.Animation.gentle) {
+            self.timeOfDay = tod
+        }
+    }
+    
+    func toggleWallSconce() {
+        isWallSconceOn.toggle()
+    }
+    
+    func moveItem(_ id: UUID, to position: RoomPosition) {
+        let worldPos = ThoughtEntityBuilder.worldPosition(for: position)
+        updateItemPosition(id: id, position: worldPos)
     }
     
     private func buildScene() {
@@ -186,7 +226,7 @@ final class RoomSceneCoordinator {
         if let entity = thoughtEntities[id] {
             entity.position = position
         }
-        let roomPos = RoomPosition(x: Double(position.x), y: Double(position.y), z: Double(position.z))
+        let roomPos = ThoughtEntityBuilder.roomPosition(from: position)
         onItemMoved?(id, roomPos)
     }
     
