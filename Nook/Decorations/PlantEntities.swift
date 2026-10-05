@@ -18,6 +18,7 @@ final class FloorObjectsAreaEntity: Entity {
     
     let skateboard: SkateboardEntity
     let bouclePouf: BouclePoufEntity
+    let yarnBall: YarnBallEntity
     let monstera: MonsteraPlantEntity
     let deskFloorPlant: DeskFloorPlantEntity
     let stepBooks: StepBooksEntity
@@ -29,6 +30,7 @@ final class FloorObjectsAreaEntity: Entity {
     required init() {
         self.skateboard = SkateboardEntity()
         self.bouclePouf = BouclePoufEntity()
+        self.yarnBall = YarnBallEntity()
         self.monstera = MonsteraPlantEntity()
         self.deskFloorPlant = DeskFloorPlantEntity()
         self.stepBooks = StepBooksEntity()
@@ -43,6 +45,7 @@ final class FloorObjectsAreaEntity: Entity {
         // Assemble hierarchy under FloorObjects
         addChild(skateboard)
         addChild(bouclePouf)
+        addChild(yarnBall)
         addChild(monstera)
         addChild(deskFloorPlant)
         addChild(stepBooks)
