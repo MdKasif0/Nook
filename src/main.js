@@ -23,7 +23,7 @@ class NookApplication {
   constructor() {
     this.canvas = document.getElementById('nook-canvas');
     this.uiContainer = document.getElementById('nook-ui');
-    this.clock = new THREE.Clock();
+    this.lastTime = performance.now();
 
     this.initRenderer();
     this.initScene();
@@ -133,7 +133,7 @@ class NookApplication {
 
       if (hit && hit.interactiveObject) {
         const obj = hit.interactiveObject;
-        if (obj.id === 'prop_cookie') {
+        if (obj.itemId === 'prop_cookie') {
           // Cookie Specific Context Actions
           this.contextMenu.show(e.clientX, e.clientY, [
             {
@@ -296,7 +296,9 @@ class NookApplication {
   animate() {
     requestAnimationFrame(this.animate);
 
-    const delta = this.clock.getDelta();
+    const currentTime = performance.now();
+    const delta = Math.min((currentTime - this.lastTime) * 0.001, 0.1);
+    this.lastTime = currentTime;
 
     // 1. Raycast Hover Updates
     if (!this.dragManager.isDragging) {
