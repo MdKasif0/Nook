@@ -33,6 +33,10 @@ struct RoomView: View {
     @State private var cookieToastDismissTask: Task<Void, Never>?
     @State private var detailItem: NookItem?
     
+    @AppStorage("nook_first_launch_dismissed") private var firstLaunchDismissed: Bool = false
+    @AppStorage("nook_has_interacted_with_object") private var hasInteractedWithObject: Bool = false
+    @FocusState private var isRoomFocused: Bool
+    
     // Inspector editing state
     @State private var isEditingSelectedItem = false
     @State private var editTitle = ""
