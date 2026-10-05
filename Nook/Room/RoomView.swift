@@ -44,6 +44,9 @@ struct RoomView: View {
     @State private var editObjectType: NookObjectType = .pebble
     @State private var isHeaderHovered = false
     
+    // Interactive prop selection state
+    @State private var selectedPropInfo: InteractivePropComponent?
+    
     private var currentRoomState: RoomState {
         if let first = roomStates.first {
             return first
@@ -67,6 +70,39 @@ struct RoomView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Miniature Room with \(items.count) \(items.count == 1 ? "thought" : "thoughts")")
                 .accessibilityHint("Use Tab or arrow keys to cycle through objects. Press Return to open.")
+                .contextMenu {
+                    if let prop = selectedPropInfo {
+                        if prop.allowsRotation {
+                            Button {
+                                sceneController.interactionSystem?.rotateProp(id: prop.propId, angleDegrees: 45, undoManager: undoManager)
+                            } label: {
+                                Label("Rotate 45°", systemImage: "rotate.right")
+                            }
+                        }
+                        Button {
+                            sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
+                        } label: {
+                            Label("Reset Position", systemImage: "arrow.counterclockwise")
+                        }
+                    } else if let item = selectedItem {
+                        Button {
+                            detailItem = item
+                        } label: {
+                            Label("Open Thought", systemImage: "arrow.up.forward.app")
+                        }
+                        Button {
+                            beginEditing(item)
+                        } label: {
+                            Label("Edit Thought", systemImage: "pencil")
+                        }
+                        Divider()
+                        Button(role: .destructive) {
+                            deleteSelectedItem(item)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
             
             // Floating Overlays & Controls
             VStack(spacing: 0) {
