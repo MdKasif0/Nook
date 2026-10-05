@@ -681,8 +681,8 @@ final class NookDataReliabilityTests {
         guard let cookieProp = cookie.components[InteractivePropComponent.self] else {
             throw TestError("Cookie is missing InteractivePropComponent.")
         }
-        guard cookieProp.category == .special && !cookieProp.allowsDragging else {
-            throw TestError("Cookie should be .special and forbid accidental dragging.")
+        guard cookieProp.category == .special && cookieProp.allowsDragging else {
+            throw TestError("Cookie should be .special and support intentional dragging.")
         }
     }
     
@@ -1242,6 +1242,117 @@ final class NookDataReliabilityTests {
         cookie.swishTail()
         cookie.blink()
         cookie.pet()
+    }
+    
+    private static func testCookieStateMachineDeterministicTransitions() throws {
+        let state = CookieState()
+        
+        // 1. Initial state
+        guard state.activity == .idle else { throw TestError("Initial state not idle") }
+        
+        // 2. Valid transitions: idle -> walking -> jumping -> sitting -> sleeping
+        guard state.transitionToActivity(.walking) else { throw TestError("Failed idle -> walking") }
+        guard state.posture == .walking else { throw TestError("Walking posture not set") }
+        
+        guard state.transitionToActivity(.jumping) else { throw TestError("Failed walking -> jumping") }
+        guard state.posture == .jumping else { throw TestError("Jumping posture not set") }
+        
+        guard state.transitionToActivity(.sitting) else { throw TestError("Failed jumping -> sitting") }
+        guard state.posture == .sitting else { throw TestError("Sitting posture not set") }
+        
+        guard state.transitionToActivity(.sleeping) else { throw TestError("Failed sitting -> sleeping") }
+        guard state.isSleeping && state.posture == .curled else { throw TestError("Sleeping state incorrect") }
+        
+        // 3. Contradictory transition rejection: sleeping cannot immediately jump without waking
+        let invalidTransition = state.transitionToActivity(.jumping)
+        guard !invalidTransition else { throw TestError("Allowed contradictory transition sleeping -> jumping") }
+        
+        // 4. Force drag wakes up from sleep
+        guard state.transitionToActivity(.beingDragged) else { throw TestError("Failed transition to beingDragged") }
+        guard !state.isSleeping else { throw TestError("Cookie still sleeping while dragged") }
+        
+        // 5. Drag settles to sitting
+        guard state.transitionToActivity(.sitting) else { throw TestError("Failed beingDragged -> sitting") }
+    }
+    
+    private static func testCookieNavigationZonesAndObstacleAvoidance() throws {
+        // 1. Zone detection at known points
+        let bedZone = CookieNavigationController.zone(for: RoomNavZone.daybed.defaultSpot)
+        guard bedZone == .daybed else { throw TestError("Zone for bed spot was \(bedZone)") }
+        
+        let deskZone = CookieNavigationController.zone(for: RoomNavZone.desk.defaultSpot)
+        guard deskZone == .desk else { throw TestError("Zone for desk spot was \(deskZone)") }
+        
+        let loungeZone = CookieNavigationController.zone(for: RoomNavZone.lowerFloor.defaultSpot)
+        guard loungeZone == .lowerFloor else { throw TestError("Zone for lounge was \(loungeZone)") }
+        
+        // 2. Surface height mapping
+        let bedHeight = CookieNavigationController.surfaceHeight(at: 0.48, z: -0.66)
+        guard abs(bedHeight - RoomNavZone.daybed.surfaceY) < 0.01 else { throw TestError("Bed surface height mismatch") }
+        
+        let deskHeight = CookieNavigationController.surfaceHeight(at: -0.70, z: -0.15)
+        guard abs(deskHeight - RoomNavZone.desk.surfaceY) < 0.01 else { throw TestError("Desk surface height mismatch") }
+        
+        // 3. Obstacle collision detection
+        let isMonitorObstacle = CookieNavigationController.isObstacle(x: -0.70, z: -0.75)
+        guard isMonitorObstacle else { throw TestError("Monitor footprint not flagged as obstacle") }
+        
+        let isOpenFloor = CookieNavigationController.isObstacle(x: 0.0, z: 0.0)
+        guard !isOpenFloor else { throw TestError("Open floor falsely flagged as obstacle") }
+        
+        // 4. Clamping out-of-bounds coordinates
+        let clamped = CookieNavigationController.clampToWalkable(SIMD3<Float>(9.9, 0, -9.9))
+        guard clamped.x <= CookieNavigationController.maxRoomX && clamped.z >= CookieNavigationController.minRoomZ else {
+            throw TestError("Clamping failed to constrain within room boundaries")
+        }
+    }
+    
+    private static func testCookieMemoryPersistenceAcrossRestarts() throws {
+        let testDefaults = UserDefaults(suiteName: "test_nook_cookie_memory_\(UUID().uuidString)")!
+        let store = CookieMemoryStore(defaults: testDefaults)
+        
+        // 1. Save state
+        let customPos = SIMD3<Float>(-0.68, 0.880, -0.18)
+        store.updatePosition(customPos, rotationY: 1.57, zone: "Desk")
+        store.recordPet()
+        store.recordPet()
+        store.recordSleep()
+        
+        // 2. Load and verify persistence
+        let loaded = store.load()
+        guard abs(loaded.positionX - customPos.x) < 0.001,
+              abs(loaded.positionY - customPos.y) < 0.001,
+              abs(loaded.positionZ - customPos.z) < 0.001 else {
+            throw TestError("Persisted position mismatch")
+        }
+        guard loaded.favoriteZone == "Desk" else { throw TestError("Persisted favorite zone mismatch") }
+        guard loaded.petCount == 2 else { throw TestError("Persisted petCount mismatch: \(loaded.petCount)") }
+        guard loaded.sleepCount == 1 else { throw TestError("Persisted sleepCount mismatch: \(loaded.sleepCount)") }
+        
+        // 3. Reset
+        store.reset()
+        let resetMem = store.load()
+        guard resetMem.petCount == 0 else { throw TestError("Reset memory failed to clear petCount") }
+    }
+    
+    private static func testCookieParabolicJumpTrajectory() throws {
+        let start = SIMD3<Float>(0.05, 0.160, -0.42)
+        let end = SIMD3<Float>(0.05, 0.605, -0.55)
+        let deltaY = end.y - start.y
+        let peakBonus: Float = max(0.12, abs(deltaY) * 0.5 + 0.08)
+        
+        // At mid-air (progress = 0.5), vertical arc height must exceed linear midpoint
+        let midProgress: Float = 0.5
+        let baseMidY = start.y + deltaY * midProgress
+        let arcY = 4.0 * peakBonus * midProgress * (1.0 - midProgress)
+        let totalMidY = baseMidY + arcY
+        
+        guard totalMidY > max(start.y, end.y) else {
+            throw TestError("Parabolic jump peak \(totalMidY) did not clear starting or ending elevation")
+        }
+        guard arcY >= 0.12 else {
+            throw TestError("Jump arc height \(arcY) is too flat")
+        }
     }
     
     // MARK: - Helper Container
