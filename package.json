@@ -1,25 +1,17 @@
 {
-  "name": "nook",
+  "name": "nook-3d",
   "version": "1.0.0",
-  "description": "A calm, native macOS application where your thoughts, notes, ideas, and memories live as tactile physical objects inside a realistic miniature 3D diorama room on your Mac.",
-  "main": "index.js",
+  "description": "Nook 3D Interactive Miniature Room built with Three.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MdKasif0/Nook.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/MdKasif0/Nook/issues"
-  },
-  "homepage": "https://github.com/MdKasif0/Nook#readme",
   "dependencies": {
-    "three": "^0.186.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
     "vite": "^8.3.2"
   }
 }
