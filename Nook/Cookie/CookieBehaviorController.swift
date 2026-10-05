@@ -35,6 +35,7 @@ public final class CookieBehaviorController {
     private var lastCursorLookTime: Date = .distantPast
     private var lastObjectMoveReactionTime: Date = .distantPast
     private var lastClickReactionTime: Date = .distantPast
+    private var lastClickReactionIndex: Int = -1
     private var recentCreationTimestamps: [Date] = []
     
     // Preferred Rest & Exploration Anchor Locations
@@ -43,7 +44,47 @@ public final class CookieBehaviorController {
     public static let windowLedgeLocation = RoomNavZone.windowLedge.defaultSpot
     public static let loungeLocation = RoomNavZone.lowerFloor.defaultSpot
     public static let poufLocation = SIMD3<Float>(0.20, 0.020, 0.65)
+    public static let chairRestLocation = SIMD3<Float>(-0.42, 0.160, -0.20)
     public static let plantInspectLocation = SIMD3<Float>(-0.28, 0.160, -0.05)
+    
+    public enum PreferredRestLocation: String, CaseIterable, Sendable {
+        case bed = "Bed"
+        case catCushion = "Cat Cushion"
+        case deskChair = "Desk Chair"
+        case windowArea = "Window Area"
+        
+        public var spot: SIMD3<Float> {
+            switch self {
+            case .bed:        return CookieBehaviorController.bedRestLocation
+            case .catCushion: return CookieBehaviorController.poufLocation
+            case .deskChair:  return CookieBehaviorController.chairRestLocation
+            case .windowArea: return CookieBehaviorController.windowLedgeLocation
+            }
+        }
+    }
+    
+    private var lastRestLocation: PreferredRestLocation?
+    
+    public func choosePreferredRestLocation(at date: Date = Date()) -> PreferredRestLocation {
+        let hour = Calendar.current.component(.hour, from: date)
+        if hour >= 22 || hour < 7 {
+            lastRestLocation = .bed
+            return .bed
+        }
+        var candidateLocations = PreferredRestLocation.allCases
+        if let last = lastRestLocation, candidateLocations.count > 1 {
+            candidateLocations.removeAll { $0 == last }
+        }
+        let chosen: PreferredRestLocation
+        if hour >= 12 && hour < 17 {
+            let afternoonPool: [PreferredRestLocation] = candidateLocations.contains(.windowArea) ? [.windowArea, .catCushion, .bed] : candidateLocations
+            chosen = afternoonPool.randomElement() ?? .bed
+        } else {
+            chosen = candidateLocations.randomElement() ?? .bed
+        }
+        lastRestLocation = chosen
+        return chosen
+    }
     
     public init(state: CookieState = CookieState()) {
         self.state = state
