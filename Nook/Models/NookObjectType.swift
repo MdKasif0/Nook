@@ -17,7 +17,7 @@ enum NookObjectType: String, CaseIterable, Identifiable, Codable, Sendable {
     /// User-facing display name.
     var displayName: String {
         switch self {
-        case .pebble:     return "Smooth Pebble"
+        case .pebble:     return "Pebble"
         case .paperNote:  return "Paper Note"
         case .stickyNote: return "Sticky Note"
         case .card:       return "Small Card"
