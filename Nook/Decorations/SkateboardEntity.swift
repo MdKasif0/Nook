@@ -17,12 +17,10 @@ final class SkateboardEntity: Entity {
     
     private func buildSkateboard() {
         let mats = RoomMaterials.shared
-        let lowerFloorY = RoomArchitectureEntity.lowerFloorY
-        
-        // Positioned on the lower floor platform near the steps
-        // X = +0.12, Z = +0.55
-        self.position = [0.12, lowerFloorY + 0.035, 0.55]
-        self.orientation = simd_quatf(angle: -Float.pi * 0.14, axis: [0, 1, 0])
+        // Positioned on the upper platform edge near the steps
+        // X = +0.08, Z = +0.44
+        self.position = [0.08, RoomArchitectureEntity.upperFloorY + 0.025, 0.44]
+        self.orientation = simd_quatf(angle: -Float.pi * 0.16, axis: [0, 1, 0])
         
         let deckLength: Float = 0.44
         let deckWidth: Float = 0.12
