@@ -640,7 +640,7 @@ public final class CookieRealityEntity: Entity {
                 guard let self = self else { break }
                 
                 guard !self.shouldReduceMotion else { continue }
-                await self.performTailTwitch()
+                await self.performTailMotion(.relaxed)
             }
         }
     }
@@ -1287,7 +1287,7 @@ public enum CookieTailMotion: Sendable {
 /// - 100% deterministic and local.
 /// - NO network requests, NO analytics, NO tracking, NO cloud processing, NO external AI API.
 /// - Zero user data leaves this Mac.
-public protocol CookieIntelligenceProvider: Sendable {
+protocol CookieIntelligenceProvider: Sendable {
     /// Evaluates recent room events and determines if Cookie should alter mood or demeanor.
     func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood
     
@@ -1300,10 +1300,10 @@ public protocol CookieIntelligenceProvider: Sendable {
 
 /// Default local deterministic behavioral provider for Cookie.
 /// 100% local, offline, deterministic.
-public final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
-    public init() {}
+final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
+    init() {}
     
-    public func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood {
+    func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood {
         let creations = recentEvents.filter {
             if case .itemCreated = $0 { return true }
             if case .thoughtCreated = $0 { return true }
