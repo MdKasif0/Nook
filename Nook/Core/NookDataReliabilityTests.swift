@@ -35,7 +35,8 @@ final class NookDataReliabilityTests {
             ("Restart Persistence Across Containers", testRestartPersistence),
             ("Local Search Indexing & Querying", testLocalSearch),
             ("Native macOS Undo/Redo (Move, Edit, Delete)", testUndoRedo),
-            ("Repeated Operations Stress Stability", testRepeatedOperations)
+            ("Repeated Operations Stress Stability", testRepeatedOperations),
+            ("Twenty Thoughts Complete Lifecycle & Persistence", testTwentyThoughtsProductionLifecycle)
         ]
         
         for (name, testBlock) in tests {
@@ -428,6 +429,169 @@ final class NookDataReliabilityTests {
         let allRemaining = try context.fetch(FetchDescriptor<NookItem>())
         guard allRemaining.isEmpty else {
             throw TestError("Database corrupted or leaked items during stress testing.")
+        }
+    }
+    
+    // MARK: - Test 10: Twenty Thoughts Complete Lifecycle & Persistence
+    
+    private static func testTwentyThoughtsProductionLifecycle() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("nook_twenty_test_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let dbURL = tempDir.appendingPathComponent("twenty_thoughts.sqlite")
+        
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        
+        let schema = Schema([NookItem.self, RoomState.self])
+        let config = ModelConfiguration("TwentyThoughtsStore", schema: schema, url: dbURL)
+        
+        var thoughtIDs: [UUID] = []
+        
+        // 1. Create 20 thoughts
+        do {
+            let container1 = try ModelContainer(for: schema, configurations: [config])
+            let ctx1 = container1.mainContext
+            
+            for i in 1...20 {
+                let objectType: NookObjectType
+                switch i % 5 {
+                case 0: objectType = .pebble
+                case 1: objectType = .paperNote
+                case 2: objectType = .stickyNote
+                case 3: objectType = .card
+                default: objectType = .polaroid
+                }
+                
+                let thought = NookItem(
+                    title: "Thought \(i): Creative Exploration",
+                    content: "Notes and reflections for thought item #\(i) inside the cozy room.",
+                    itemType: .idea,
+                    objectType: objectType,
+                    position: RoomPosition(x: 0.05 * Double(i), y: 0.1 * Double(i % 5), z: 0.5)
+                )
+                ctx1.insert(thought)
+                thoughtIDs.append(thought.id)
+            }
+            try ctx1.save()
+            
+            guard try ctx1.fetch(FetchDescriptor<NookItem>()).count == 20 else {
+                throw TestError("Failed to initialize 20 thoughts.")
+            }
+            
+            // 2. Move them
+            for (index, id) in thoughtIDs.enumerated() {
+                var desc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == id })
+                desc.fetchLimit = 1
+                if let item = try ctx1.fetch(desc).first {
+                    item.roomPosition = RoomPosition(x: 0.04 * Double(index), y: 0.45, z: 0.2 * Double(index % 4))
+                    item.touch()
+                }
+            }
+            try ctx1.save()
+            
+            // 3. Edit them
+            for (index, id) in thoughtIDs.enumerated() {
+                var desc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == id })
+                desc.fetchLimit = 1
+                if let item = try ctx1.fetch(desc).first {
+                    item.title = "Refined Thought \(index + 1) — Apple-Inspired"
+                    item.content = "Polished content with markdown and tactile metadata."
+                    item.touch()
+                }
+            }
+            try ctx1.save()
+            
+            // 4. Delete some (delete 4 items: indices 0, 5, 10, 15)
+            let idsToDelete = [thoughtIDs[0], thoughtIDs[5], thoughtIDs[10], thoughtIDs[15]]
+            for id in idsToDelete {
+                var desc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == id })
+                desc.fetchLimit = 1
+                if let item = try ctx1.fetch(desc).first {
+                    ctx1.delete(item)
+                }
+            }
+            try ctx1.save()
+            
+            // 5. Archive some (archive 5 items: indices 1, 6, 11, 16, 19)
+            let idsToArchive = [thoughtIDs[1], thoughtIDs[6], thoughtIDs[11], thoughtIDs[16], thoughtIDs[19]]
+            for id in idsToArchive {
+                var desc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == id })
+                desc.fetchLimit = 1
+                if let item = try ctx1.fetch(desc).first {
+                    item.isArchived = true
+                    item.touch()
+                }
+            }
+            try ctx1.save()
+            
+            // 6. Search
+            let searchDescriptor = FetchDescriptor<NookItem>(predicate: #Predicate { $0.title.contains("Refined") })
+            let searchResults = try ctx1.fetch(searchDescriptor)
+            guard searchResults.count == 16 else {
+                throw TestError("Expected 16 items matching 'Refined', found \(searchResults.count)")
+            }
+            
+            // 7. Quit container 1
+        }
+        
+        // 8. Relaunch (create clean new ModelContainer accessing same sqlite disk database)
+        do {
+            let container2 = try ModelContainer(for: schema, configurations: [config])
+            let ctx2 = container2.mainContext
+            
+            // 9. Verify everything persisted correctly
+            let allItems = try ctx2.fetch(FetchDescriptor<NookItem>())
+            guard allItems.count == 16 else {
+                throw TestError("Restart verification failed: expected 16 remaining items, found \(allItems.count)")
+            }
+            
+            let activeItems = try ctx2.fetch(FetchDescriptor<NookItem>(predicate: #Predicate { !$0.isArchived }))
+            guard activeItems.count == 11 else {
+                throw TestError("Expected 11 active items after restart, found \(activeItems.count)")
+            }
+            
+            let archivedItems = try ctx2.fetch(FetchDescriptor<NookItem>(predicate: #Predicate { $0.isArchived }))
+            guard archivedItems.count == 5 else {
+                throw TestError("Expected 5 archived items after restart, found \(archivedItems.count)")
+            }
+            
+            // Verify deleted items are gone
+            let deletedIDs = [thoughtIDs[0], thoughtIDs[5], thoughtIDs[10], thoughtIDs[15]]
+            for delID in deletedIDs {
+                var desc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == delID })
+                desc.fetchLimit = 1
+                if !(try ctx2.fetch(desc).isEmpty) {
+                    throw TestError("Deleted item \(delID) unexpectedly survived restart.")
+                }
+            }
+            
+            // Verify content and coordinates of remaining item
+            let sampleID = thoughtIDs[2]
+            var sampleDesc = FetchDescriptor<NookItem>(predicate: #Predicate { $0.id == sampleID })
+            sampleDesc.fetchLimit = 1
+            guard let sampleItem = try ctx2.fetch(sampleDesc).first else {
+                throw TestError("Sample item 2 not found after restart.")
+            }
+            guard sampleItem.title == "Refined Thought 3 — Apple-Inspired" else {
+                throw TestError("Title did not persist accurately: \(sampleItem.title)")
+            }
+            guard abs(sampleItem.positionY - 0.45) < 0.001 else {
+                throw TestError("Position Y coordinate did not persist accurately: \(sampleItem.positionY)")
+            }
+            
+            // Test malformed/unexpected data resilience
+            let malformedItem = NookItem(title: "", content: "")
+            malformedItem.roomPosition = RoomPosition(x: Double.nan, y: -9999.0, z: Double.infinity)
+            malformedItem.setMetadata(["corrupted": "value\0with\u{FFFF}characters"])
+            ctx2.insert(malformedItem)
+            try ctx2.save()
+            
+            guard malformedItem.roomPosition.x >= 0.0 && malformedItem.roomPosition.x <= 1.0 else {
+                throw TestError("NaN/infinite coordinate was not sanitized or clamped.")
+            }
+            ctx2.delete(malformedItem)
+            try ctx2.save()
         }
     }
     
