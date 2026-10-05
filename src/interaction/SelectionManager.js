@@ -41,6 +41,7 @@ export class SelectionManager {
     const hit = this.raycastManager.getIntersectedObject();
     if (hit && hit.interactiveObject) {
       this.select(hit.interactiveObject);
+      hit.interactiveObject.triggerSpecialAction();
     } else {
       this.deselect();
     }

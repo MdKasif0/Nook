@@ -46,7 +46,12 @@ export class BaseSurface {
   isAllowed(objectType) {
     if (!objectType) return true;
     if (this.allowedObjectTypes.has('*')) return true;
-    return this.allowedObjectTypes.has(objectType.toLowerCase());
+    const lower = objectType.toLowerCase();
+    const thoughtTypes = ['thought', 'pebble', 'paper_note', 'polaroid', 'bookmark', 'sticky_note'];
+    if (thoughtTypes.includes(lower) && this.allowedObjectTypes.has('thought')) {
+      return true;
+    }
+    return this.allowedObjectTypes.has(lower);
   }
 
   clamp(x, z, padding = 0.08) {

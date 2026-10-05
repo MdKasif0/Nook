@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { InteractiveObject } from './InteractiveObject.js';
 import { PALETTE, UPPER_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
+import { TextureGenerator } from '../utils/TextureGenerator.js';
 
 export class ObjectManager {
   constructor(roomScene, placementManager) {
