@@ -87,6 +87,8 @@ final class PreferencesManager {
         } else {
             self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         }
+        
+        self.autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
     }
     
     // MARK: - Launch At Login Implementation

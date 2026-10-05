@@ -74,6 +74,41 @@ struct SettingsView: View {
                         .font(NookDesign.Typography.caption)
                         .foregroundStyle(NookDesign.Colors.textSecondary)
                 }
+                
+                Section {
+                    Toggle("Automatically check for updates", isOn: $preferences.autoCheckUpdates)
+                        .help("Periodically check the Sparkle AppCast feed for new Nook releases.")
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Current version: Nook \(NookUpdateManager.shared.currentVersion)")
+                                .font(NookDesign.Typography.caption)
+                                .foregroundStyle(NookDesign.Colors.textPrimary)
+                            
+                            if let lastDate = NookUpdateManager.shared.lastCheckedDate {
+                                Text("Last checked: \(lastDate.formatted(date: .abbreviated, time: .shortened))")
+                                    .font(NookDesign.Typography.caption)
+                                    .foregroundStyle(NookDesign.Colors.textTertiary)
+                            } else {
+                                Text("Feed: nook.app/appcast.xml")
+                                    .font(NookDesign.Typography.caption)
+                                    .foregroundStyle(NookDesign.Colors.textTertiary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button("Check Now…") {
+                            NookUpdateManager.shared.checkForUpdates(userInitiated: true)
+                        }
+                        .buttonStyle(.bordered)
+                        .font(NookDesign.Typography.caption)
+                    }
+                } header: {
+                    Text("Software Updates")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textSecondary)
+                }
             }
             .formStyle(.grouped)
             .tabItem {
