@@ -20,10 +20,16 @@ final class PreferencesManager {
     
     // MARK: - Settings Properties
     
-    /// Whether reduced motion is explicitly forced by the user in Nook preferences.
+    private var _userReduceMotion: Bool
+    
+    /// Whether reduced motion is active, either from user preference or macOS Accessibility settings.
     var reduceMotion: Bool {
-        didSet {
-            defaults.set(reduceMotion, forKey: Keys.reduceMotion)
+        get {
+            _userReduceMotion || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        }
+        set {
+            _userReduceMotion = newValue
+            defaults.set(newValue, forKey: Keys.reduceMotion)
         }
     }
     
@@ -50,7 +56,7 @@ final class PreferencesManager {
     }
     
     private init() {
-        self.reduceMotion = defaults.bool(forKey: Keys.reduceMotion)
+        self._userReduceMotion = defaults.bool(forKey: Keys.reduceMotion)
         
         // Sound effects must be OFF by default per user specification
         if defaults.object(forKey: Keys.soundEffects) != nil {

@@ -21,16 +21,23 @@ struct QuickCaptureView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: NookDesign.Spacing.md) {
-            // Header: "What are you thinking about?"
-            HStack(alignment: .center, spacing: NookDesign.Spacing.sm) {
-                Image(systemName: "sparkles")
+            // Header: "What are you thinking about?" with subtle contextual hint
+            HStack(alignment: .top, spacing: NookDesign.Spacing.sm) {
+                Image(systemName: "pencil.line")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(NookDesign.Colors.olive)
+                    .padding(.top, 2)
                 
-                Text("What are you thinking about?")
-                    .font(NookDesign.Typography.subheading)
-                    .fontWeight(.medium)
-                    .foregroundStyle(NookDesign.Colors.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("What are you thinking about?")
+                        .font(NookDesign.Typography.subheading)
+                        .fontWeight(.medium)
+                        .foregroundStyle(NookDesign.Colors.textPrimary)
+                    
+                    Text("Turn a thought into something you can keep.")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                }
                 
                 Spacer()
                 
@@ -44,6 +51,7 @@ struct QuickCaptureView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Dismiss (esc)")
+                .accessibilityLabel("Dismiss Quick Thought")
             }
             
             // Large Thought Content TextField
@@ -64,6 +72,7 @@ struct QuickCaptureView: View {
                     .padding(.horizontal, NookDesign.Spacing.sm)
                     .padding(.vertical, NookDesign.Spacing.xs)
                     .frame(minHeight: 70, maxHeight: 110)
+                    .accessibilityLabel("Thought content")
             }
             .background(NookDesign.Colors.backgroundSecondary.opacity(0.8))
             .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous))
@@ -84,6 +93,7 @@ struct QuickCaptureView: View {
                     RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous)
                         .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
                 )
+                .accessibilityLabel("Thought title (optional)")
                 .onSubmit {
                     saveAndMaterialize()
                 }
@@ -135,6 +145,7 @@ struct QuickCaptureView: View {
                 .buttonStyle(.plain)
                 .disabled(!canCreate)
                 .keyboardShortcut(.defaultAction)
+                .accessibilityLabel("Place Object in Room")
             }
         }
         .padding(NookDesign.Spacing.lg)

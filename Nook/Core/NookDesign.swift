@@ -45,11 +45,11 @@ enum NookDesign {
         /// Primary text — soft charcoal, not pure black.
         static let textPrimary = Color(hex: 0x3A3835)
         
-        /// Secondary text — warm gray.
-        static let textSecondary = Color(hex: 0x7A756D)
+        /// Secondary text — warm deep gray (WCAG AA compliant > 6.5:1).
+        static let textSecondary = Color(hex: 0x5C5750)
         
-        /// Tertiary text — light muted.
-        static let textTertiary = Color(hex: 0xA8A29A)
+        /// Tertiary text — muted charcoal/taupe (WCAG AA compliant > 4.6:1).
+        static let textTertiary = Color(hex: 0x746E66)
         
         /// Near-black for strong emphasis.
         static let ink = Color(hex: 0x4A4945)
