@@ -381,6 +381,10 @@ final class RoomSceneCoordinator {
     }
     
     func petCookie() {
+        guard !isPettingInProgress else { return }
+        isPettingInProgress = true
+        defer { isPettingInProgress = false }
+        
         cookie?.pet()
         RoomEventBus.shared.publish(.cookiePetted)
         onPetCookie?()
