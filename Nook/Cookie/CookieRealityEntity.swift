@@ -1278,25 +1278,53 @@ public enum CookieTailMotion: Sendable {
 
 // MARK: - Future AI Extension Point Architecture
 
-/// Protocol defining the extension point where an optional AI module could later understand user activity.
-/// Strictly local, non-networked in v1.
-protocol CookieIntelligenceProvider: Sendable {
+/// Clean extension point protocol for a future, optional AI intelligence module.
+///
+/// In the future, a purely local (e.g. CoreML / Apple Intelligence on-device) module could
+/// analyze user thoughts, recurring themes, or interaction preferences to subtly adjust Cookie's demeanor.
+///
+/// ⚠️ Strict v1 Constraints:
+/// - 100% deterministic and local.
+/// - NO network requests, NO analytics, NO tracking, NO cloud processing, NO external AI API.
+/// - Zero user data leaves this Mac.
+public protocol CookieIntelligenceProvider: Sendable {
+    /// Evaluates recent room events and determines if Cookie should alter mood or demeanor.
     func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood
+    
+    /// Optional future hook: Suggests an autonomous activity based on recurring themes or user preferences.
+    func suggestAutonomousActivity(hourOfDay: Int, userPreferences: [String: String]) -> CookieActivity?
+    
+    /// Optional future hook: Evaluates sentiment or themes in user thought titles (without sending text off-device).
+    func evaluateThoughtThemes(_ titles: [String]) -> CookieMood?
 }
 
-/// Default local deterministic behavioral provider for Cookie. Zero cloud calls.
-final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
-    init() {}
+/// Default local deterministic behavioral provider for Cookie.
+/// 100% local, offline, deterministic.
+public final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
+    public init() {}
     
     public func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood {
         let creations = recentEvents.filter {
             if case .itemCreated = $0 { return true }
+            if case .thoughtCreated = $0 { return true }
             return false
         }.count
         
         if creations >= 3 {
-            return .curious
+            return .excited
         }
         return .idle
+    }
+    
+    public func suggestAutonomousActivity(hourOfDay: Int, userPreferences: [String: String]) -> CookieActivity? {
+        if hourOfDay >= 22 || hourOfDay < 7 {
+            return .sleeping
+        }
+        return nil
+    }
+    
+    public func evaluateThoughtThemes(_ titles: [String]) -> CookieMood? {
+        // v1: Deterministic local rule - no external AI calls
+        return nil
     }
 }
