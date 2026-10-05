@@ -837,6 +837,113 @@ struct RoomView: View {
     private func selectItem(_ id: UUID?) {
         sceneController.selectedItemID = id
         isEditingSelectedItem = false
+        if id != nil {
+            hasInteractedWithObject = true
+        }
+    }
+    
+    private func navigateNextItem() {
+        let activeItems = items.filter { !$0.isArchived }
+        guard !activeItems.isEmpty else { return }
+        hasInteractedWithObject = true
+        if let currentID = sceneController.selectedItemID,
+           let currentIndex = activeItems.firstIndex(where: { $0.id == currentID }) {
+            let nextIndex = (currentIndex + 1) % activeItems.count
+            selectItem(activeItems[nextIndex].id)
+            sceneController.focusItem(id: activeItems[nextIndex].id)
+        } else {
+            selectItem(activeItems[0].id)
+            sceneController.focusItem(id: activeItems[0].id)
+        }
+    }
+    
+    private func navigatePreviousItem() {
+        let activeItems = items.filter { !$0.isArchived }
+        guard !activeItems.isEmpty else { return }
+        hasInteractedWithObject = true
+        if let currentID = sceneController.selectedItemID,
+           let currentIndex = activeItems.firstIndex(where: { $0.id == currentID }) {
+            let prevIndex = (currentIndex - 1 + activeItems.count) % activeItems.count
+            selectItem(activeItems[prevIndex].id)
+            sceneController.focusItem(id: activeItems[prevIndex].id)
+        } else {
+            selectItem(activeItems[activeItems.count - 1].id)
+            sceneController.focusItem(id: activeItems[activeItems.count - 1].id)
+        }
+    }
+    
+    private func deleteSelectedItem(_ item: NookItem) {
+        withAnimation(NookDesign.Animation.standard) {
+            sceneController.selectedItemID = nil
+            NookActionService.shared.deleteItem(
+                item,
+                in: modelContext,
+                undoManager: undoManager,
+                appState: appState
+            )
+        }
+    }
+    
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        if press.key == .tab {
+            if press.modifiers.contains(.shift) {
+                navigatePreviousItem()
+            } else {
+                navigateNextItem()
+            }
+            return .handled
+        }
+        if press.key == .rightArrow || press.key == .downArrow {
+            if !isEditingSelectedItem {
+                navigateNextItem()
+                return .handled
+            }
+        }
+        if press.key == .leftArrow || press.key == .upArrow {
+            if !isEditingSelectedItem {
+                navigatePreviousItem()
+                return .handled
+            }
+        }
+        if press.key == .return || press.key == .space {
+            if let item = selectedItem, !isEditingSelectedItem {
+                hasInteractedWithObject = true
+                detailItem = item
+                return .handled
+            }
+        }
+        if press.characters == "e" || press.characters == "E" {
+            if let item = selectedItem, !isEditingSelectedItem {
+                beginEditing(item)
+                return .handled
+            }
+        }
+        if press.key == .delete || press.key == .deleteForward {
+            if let item = selectedItem, !isEditingSelectedItem {
+                deleteSelectedItem(item)
+                return .handled
+            }
+        }
+        if press.key == .escape {
+            if isEditingSelectedItem {
+                isEditingSelectedItem = false
+                return .handled
+            }
+            if sceneController.selectedItemID != nil {
+                withAnimation(NookDesign.Animation.springy) {
+                    sceneController.selectedItemID = nil
+                    sceneController.resetCameraFraming()
+                }
+                return .handled
+            }
+            if !firstLaunchDismissed {
+                withAnimation(NookDesign.Animation.standard) {
+                    firstLaunchDismissed = true
+                }
+                return .handled
+            }
+        }
+        return .ignored
     }
     
     private func handleItemMoved(id: UUID, newPosition: RoomPosition) {
@@ -916,7 +1023,7 @@ struct RoomView: View {
         
         let welcomePebble = NookItem(
             title: "Welcome to your Nook.",
-            content: "This is your quiet, miniature digital room. Your thoughts exist as physical objects.\n\n• Drag me anywhere across the desk\n• Click any object to inspect or edit\n• Press ⌘⇧Space anytime to capture a thought",
+            content: "Capture a thought with ⌘⇧Space.\n\nEvery thought here exists as a small tactile object. You can drag them across your desk, pick them up, or open them anytime.",
             itemType: .thought,
             objectType: .pebble,
             position: PlacementZone.deskCenter.basePosition

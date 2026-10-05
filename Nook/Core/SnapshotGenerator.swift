@@ -40,25 +40,30 @@ enum SnapshotGenerator {
             )
         saveView(searchPaletteView, size: CGSize(width: 580, height: 500), to: "\(artifactDir)/nook_search_palette.png")
         
-        // 4. Native Settings Window (General)
-        let settingsView = SettingsView(initialTab: .general)
+        // 4. Contextual Empty State (Ideas: "Your first idea is waiting for a shelf.")
+        let ideasEmptyView = ItemListView(title: "Ideas", icon: "lightbulb", filter: .itemType(.idea))
             .environment(state)
             .modelContainer(container)
-            .padding(16)
-            .background(
-                Color(red: 0.96, green: 0.95, blue: 0.93)
-            )
-        saveView(settingsView, size: CGSize(width: 500, height: 380), to: "\(artifactDir)/nook_settings.png")
+            .frame(width: 480, height: 320)
+        saveView(ideasEmptyView, size: CGSize(width: 480, height: 320), to: "\(artifactDir)/nook_ideas_empty_state.png")
         
-        // 5. Data & Privacy Settings
-        let privacySettingsView = SettingsView(initialTab: .privacy)
-            .environment(state)
-            .modelContainer(container)
-            .padding(16)
-            .background(
-                Color(red: 0.96, green: 0.95, blue: 0.93)
-            )
-        saveView(privacySettingsView, size: CGSize(width: 500, height: 380), to: "\(artifactDir)/nook_privacy_settings.png")
+        // 5. Thought Detail Reader Sheet
+        let sampleItem = NookItem(
+            title: "Local AI Coding Assistant",
+            content: "Build a quiet, tactile miniature environment where thoughts become physical objects on a wooden desk.",
+            itemType: .idea,
+            objectType: .pebble
+        )
+        let thoughtDetailView = ThoughtDetailSheet(
+            item: sampleItem,
+            onEdit: {},
+            onMove: { _ in },
+            onArchive: {},
+            onDelete: {}
+        )
+        .padding(16)
+        .background(Color(red: 0.94, green: 0.92, blue: 0.88))
+        saveView(thoughtDetailView, size: CGSize(width: 520, height: 460), to: "\(artifactDir)/nook_thought_detail.png")
     }
     
     private static func saveView<V: View>(_ view: V, size: CGSize, to path: String) {
