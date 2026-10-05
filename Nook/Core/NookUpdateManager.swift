@@ -28,7 +28,7 @@ public struct AppCastItem: Identifiable, Equatable, Sendable {
 /// 6. Drives native SwiftUI update dialogs and menu bar status.
 @MainActor
 @Observable
-public final class NookUpdateManager: NSObject, Sendable {
+public final class NookUpdateManager {
     
     public static let shared = NookUpdateManager()
     private static let logger = Logger(subsystem: "com.nook.app", category: "UpdateManager")
@@ -71,9 +71,7 @@ public final class NookUpdateManager: NSObject, Sendable {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
     
-    private override init() {
-        super.init()
-    }
+    private init() {}
     
     // MARK: - Update Checking
     
