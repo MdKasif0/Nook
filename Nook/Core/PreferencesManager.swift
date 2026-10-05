@@ -17,6 +17,8 @@ final class PreferencesManager {
         static let reduceMotion = "nook_reduce_motion"
         static let launchAtLogin = "nook_launch_at_login"
         static let soundEffects = "nook_sound_effects"
+        static let cookieSoundEnabled = "nook_cookie_sound_enabled"
+        static let cookieSoundVolume = "nook_cookie_sound_volume"
         static let cookieReactions = "nook_cookie_reactions"
         static let autoCheckUpdates = "nook_auto_check_updates"
     }
@@ -48,6 +50,20 @@ final class PreferencesManager {
     var soundEffectsEnabled: Bool {
         didSet {
             defaults.set(soundEffectsEnabled, forKey: Keys.soundEffects)
+        }
+    }
+    
+    /// Whether Cookie's soft vocalizations (meows, purrs, chirps) are enabled.
+    var cookieSoundEnabled: Bool {
+        didSet {
+            defaults.set(cookieSoundEnabled, forKey: Keys.cookieSoundEnabled)
+        }
+    }
+    
+    /// Cookie vocalization volume (0.0 to 1.0, default low 0.35).
+    var cookieSoundVolume: Float {
+        didSet {
+            defaults.set(cookieSoundVolume, forKey: Keys.cookieSoundVolume)
         }
     }
     
