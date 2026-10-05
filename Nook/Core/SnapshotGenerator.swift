@@ -1,5 +1,7 @@
 import SwiftUI
 import AppKit
+import RealityKit
+import Metal
 
 /// Generates pixel-perfect snapshots of Nook's native UI surfaces for preview and documentation.
 @MainActor
@@ -90,10 +92,6 @@ enum SnapshotGenerator {
             renderer.entities.append(coordinator.rootEntity)
             renderer.activeCamera = coordinator.cameraRig.cameraEntity
             
-            // Set warm cream background
-            var settings = RealityRenderer.CameraSettings()
-            settings.colorBackground = .color(CGColor(red: 0.98, green: 0.965, blue: 0.945, alpha: 1.0))
-            
             let outputDesc = RealityRenderer.CameraOutput.Descriptor.singleProjection(colorTexture: texture)
             let cameraOutput = try RealityRenderer.CameraOutput(outputDesc)
             try renderer.updateAndRender(deltaTime: 0.016, cameraOutput: cameraOutput)
@@ -105,8 +103,19 @@ enum SnapshotGenerator {
             guard let tiff = nsImage.tiffRepresentation,
                   let bitmap = NSBitmapImageRep(data: tiff),
                   let png = bitmap.representation(using: .png, properties: [:]) else { return }
-            try png.write(to: URL(fileURLWithPath: path))
-            print("Successfully rendered reality room snapshot to: \(path)")
+            let targetURL = URL(fileURLWithPath: path)
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(targetURL.lastPathComponent)
+            do {
+                try png.write(to: targetURL)
+                print("Successfully rendered reality room snapshot to: \(targetURL.path)")
+            } catch {
+                do {
+                    try png.write(to: tempURL)
+                    print("Rendered reality room snapshot to sandbox temp: \(tempURL.path)")
+                } catch {
+                    print("Failed to write reality room snapshot: \(error)")
+                }
+            }
         } catch {
             print("Error rendering reality room snapshot: \(error)")
         }
