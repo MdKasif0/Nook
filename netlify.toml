@@ -30,6 +30,13 @@
   status = 302
   force = true
 
+# Route /appcast to the Sparkle XML feed
+[[redirects]]
+  from = "/appcast"
+  to = "/appcast.xml"
+  status = 301
+  force = true
+
 # ------------------------------------------------------------------------------
 # Headers & Security Policies
 # ------------------------------------------------------------------------------
