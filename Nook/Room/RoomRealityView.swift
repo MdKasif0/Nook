@@ -5,12 +5,14 @@ import AppKit
 /// SwiftUI container for the Nook 3D RealityKit miniature room diorama.
 ///
 /// Embeds the scene graph via `RealityView`, configures the virtual isometric camera,
-/// enables entity hit-testing, tap actions, and tactile drag manipulation.
+/// enables entity hit-testing, tap actions, physical dragging, rotation, settling physics,
+/// and native UndoManager integration.
 struct RoomRealityView: View {
     
     let coordinator: RoomSceneCoordinator
+    @Environment(\.undoManager) private var undoManager
     
-    @State private var draggedEntity: Entity?
+    @State private var activeDragTarget: Entity?
     @State private var dragInitialPosition: SIMD3<Float> = .zero
     
     var body: some View {
@@ -32,41 +34,25 @@ struct RoomRealityView: View {
             DragGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
-                    let entity = value.entity
-                    // Only allow dragging thought items
-                    guard entity.name.hasPrefix("thought_") || entity.findAncestor(prefix: "thought_") != nil else { return }
-                    let target = entity.name.hasPrefix("thought_") ? entity : entity.findAncestor(prefix: "thought_")!
+                    guard let interaction = coordinator.interactionSystem,
+                          interaction.canDragEntity(value.entity) else { return }
                     
-                    if draggedEntity == nil {
-                        draggedEntity = target
-                        dragInitialPosition = target.position
+                    if activeDragTarget == nil {
+                        if let target = interaction.handleDragStart(for: value.entity) {
+                            activeDragTarget = target
+                            dragInitialPosition = target.position
+                        }
                     }
                     
-                    // Convert screen translation to ground plane X/Z translation
-                    // Isometric projection mapping:
-                    let deltaX = Float(value.translation.width) * 0.0025
-                    let deltaZ = Float(value.translation.height) * 0.0025
-                    
-                    let newX = dragInitialPosition.x + (deltaX - deltaZ) * 0.707
-                    let newZ = dragInitialPosition.z + (deltaX + deltaZ) * 0.707
-                    
-                    // Clamp to room bounds
-                    let clampedX = min(max(newX, -1.15), 1.15)
-                    let clampedZ = min(max(newZ, -1.05), 1.05)
-                    
-                    target.position = [clampedX, dragInitialPosition.y + 0.03, clampedZ]
+                    guard let target = activeDragTarget else { return }
+                    interaction.handleDragUpdate(target: target, translation: value.translation, startPos: dragInitialPosition)
                 }
                 .onEnded { value in
-                    guard let target = draggedEntity else { return }
-                    // Drop down to surface
-                    target.position.y = dragInitialPosition.y
+                    guard let interaction = coordinator.interactionSystem,
+                          let target = activeDragTarget else { return }
                     
-                    let idStr = String(target.name.dropFirst("thought_".count))
-                    if let uuid = UUID(uuidString: idStr) {
-                        let finalPos = SIMD3<Float>(target.position.x, target.position.y, target.position.z)
-                        coordinator.interactionSystem?.handleItemDrag(id: uuid, newPosition: finalPos)
-                    }
-                    draggedEntity = nil
+                    interaction.handleDragEnd(target: target, undoManager: undoManager)
+                    activeDragTarget = nil
                 }
         )
         .background(Color(red: 0.98, green: 0.965, blue: 0.945))
