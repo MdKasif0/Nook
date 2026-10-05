@@ -4,11 +4,12 @@
  * Calibrated directly to match the warm sun-spot sleeping pose from nook-room.jpeg.
  */
 
+import * as THREE from 'three';
 import { UPPER_FLOOR_Y, LOWER_FLOOR_Y, MAIN_FLOOR_Y } from '../utils/Constants.js';
 
 export const COOKIE_LOCATIONS = {
-  // 1. Bed Sun Spot (Sleeping cat in nook-room.jpeg curled up on sage blanket)
-  BED_SUN_SPOT: new THREE.Vector3(2.2, 1.15, -0.65),
+  // 1. Bed Sun Spot (Sleeping cat in nook-room.jpeg curled up on sage blanket in the sunbeam)
+  BED_SUN_SPOT: new THREE.Vector3(1.85, 1.54, -0.55),
 
   // 2. Cat Bed / Bouclé Pouf Cushion
   POUF_LOUNGE: new THREE.Vector3(3.45, 0.46, 3.25),
