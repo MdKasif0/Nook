@@ -382,6 +382,7 @@ final class RoomSceneCoordinator {
     
     func petCookie() {
         cookie?.pet()
+        RoomEventBus.shared.publish(.cookiePetted)
         onPetCookie?()
     }
     

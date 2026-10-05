@@ -81,22 +81,22 @@ struct RoomView: View {
                             
                             Menu("Call Cookie") {
                                 Button {
-                                    Task { await sceneController.cookie?.goToBed() }
+                                    RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.bedRestLocation))
                                 } label: {
                                     Label("To Bed", systemImage: "bed.double.fill")
                                 }
                                 Button {
-                                    Task { await sceneController.cookie?.goToDesk() }
+                                    RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.deskExploreLocation))
                                 } label: {
                                     Label("To Desk", systemImage: "desktopcomputer")
                                 }
                                 Button {
-                                    Task { await sceneController.cookie?.goToSunkenLounge() }
+                                    RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.loungeLocation))
                                 } label: {
                                     Label("To Sunken Lounge", systemImage: "sofa.fill")
                                 }
                                 Button {
-                                    Task { await sceneController.cookie?.goToWindow() }
+                                    RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.windowLedgeLocation))
                                 } label: {
                                     Label("To Window Sill", systemImage: "sun.max.fill")
                                 }
@@ -140,9 +140,7 @@ struct RoomView: View {
                         } else {
                             Button {
                                 if let entity = sceneController.findPropEntity(id: prop.propId) {
-                                    Task {
-                                        await sceneController.cookie?.callCookie(to: entity.position)
-                                    }
+                                    RoomEventBus.shared.publish(.cookieCalled(targetPosition: entity.position))
                                 }
                             } label: {
                                 Label("Call Cookie Here", systemImage: "cat.fill")
@@ -176,9 +174,7 @@ struct RoomView: View {
                     } else if let item = selectedItem {
                         Button {
                             if let entity = sceneController.findThoughtEntity(id: item.id) {
-                                Task {
-                                    await sceneController.cookie?.callCookie(to: entity.position)
-                                }
+                                RoomEventBus.shared.publish(.cookieCalled(targetPosition: entity.position))
                             }
                         } label: {
                             Label("Call Cookie Here", systemImage: "cat.fill")
@@ -203,22 +199,22 @@ struct RoomView: View {
                     } else {
                         Menu("Call Cookie") {
                             Button {
-                                Task { await sceneController.cookie?.goToBed() }
+                                RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.bedRestLocation))
                             } label: {
                                 Label("Call Cookie to Bed", systemImage: "bed.double.fill")
                             }
                             Button {
-                                Task { await sceneController.cookie?.goToDesk() }
+                                RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.deskExploreLocation))
                             } label: {
                                 Label("Call Cookie to Desk", systemImage: "desktopcomputer")
                             }
                             Button {
-                                Task { await sceneController.cookie?.goToSunkenLounge() }
+                                RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.loungeLocation))
                             } label: {
                                 Label("Call Cookie to Lounge", systemImage: "sofa.fill")
                             }
                             Button {
-                                Task { await sceneController.cookie?.goToWindow() }
+                                RoomEventBus.shared.publish(.cookieCalled(targetPosition: CookieBehaviorController.windowLedgeLocation))
                             } label: {
                                 Label("Call Cookie to Window", systemImage: "sun.max.fill")
                             }
