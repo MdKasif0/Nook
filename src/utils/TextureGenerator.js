@@ -810,4 +810,128 @@ export class TextureGenerator {
     texture.wrapT = THREE.RepeatWrapping;
     return texture;
   }
+
+  /**
+   * Generates procedural tangent-space normal map from a height field function.
+   */
+  static createHeightToNormalMap(heightFunc, width = 512, height = 512, scale = 2.0) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(width, height);
+    const data = imgData.data;
+
+    const grid = new Float32Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        grid[y * width + x] = heightFunc(x, y, width, height);
+      }
+    }
+
+    for (let y = 0; y < height; y++) {
+      const y0 = (y - 1 + height) % height;
+      const y1 = (y + 1) % height;
+      for (let x = 0; x < width; x++) {
+        const x0 = (x - 1 + width) % width;
+        const x1 = (x + 1) % width;
+
+        const dx = (grid[y * width + x1] - grid[y * width + x0]) * scale;
+        const dy = (grid[y1 * width + x] - grid[y0 * width + x]) * scale;
+        const dz = 1.0;
+
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1.0;
+        const nx = -dx / len;
+        const ny = -dy / len;
+        const nz = dz / len;
+
+        const idx = (y * width + x) * 4;
+        data[idx] = Math.floor((nx * 0.5 + 0.5) * 255);
+        data[idx + 1] = Math.floor((ny * 0.5 + 0.5) * 255);
+        data[idx + 2] = Math.floor((nz * 0.5 + 0.5) * 255);
+        data[idx + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }
+
+  /**
+   * Generates directional wood grain normal map for tactile micro-relief.
+   */
+  static createWoodNormalMap(width = 512, height = 512) {
+    return this.createHeightToNormalMap((x, y, w, h) => {
+      const grain = Math.sin(y * 0.28 + Math.sin(x * 0.04) * 3.5) * 0.4;
+      const micro = Math.sin(y * 0.85) * 0.35 + (Math.sin(x * 0.12 * y * 0.01) * 0.15);
+      const pore = (y % 4 === 0) ? (Math.sin(x * 0.2) * 0.2) : 0;
+      return grain + micro + pore;
+    }, width, height, 2.5);
+  }
+
+  /**
+   * Generates wood roughness map with matte/semi-matte pore variation.
+   */
+  static createWoodRoughnessMap(width = 512, height = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Base semi-matte roughness (~0.48)
+    ctx.fillStyle = '#7a7a7a';
+    ctx.fillRect(0, 0, width, height);
+
+    // Grain line roughness modulation
+    ctx.globalAlpha = 0.22;
+    for (let y = 0; y < height; y += 3) {
+      const isPore = y % 6 === 0;
+      ctx.fillStyle = isPore ? '#a8a8a8' : '#5c5c5c';
+      ctx.fillRect(0, y, width, 2);
+    }
+
+    ctx.globalAlpha = 1.0;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }
+
+  /**
+   * Generates woven fabric normal map for soft tactile linen/cotton cloth.
+   */
+  static createFabricNormalMap(width = 512, height = 512) {
+    return this.createHeightToNormalMap((x, y, w, h) => {
+      const threadX = Math.sin(x * 0.65) * 0.5;
+      const threadY = Math.cos(y * 0.65) * 0.5;
+      const cross = Math.sin((x + y) * 0.32) * 0.2;
+      return threadX + threadY + cross;
+    }, width, height, 1.8);
+  }
+
+  /**
+   * Generates fluffy looped bouclé normal map for the cat bed pouf.
+   */
+  static createBoucleNormalMap(width = 512, height = 512) {
+    return this.createHeightToNormalMap((x, y, w, h) => {
+      const loop1 = Math.sin(x * 0.35 + Math.sin(y * 0.28) * 3.0);
+      const loop2 = Math.cos(y * 0.32 + Math.cos(x * 0.26) * 3.0);
+      const nub = Math.sin(x * 0.8) * Math.sin(y * 0.8) * 0.4;
+      return (loop1 + loop2 + nub) * 0.5;
+    }, width, height, 2.2);
+  }
+
+  /**
+   * Generates subtle chalky plaster normal map for cream walls.
+   */
+  static createPlasterNormalMap(width = 512, height = 512) {
+    return this.createHeightToNormalMap((x, y, w, h) => {
+      return (Math.sin(x * 0.15) * Math.sin(y * 0.15) * 0.4) +
+             (Math.sin(x * 0.42 + y * 0.38) * 0.3) +
+             (Math.sin(x * 0.95 - y * 0.85) * 0.2);
+    }, width, height, 1.2);
+  }
 }
