@@ -1626,13 +1626,24 @@ kbd, .keyboard-key {
     top: 56px;
     left: 0;
     right: 0;
-    background: var(--bg-paper);
-    border-bottom: 1px solid var(--border-surface);
+    bottom: 0;
+    background: rgba(253, 251, 247, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: var(--space-lg);
-    gap: var(--space-md);
-    box-shadow: var(--shadow-elevated);
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--space-xl) var(--space-lg);
+    gap: var(--space-lg);
     display: none;
+    z-index: 99;
+  }
+
+  .nav-links .nav-link {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    padding: 8px 16px;
   }
 
   .nav-links.open {
