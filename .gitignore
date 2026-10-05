@@ -34,3 +34,6 @@ render_room
 
 # Distribution
 dist/
+*.sparkle_key
+.sparkle_priv_key
+
