@@ -8,20 +8,20 @@ import * as THREE from 'three';
 import { UPPER_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
 
 export const COOKIE_LOCATIONS = {
-  // 1. Bed Sun Spot (Exact position of the sleeping cat in nook-room.jpeg!)
-  BED_SUN_SPOT: new THREE.Vector3(0.95, UPPER_FLOOR_Y + 0.49, -0.65),
+  // 1. Bed Sun Spot (Sleeping cat in nook-room.jpeg curled up on sage blanket)
+  BED_SUN_SPOT: new THREE.Vector3(2.2, 1.15, -0.65),
 
-  // 2. Bouclé Pouf Cushion
-  POUF_LOUNGE: new THREE.Vector3(1.22, LOWER_FLOOR_Y + 0.28, 1.45),
+  // 2. Cat Bed / Bouclé Pouf Cushion
+  POUF_LOUNGE: new THREE.Vector3(3.45, 0.46, 3.25),
 
   // 3. Desk Companion (next to keyboard and warm desk lamp)
-  DESK_COMPANION: new THREE.Vector3(-0.55, 0.71, -0.55),
+  DESK_COMPANION: new THREE.Vector3(-1.8, 1.70, -2.0),
 
-  // 4. Woven Rug (Sunken desk area)
-  RUG_CENTER: new THREE.Vector3(-0.65, LOWER_FLOOR_Y, 0.25),
+  // 4. Botanical Rug (desk chair area)
+  RUG_CENTER: new THREE.Vector3(-2.65, MAIN_FLOOR_Y + 0.02, -0.7),
 
-  // 5. Window Sill (watching birds outside in the warm breeze)
-  WINDOW_SILL: new THREE.Vector3(1.82, 0.80, -0.90)
+  // 5. Window Sill (watching birds outside in the warm sunlight)
+  WINDOW_SILL: new THREE.Vector3(4.8, 2.15, -0.2)
 };
 
 export class CookieNavigation {

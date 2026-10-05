@@ -27,55 +27,55 @@ export class PlacementManager {
     this.surfaces.push({
       id: 'desk',
       name: 'Desk Top',
-      minX: -1.95,
-      maxX: -0.35,
-      minZ: -1.05,
-      maxZ: -0.25,
-      height: 0.71
+      minX: -4.9,
+      maxX: -1.0,
+      minZ: -3.4,
+      maxZ: -1.6,
+      height: 1.70
     });
 
     // 2. Bed Mattress Bounds
     this.surfaces.push({
       id: 'bed',
       name: 'Bed Mattress',
-      minX: 0.32,
-      maxX: 1.58,
-      minZ: -1.62,
-      maxZ: 0.12,
-      height: 0.49
+      minX: 0.35,
+      maxX: 3.65,
+      minZ: -3.3,
+      maxZ: 0.45,
+      height: 1.15
     });
 
     // 3. Foot Bench / Ottoman Bounds
     this.surfaces.push({
       id: 'bench',
-      name: 'Bench Cushion',
-      minX: 0.81,
-      maxX: 1.49,
-      minZ: 0.34,
-      maxZ: 0.96,
-      height: 0.29
+      name: 'Ottoman Cushion',
+      minX: 2.3,
+      maxX: 3.8,
+      minZ: 0.55,
+      maxZ: 1.95,
+      height: 0.78
     });
 
-    // 4. Pouf Cushion Bounds
+    // 4. Cat Bed / Pouf Cushion Bounds
     this.surfaces.push({
       id: 'pouf',
-      name: 'Bouclé Pouf',
-      minX: 0.85,
-      maxX: 1.58,
-      minZ: 1.05,
-      maxZ: 1.85,
-      height: 0.18
+      name: 'Cat Bed Pouf',
+      minX: 2.6,
+      maxX: 4.3,
+      minZ: 2.4,
+      maxZ: 4.1,
+      height: 0.46
     });
 
     // 5. Window Sill Bounds
     this.surfaces.push({
       id: 'window_sill',
       name: 'Window Sill',
-      minX: 1.75,
-      maxX: 1.98,
-      minZ: -1.75,
-      maxZ: -0.05,
-      height: 0.80
+      minX: 4.6,
+      maxX: 5.3,
+      minZ: -1.8,
+      maxZ: 1.6,
+      height: 2.15
     });
   }
 

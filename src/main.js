@@ -81,12 +81,12 @@ class NookApplication {
     this.cookie = new CookieController(this.roomScene);
     this.objectManager.registerObject(this.cookie);
 
-    // Initial state: Pure Architectural Blueprint mode
-    this.isArchOnly = true;
-    this.roomScene.interactiveObjects.visible = false;
-    this.roomScene.furniture.visible = false;
-    this.roomScene.decorations.visible = false;
-    this.roomScene.cookieGroup.visible = false;
+    // Initial state: Full room with major furniture visible
+    this.isArchOnly = false;
+    this.roomScene.interactiveObjects.visible = true;
+    this.roomScene.furniture.visible = true;
+    this.roomScene.decorations.visible = true;
+    this.roomScene.cookieGroup.visible = true;
   }
 
   initSubsystems() {
@@ -187,10 +187,10 @@ class NookApplication {
     pill.innerHTML = `
       <div class="nook-brand">
         <span class="nook-brand-icon">🌱</span>
-        <span class="nook-brand-name">Nook Architecture</span>
+        <span class="nook-brand-name">Nook Room</span>
       </div>
       <div class="nook-pill-divider"></div>
-      <button class="nook-pill-btn active" id="btn-arch" title="Toggle Architecture Only">🏛️ Architecture Only</button>
+      <button class="nook-pill-btn active" id="btn-arch" title="Toggle Furniture / Architecture Mode">🛋️ Room Furniture</button>
       <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Reset Camera</button>
     `;
     this.uiContainer.appendChild(pill);
@@ -201,8 +201,8 @@ class NookApplication {
       this.roomScene.furniture.visible = !this.isArchOnly;
       this.roomScene.decorations.visible = !this.isArchOnly;
       this.roomScene.cookieGroup.visible = !this.isArchOnly;
-      archBtn.classList.toggle('active', this.isArchOnly);
-      archBtn.textContent = this.isArchOnly ? '🏛️ Architecture Only' : '🛋️ All Objects';
+      archBtn.classList.toggle('active', !this.isArchOnly);
+      archBtn.textContent = this.isArchOnly ? '🏛️ Architecture Only' : '🛋️ Room Furniture';
     };
 
     archBtn.addEventListener('click', () => {

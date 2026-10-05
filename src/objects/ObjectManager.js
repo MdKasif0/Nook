@@ -18,68 +18,18 @@ export class ObjectManager {
   }
 
   /**
-   * Spawns the initial tactile interactive objects found in nook-room.jpeg.
+   * Spawns initial tactile interactive thoughts.
    */
   spawnFoundationalObjects() {
-    // 1. Smooth River Pebble (Tactile Thought) on Desk
+    // Smooth River Pebble (Tactile Thought) on Desk
     const pebble = this.createPebble({
       id: 'prop_welcome_pebble',
       name: 'Welcome Pebble',
       title: 'Welcome to your Nook',
       content: 'Capture a thought anytime. Every thought exists here as a small tactile physical object.',
-      position: new THREE.Vector3(-0.95, 0.73, -0.65)
+      position: new THREE.Vector3(-2.4, 1.72, -1.9)
     });
     this.registerObject(pebble);
-
-    // 2. Calico Journal / Open Book on Desk
-    const journal = this.createJournal({
-      id: 'prop_journal',
-      name: 'Leather Journal',
-      title: 'Notes & Musings',
-      content: 'Writing things down calms the mind.',
-      position: new THREE.Vector3(-1.35, 0.72, -0.45)
-    });
-    this.registerObject(journal);
-
-    // 3. Ceramic Mug on Desk
-    const mug = this.createMug({
-      id: 'prop_mug',
-      name: 'Ceramic Mug',
-      position: new THREE.Vector3(-0.62, 0.72, -0.75)
-    });
-    this.registerObject(mug);
-
-    // 4. Retro Turntable Vinyl Record Player (on Bench at foot of bed)
-    const recordPlayer = this.createRecordPlayer({
-      id: 'prop_record_player',
-      name: 'Vintage Record Player',
-      position: new THREE.Vector3(1.15, UPPER_FLOOR_Y + 0.30, 0.65)
-    });
-    this.registerObject(recordPlayer);
-
-    // 5. Miniature Skateboard (on floor in front of step)
-    const skateboard = this.createSkateboard({
-      id: 'prop_skateboard',
-      name: 'Cruiser Skateboard',
-      position: new THREE.Vector3(0.25, LOWER_FLOOR_Y + 0.05, 0.95)
-    });
-    this.registerObject(skateboard);
-
-    // 6. Daisy Flower Pillow (on Bouclé Pouf)
-    const daisyPillow = this.createDaisyPillow({
-      id: 'prop_daisy_pillow',
-      name: 'Daisy Flower Pillow',
-      position: new THREE.Vector3(1.22, LOWER_FLOOR_Y + 0.30, 1.45)
-    });
-    this.registerObject(daisyPillow);
-
-    // 7. Potted Monstera Plant (beside Ottoman bench)
-    const monstera = this.createPlant({
-      id: 'prop_monstera',
-      name: 'Potted Monstera',
-      position: new THREE.Vector3(1.45, LOWER_FLOOR_Y + 0.0, 0.65)
-    });
-    this.registerObject(monstera);
   }
 
   registerObject(obj) {

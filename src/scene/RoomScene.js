@@ -32,6 +32,7 @@ import {
 import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { Lighting } from './Lighting.js';
 import { Environment } from './Environment.js';
+import { FurnitureBuilder } from '../objects/FurnitureBuilder.js';
 
 export class RoomScene {
   constructor() {
@@ -79,6 +80,10 @@ export class RoomScene {
     this.buildRightWallAndWindow();
     this.buildThickUpperWallTrim();
     this.buildBuiltInShelfStructure();
+
+    // Construct Major Furniture matching nook-room.jpeg
+    this.furnitureBuilder = new FurnitureBuilder(this);
+    this.furnitureItems = this.furnitureBuilder.buildAll();
   }
 
   createMaterials() {
