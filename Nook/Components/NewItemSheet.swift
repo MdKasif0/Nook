@@ -15,6 +15,7 @@ struct NewItemSheet: View {
     @State private var content: String = ""
     @State private var selectedType: NookItemType = .thought
     @State private var selectedObjectType: NookObjectType = .pebble
+    @FocusState private var isTitleFocused: Bool
     
     init(
         preselectedType: NookItemType? = nil,
@@ -55,6 +56,8 @@ struct NewItemSheet: View {
                 TextField("Title", text: $title)
                     .textFieldStyle(.roundedBorder)
                     .font(NookDesign.Typography.body)
+                    .focused($isTitleFocused)
+                    .accessibilityLabel("Thought Title")
                 
                 // Content
                 TextEditor(text: $content)
@@ -68,6 +71,7 @@ struct NewItemSheet: View {
                         RoundedRectangle(cornerRadius: NookDesign.Radius.md, style: .continuous)
                             .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
                     )
+                    .accessibilityLabel("Thought Content")
                 
                 // Physical Object Picker
                 VStack(alignment: .leading, spacing: NookDesign.Spacing.xs) {
@@ -98,10 +102,14 @@ struct NewItemSheet: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                .accessibilityLabel("Place Thought in Room")
             }
             .padding(NookDesign.Spacing.xl)
         }
         .frame(width: 440)
         .background(NookDesign.Colors.backgroundPrimary)
+        .onAppear {
+            isTitleFocused = true
+        }
     }
 }
