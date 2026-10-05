@@ -321,9 +321,19 @@ public final class CookieBehaviorController {
     private func handleObjectMoved(id: String, position: SIMD3<Float>) {
         guard !state.isSleeping, let entity = self.entity else { return }
         let now = Date()
-        guard now.timeIntervalSince(lastObjectMoveReactionTime) > 2.5 else { return }
+        guard now.timeIntervalSince(lastObjectMoveReactionTime) > 2.0 else { return }
         
         let dist = simd_distance(entity.position, position)
+        
+        // Check if object is a toy or yarn ball
+        if id == "prop_yarn_ball" || id.lowercased().contains("toy") {
+            if dist < 0.55 {
+                lastObjectMoveReactionTime = now
+                handleToyMoved(position: position)
+                return
+            }
+        }
+        
         if dist < 0.38 {
             lastObjectMoveReactionTime = now
             entity.curiousLook(at: position)
@@ -335,6 +345,45 @@ public final class CookieBehaviorController {
                 let safeNudge = CookieNavigationController.clampToWalkable(nudge)
                 entity.position = safeNudge
             }
+        }
+    }
+    
+    // MARK: - Play Behavior with Toys & Props
+    
+    private func handleToyMoved(position: SIMD3<Float>) {
+        guard !state.isSleeping, let entity = self.entity else { return }
+        
+        activeReactionTask?.cancel()
+        activeReactionTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            
+            // 1. Look
+            entity.setMood(.curious, animated: true)
+            entity.curiousLook(at: position)
+            self.audio.play(.curiousChirp, force: true)
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            
+            // 2. Approach
+            let cur = entity.position
+            let delta = position - cur
+            let approachSpot = position - simd_normalize(delta) * 0.10
+            let safeSpot = CookieNavigationController.clampToWalkable(approachSpot)
+            await entity.callCookie(to: safeSpot)
+            
+            // 3. Paw at toy
+            entity.setPosture(.pointing, animated: true)
+            entity.swishTail(.excited)
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            
+            // 4. Chase slightly (tiny playful hop)
+            entity.play()
+            self.audio.play(.happyMeow, force: true)
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            
+            // 5. Sit
+            entity.setPosture(.sitting, animated: true)
+            entity.setMood(.idle, animated: true)
+            self.state.transitionToActivity(.sitting)
         }
     }
     
@@ -367,23 +416,45 @@ public final class CookieBehaviorController {
         guard !state.isSleeping, duration >= 45.0, let entity = self.entity else { return }
         
         // Natural settling sequence:
-        // looking around -> stretch -> walk to comfortable rest location -> curl up -> sleep
+        // walking -> looking around -> yawn -> walk to bed/rest spot -> curl up -> sleep
         activeReactionTask?.cancel()
         activeReactionTask = Task { @MainActor [weak self] in
             guard let self = self else { return }
             
-            // 1. Looking around
+            // 1. Walking slightly toward open area
+            self.state.transitionToActivity(.walking)
+            let curPos = entity.position
+            let wanderTarget = curPos + SIMD3<Float>(0.06, 0, 0.04)
+            let safeWander = CookieNavigationController.clampToWalkable(wanderTarget)
+            await entity.callCookie(to: safeWander)
+            
+            // 2. Looking around
             self.state.transitionToActivity(.lookingAround)
-            entity.headModel?.orientation = simd_quatf(angle: 0.20, axis: [0, 1, 0])
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            entity.headModel?.orientation = simd_quatf(angle: 0.22, axis: [0, 1, 0])
+            entity.blink()
+            try? await Task.sleep(nanoseconds: 1_100_000_000)
+            entity.headModel?.orientation = simd_quatf(angle: -0.18, axis: [0, 1, 0])
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            entity.headModel?.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             
-            // 2. Yawn / stretch
-            entity.setPosture(.stretching, animated: true)
+            // 3. Yawn / sleepy murmur
+            entity.headModel?.orientation = simd_quatf(angle: 0.14, axis: [1, 0, 0])
             self.audio.playSleepyMurmur()
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             
-            // 3. Settle at daybed
-            await entity.goToBed()
+            // 4. Walk to preferred rest location (bed, cat cushion, chair, or window)
+            let chosenRest = self.choosePreferredRestLocation()
+            await entity.callCookie(to: chosenRest.spot)
+            
+            // 5. Curl up
+            entity.setPosture(.curled, animated: true)
+            entity.setMood(.resting, animated: true)
+            
+            // 6. Sleep with occasional subtle purr
+            self.state.transitionToActivity(.sleeping)
+            self.audio.startPurring()
+            try? await Task.sleep(nanoseconds: 2_800_000_000)
+            self.audio.stopPurring()
         }
     }
     
@@ -391,25 +462,41 @@ public final class CookieBehaviorController {
         guard state.isSleeping, let entity = self.entity else { return }
         
         // Natural wake sequence without teleporting:
-        // ear twitch -> slight movement -> stretch -> yawn -> look around
+        // ear twitch -> slight movement -> stretch -> yawn -> stand -> look around
         activeReactionTask?.cancel()
         activeReactionTask = Task { @MainActor [weak self] in
             guard let self = self else { return }
             
             // 1. Ear twitch
             entity.leftEarModel?.orientation = simd_quatf(angle: 0.62, axis: [0, 0, 1])
-            try? await Task.sleep(nanoseconds: 400_000_000)
+            try? await Task.sleep(nanoseconds: 350_000_000)
             
-            // 2. Stretch
+            // 2. Slight movement
+            entity.bodyModel?.position = [0, 0.042, 0]
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            
+            // 3. Stretch
             entity.setPosture(.stretching, animated: true)
-            self.audio.play(.softMeow, force: true)
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await Task.sleep(nanoseconds: 800_000_000)
             
-            // 3. Sit and look around
+            // 4. Yawn
+            entity.headModel?.orientation = simd_quatf(angle: 0.12, axis: [1, 0, 0])
+            self.audio.playSleepyMurmur()
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            
+            // 5. Stand & soft meow
+            entity.setPosture(.standing, animated: true)
+            self.audio.play(.softMeow, force: true)
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            
+            // 6. Look around & sit
+            entity.headModel?.orientation = simd_quatf(angle: 0.20, axis: [0, 1, 0])
+            entity.blink()
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            entity.headModel?.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             entity.setPosture(.sitting, animated: true)
             entity.setMood(.idle, animated: true)
             self.state.transitionToActivity(.sitting)
-            entity.blink()
         }
     }
     
@@ -448,21 +535,37 @@ public final class CookieBehaviorController {
                 return
             }
             
-            // Varied reactions on successive clicks (happy, curious, playful)
-            let roll = Int.random(in: 1...3)
-            switch roll {
-            case 1: // Happy
+            // Select next reaction ensuring it does not repeat the previous one
+            var candidates = [0, 1, 2, 3] // 0: happy, 1: curious, 2: sleepy, 3: playful
+            if self.lastClickReactionIndex >= 0 {
+                candidates.removeAll { $0 == self.lastClickReactionIndex }
+            }
+            let choice = candidates.randomElement() ?? 0
+            self.lastClickReactionIndex = choice
+            
+            switch choice {
+            case 0: // Happy
                 entity.setMood(.happy, animated: true)
-                entity.swishTail()
+                entity.swishTail(.happy)
                 self.audio.play(.happyMeow, force: true)
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 entity.setMood(.idle, animated: true)
                 
-            case 2: // Curious
+            case 1: // Curious
                 entity.setMood(.curious, animated: true)
                 entity.headModel?.orientation = simd_quatf(angle: 0.16, axis: [0, 0, 1])
+                entity.swishTail(.curious)
                 self.audio.play(.curiousChirp, force: true)
                 try? await Task.sleep(nanoseconds: 1_400_000_000)
+                entity.headModel?.orientation = simd_quatf(angle: 0, axis: [0, 0, 1])
+                entity.setMood(.idle, animated: true)
+                
+            case 2: // Sleepy
+                entity.setMood(.sleepy, animated: true)
+                entity.setPosture(.stretching, animated: true)
+                self.audio.playSleepyMurmur()
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                entity.setPosture(.sitting, animated: true)
                 entity.setMood(.idle, animated: true)
                 
             default: // Playful
