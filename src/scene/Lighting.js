@@ -48,15 +48,15 @@ export class Lighting {
     this.sunlight.shadow.camera.right = shadowExtent;
     this.sunlight.shadow.camera.top = shadowExtent;
     this.sunlight.shadow.camera.bottom = -shadowExtent;
-    this.sunlight.shadow.bias = -0.0003;
-    this.sunlight.shadow.normalBias = 0.025;
-    this.sunlight.shadow.radius = 2.4;
+    this.sunlight.shadow.bias = -0.0002;
+    this.sunlight.shadow.normalBias = 0.032;
+    this.sunlight.shadow.radius = 3.2;
 
     this.group.add(this.sunlight);
 
-    // 3. Subtle Front Fill Light (from open front cutaway to soften deep shadows)
+    // 3. Subtle Front Fill Light (from open front cutaway to soften deep shadows with warm bounce)
     this.frontFill = new THREE.DirectionalLight(
-      0xfff6ec,
+      0xfff5ea,
       LIGHTING_CONFIG.frontFillIntensity
     );
     this.frontFill.position.set(-2.0, 5.5, 9.0);
@@ -71,6 +71,26 @@ export class Lighting {
     );
     this.shelfAccent.position.set(1.5, 3.8, -3.1);
     this.group.add(this.shelfAccent);
+
+    // 5. Warm Interior Desk Lamp (cozy glow pooling over desk, keyboard and notes)
+    this.deskLampLight = new THREE.PointLight(
+      0xffd699,
+      0.65,
+      3.8,
+      1.6
+    );
+    this.deskLampLight.position.set(-2.0, 2.35, -2.6);
+    this.group.add(this.deskLampLight);
+
+    // 6. Warm Wall Sconce Accent Glow above window nook
+    this.sconceLight = new THREE.PointLight(
+      0xffcf88,
+      0.40,
+      3.2,
+      1.8
+    );
+    this.sconceLight.position.set(4.65, 3.85, -2.2);
+    this.group.add(this.sconceLight);
   }
 
   update(delta) {

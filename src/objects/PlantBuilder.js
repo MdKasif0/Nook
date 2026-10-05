@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { PALETTE } from '../utils/Constants.js';
+import { MaterialSystem } from '../materials/MaterialSystem.js';
 
 export class PlantBuilder {
   constructor() {
@@ -14,46 +15,28 @@ export class PlantBuilder {
   }
 
   createMaterials() {
+    const pbr = MaterialSystem.getMaterials();
+
     return {
-      foliageMutedSage: new THREE.MeshStandardMaterial({
-        color: 0x76946d,
-        roughness: 0.65,
-        metalness: 0.01,
-        side: THREE.DoubleSide
-      }),
-      foliageOlive: new THREE.MeshStandardMaterial({
-        color: 0x627d58,
-        roughness: 0.68,
-        metalness: 0.01,
-        side: THREE.DoubleSide
-      }),
-      foliageDeepGreen: new THREE.MeshStandardMaterial({
-        color: 0x4f6946,
-        roughness: 0.70,
-        metalness: 0.01,
-        side: THREE.DoubleSide
-      }),
-      foliageWarmYellowGreen: new THREE.MeshStandardMaterial({
-        color: 0x8ea873,
-        roughness: 0.62,
-        metalness: 0.01,
-        side: THREE.DoubleSide
-      }),
+      foliageMutedSage: pbr.Plant_Green,
+      foliageOlive: pbr.Plant_Olive,
+      foliageDeepGreen: pbr.Plant_Deep,
+      foliageWarmYellowGreen: pbr.Plant_GoldenGreen,
       vineStem: new THREE.MeshStandardMaterial({
         color: 0x5a6e4d,
         roughness: 0.85
       }),
       terracottaPot: new THREE.MeshStandardMaterial({
         color: 0xbf7854,
-        roughness: 0.82
+        roughness: 0.76,
+        metalness: 0.02
       }),
-      ceramicWhitePot: new THREE.MeshStandardMaterial({
-        color: 0xf6f1e8,
-        roughness: 0.38
-      }),
-      ceramicWarmBeige: new THREE.MeshStandardMaterial({
+      ceramicWhitePot: pbr.Ceramic_Cream,
+      ceramicWarmBeige: new THREE.MeshPhysicalMaterial({
         color: 0xd8caa8,
-        roughness: 0.55
+        roughness: 0.35,
+        clearcoat: 0.25,
+        clearcoatRoughness: 0.20
       }),
       soilMat: new THREE.MeshStandardMaterial({
         color: 0x3d3023,

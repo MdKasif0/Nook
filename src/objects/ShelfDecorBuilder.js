@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { PALETTE } from '../utils/Constants.js';
+import { MaterialSystem } from '../materials/MaterialSystem.js';
 
 export class ShelfDecorBuilder {
   constructor() {
@@ -14,6 +15,8 @@ export class ShelfDecorBuilder {
   }
 
   createMaterials() {
+    const pbr = MaterialSystem.getMaterials();
+
     const clockTexture = TextureGenerator.createClockFaceTexture(512);
     const botPrint1 = TextureGenerator.createBotanicalArtTexture(0, 512, 640);
     const botPrint2 = TextureGenerator.createBotanicalArtTexture(1, 512, 640);
@@ -23,62 +26,61 @@ export class ShelfDecorBuilder {
 
     return {
       clockFace: new THREE.MeshBasicMaterial({ map: clockTexture }),
-      brassGold: new THREE.MeshStandardMaterial({
-        color: 0xc4a66a,
-        roughness: 0.32,
-        metalness: 0.75
+      brassGold: pbr.Metal_Warm,
+      clockBodyWood: pbr.Wood_Warm,
+      botArt1: new THREE.MeshStandardMaterial({
+        map: botPrint1,
+        roughness: 0.94,
+        metalness: 0.0
       }),
-      clockBodyWood: new THREE.MeshStandardMaterial({
-        color: 0xdfab6f,
-        roughness: 0.52,
-        metalness: 0.05
+      botArt2: new THREE.MeshStandardMaterial({
+        map: botPrint2,
+        roughness: 0.94,
+        metalness: 0.0
       }),
-      botArt1: new THREE.MeshStandardMaterial({ map: botPrint1, roughness: 0.75 }),
-      botArt2: new THREE.MeshStandardMaterial({ map: botPrint2, roughness: 0.75 }),
-      botArt3: new THREE.MeshStandardMaterial({ map: botPrint3, roughness: 0.75 }),
-      botArt4: new THREE.MeshStandardMaterial({ map: botPrint4, roughness: 0.75 }),
+      botArt3: new THREE.MeshStandardMaterial({
+        map: botPrint3,
+        roughness: 0.94,
+        metalness: 0.0
+      }),
+      botArt4: new THREE.MeshStandardMaterial({
+        map: botPrint4,
+        roughness: 0.94,
+        metalness: 0.0
+      }),
       curtainFabric: new THREE.MeshStandardMaterial({
         color: 0xfbf8f1,
         map: curtainTexture,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.5, 0.5),
         roughness: 0.88,
         metalness: 0.01,
         side: THREE.DoubleSide
       }),
-      curtainRodWood: new THREE.MeshStandardMaterial({
-        color: 0x5a4128,
-        roughness: 0.45,
-        metalness: 0.08
-      }),
+      curtainRodWood: pbr.Wood_Dark,
       kraftBox: new THREE.MeshStandardMaterial({
         color: 0xcaa375,
-        roughness: 0.85,
-        metalness: 0.01
+        roughness: 0.92,
+        metalness: 0.0
       }),
       kraftLid: new THREE.MeshStandardMaterial({
         color: 0xbe9767,
-        roughness: 0.82,
-        metalness: 0.01
+        roughness: 0.90,
+        metalness: 0.0
       }),
-      ceramicWhite: new THREE.MeshStandardMaterial({
-        color: 0xfaf7f0,
-        roughness: 0.35,
-        metalness: 0.02
-      }),
+      ceramicWhite: pbr.Ceramic_Cream,
       ceramicTerracotta: new THREE.MeshStandardMaterial({
         color: 0xc77651,
-        roughness: 0.78,
+        roughness: 0.76,
         metalness: 0.02
       }),
-      ceramicSage: new THREE.MeshStandardMaterial({
+      ceramicSage: new THREE.MeshPhysicalMaterial({
         color: 0x8ea889,
-        roughness: 0.65,
-        metalness: 0.02
+        roughness: 0.35,
+        clearcoat: 0.25,
+        clearcoatRoughness: 0.20
       }),
-      frameOak: new THREE.MeshStandardMaterial({
-        color: 0xdfab6f,
-        roughness: 0.50,
-        metalness: 0.04
-      }),
+      frameOak: pbr.Wood_Light,
       catFigurineWhite: new THREE.MeshStandardMaterial({
         color: 0xffffff,
         roughness: 0.55,

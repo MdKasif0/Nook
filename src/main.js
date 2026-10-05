@@ -18,6 +18,11 @@ import { SelectionManager } from './interaction/SelectionManager.js';
 import { RoomState } from './persistence/RoomState.js';
 import { ContextMenu } from './ui/ContextMenu.js';
 import { ObjectInspector } from './ui/ObjectInspector.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { VerticalTiltShiftShader } from 'three/addons/shaders/VerticalTiltShiftShader.js';
 
 class NookApplication {
   constructor() {
@@ -28,6 +33,7 @@ class NookApplication {
     this.initRenderer();
     this.initScene();
     this.initSubsystems();
+    this.initPostProcessing();
     this.initUI();
     this.initNativeBridge();
 
@@ -59,9 +65,32 @@ class NookApplication {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = LIGHTING_CONFIG.exposure;
 
-    // Soft PCF Shadow Maps
+    // High quality soft PCF shadow maps
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
+
+  initPostProcessing() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    this.composer = new EffectComposer(this.renderer);
+
+    // 1. Base Scene Render
+    const renderPass = new RenderPass(this.roomScene.scene, this.cameraInstance.camera);
+    this.composer.addPass(renderPass);
+
+    // 2. Subtle Miniature Tilt-Shift / Shallow Depth of Field
+    // Keeps main room interior (focus line r ~ 0.48) crisp and readable,
+    // while softly blurring extreme foreground and distant ceiling beam
+    this.tiltShiftPass = new ShaderPass(VerticalTiltShiftShader);
+    this.tiltShiftPass.uniforms.r.value = 0.48;
+    this.tiltShiftPass.uniforms.v.value = (1.0 / height) * 1.5;
+    this.composer.addPass(this.tiltShiftPass);
+
+    // 3. Filmic Color Grading Output Pass
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
   }
 
   initScene() {
@@ -237,6 +266,12 @@ class NookApplication {
 
     this.cameraInstance.resize(width, height);
     this.renderer.setSize(width, height);
+    if (this.composer) {
+      this.composer.setSize(width, height);
+      if (this.tiltShiftPass) {
+        this.tiltShiftPass.uniforms.v.value = (1.0 / height) * 1.5;
+      }
+    }
   }
 
   animate() {
@@ -260,8 +295,12 @@ class NookApplication {
     // 4. Interactive Objects
     this.objectManager.update(delta);
 
-    // 5. Render Scene
-    this.renderer.render(this.roomScene.scene, this.cameraInstance.camera);
+    // 5. Render Scene with Post-Processing Miniature Effect
+    if (this.composer) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.roomScene.scene, this.cameraInstance.camera);
+    }
   }
 }
 

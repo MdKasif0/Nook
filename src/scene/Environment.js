@@ -18,32 +18,19 @@ export class Environment {
   }
 
   init() {
-    // 1. Subtle warm studio floor plane underneath the diorama box to catch soft ground shadows
-    const shadowPlaneGeo = new THREE.PlaneGeometry(24, 24);
-    const shadowPlaneMat = new THREE.ShadowMaterial({
-      opacity: 0.18,
-      transparent: true
+    // 1. Subtle warm studio tabletop plane underneath the diorama box to catch soft grounded shadows
+    const shadowPlaneGeo = new THREE.PlaneGeometry(32, 32);
+    const shadowPlaneMat = new THREE.MeshStandardMaterial({
+      color: 0xe8ddd0,
+      roughness: 0.94,
+      metalness: 0.01
     });
     const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
     shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.position.y = LOWER_FLOOR_Y - 0.22;
+    shadowPlane.position.y = -0.52;
     shadowPlane.receiveShadow = true;
     shadowPlane.name = 'StudioGroundShadowPlane';
     this.group.add(shadowPlane);
-
-    // 2. Pedestal plinth / tabletop beneath the diorama slice
-    const plinthGeo = new THREE.BoxGeometry(4.4, 0.12, 4.4);
-    const plinthMat = new THREE.MeshStandardMaterial({
-      color: 0xdfd4c5,
-      roughness: 0.9,
-      metalness: 0.05
-    });
-    const plinth = new THREE.Mesh(plinthGeo, plinthMat);
-    plinth.position.y = LOWER_FLOOR_Y - 0.12;
-    plinth.receiveShadow = true;
-    plinth.castShadow = true;
-    plinth.name = 'DioramaBasePlinth';
-    this.group.add(plinth);
   }
 
   update(delta) {

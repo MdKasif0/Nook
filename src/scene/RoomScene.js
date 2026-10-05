@@ -30,6 +30,7 @@ import {
   PALETTE
 } from '../utils/Constants.js';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
+import { MaterialSystem } from '../materials/MaterialSystem.js';
 import { Lighting } from './Lighting.js';
 import { Environment } from './Environment.js';
 import { FurnitureBuilder } from '../objects/FurnitureBuilder.js';
@@ -94,60 +95,32 @@ export class RoomScene {
   }
 
   createMaterials() {
-    // 1. Procedural PBR Textures
-    const woodTexture = TextureGenerator.createHoneyWoodTexture(1024, 1024);
-    woodTexture.repeat.set(2, 2);
-
-    const floorPlanksTexture = TextureGenerator.createFloorPlanksTexture(1024, 1024, 12);
-    floorPlanksTexture.repeat.set(3, 3);
-
-    const wallTexture = TextureGenerator.createWallCreamTexture(512, 512);
-    wallTexture.repeat.set(4, 4);
-
+    const pbr = MaterialSystem.getMaterials();
     const outdoorTexture = TextureGenerator.createOutdoorViewTexture(512, 512);
 
     return {
-      // Warm Ivory / Cream Plaster (#F7F1E6 / #F4EBDD)
-      wallCream: new THREE.MeshStandardMaterial({
-        color: PALETTE.wallCream,
-        map: wallTexture,
-        roughness: 0.88,
-        metalness: 0.01
-      }),
+      // Reusable MaterialSystem PBR Materials:
+      Wood_Warm: pbr.Wood_Warm,
+      Wood_Light: pbr.Wood_Light,
+      Wood_Dark: pbr.Wood_Dark,
+      Wall_Cream: pbr.Wall_Cream,
+      Fabric_Cream: pbr.Fabric_Cream,
+      Fabric_Sage: pbr.Fabric_Sage,
+      Metal_Warm: pbr.Metal_Warm,
+      Ceramic_Cream: pbr.Ceramic_Cream,
+      Glass_Warm: pbr.Glass_Warm,
+      Paper: pbr.Paper,
+      Plant_Green: pbr.Plant_Green,
+      Vinyl_Black: pbr.Vinyl_Black,
 
-      // Warm Natural Honey Wood (Semi-matte finish, subtle grain - unmultiplied to preserve blonde honey oak)
-      woodHoney: new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: woodTexture,
-        roughness: 0.54,
-        metalness: 0.02
-      }),
-
-      // Slightly deeper honey oak for structural trims, beams, and bevels
-      woodTrim: new THREE.MeshStandardMaterial({
-        color: 0xf3e6d5,
-        map: woodTexture,
-        roughness: 0.50,
-        metalness: 0.03
-      }),
-
-      // Floor Planks (Warm honey oak with board grooves)
-      floorPlanks: new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: floorPlanksTexture,
-        roughness: 0.48,
-        metalness: 0.02
-      }),
-
-      // Window Glass
-      windowGlass: new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.2,
-        roughness: 0.06,
-        transmission: 0.88,
-        ior: 1.5
-      }),
+      // Architectural Mappings:
+      wallCream: pbr.Wall_Cream,
+      woodHoney: pbr.Wood_Warm,
+      woodTrim: pbr.Wood_Dark,
+      woodLight: pbr.Wood_Light,
+      woodShelves: pbr.Wood_Shelves,
+      floorPlanks: pbr.Wood_Floor,
+      windowGlass: pbr.Glass_Warm,
 
       // Outdoor Sky & Foliage Backdrop
       outdoorSky: new THREE.MeshBasicMaterial({
@@ -165,28 +138,17 @@ export class RoomScene {
 
   // MARK: - 1. Base Platform
   buildBasePlatform() {
-    const halfW = ROOM_WIDTH * 0.5;
-    const halfD = ROOM_DEPTH * 0.5;
-
     // Outer thick wooden miniature diorama foundation platform
     const platformW = ROOM_WIDTH + WALL_THICKNESS * 2 + 0.6;
-    const platformD = ROOM_DEPTH + WALL_THICKNESS * 2 + 1.2;
+    const platformD = ROOM_DEPTH + WALL_THICKNESS * 2 + 1.6;
     const platformGeo = new THREE.BoxGeometry(platformW, BASE_PLATFORM_THICKNESS, platformD);
     const platformMesh = new THREE.Mesh(platformGeo, this.materials.woodTrim);
     // Sit immediately below the lowest deck (Y = 0)
-    platformMesh.position.set(0, -BASE_PLATFORM_THICKNESS * 0.5, 0.4);
+    platformMesh.position.set(0, -BASE_PLATFORM_THICKNESS * 0.5, 0.6);
     platformMesh.receiveShadow = true;
     platformMesh.castShadow = true;
     platformMesh.name = 'DioramaBasePlatform';
     this.architecture.add(platformMesh);
-
-    // Front-most lower outer stepped rim / plinth lip
-    const plinthLipGeo = new THREE.BoxGeometry(platformW + 0.25, 0.12, 0.4);
-    const plinthLip = new THREE.Mesh(plinthLipGeo, this.materials.woodHoney);
-    plinthLip.position.set(0, -0.06, halfD + WALL_THICKNESS + 0.9);
-    plinthLip.receiveShadow = true;
-    plinthLip.castShadow = true;
-    this.architecture.add(plinthLip);
   }
 
   // MARK: - 2. Stepped Floors & Front Steps
@@ -531,7 +493,7 @@ export class RoomScene {
     const shelfGroup = new THREE.Group();
     shelfGroup.name = 'BackWallBuiltInShelving';
 
-    const woodMat = this.materials.woodHoney;
+    const woodMat = this.materials.woodShelves;
     const trimMat = this.materials.woodTrim;
     const backZ = -halfD + 0.05;
 

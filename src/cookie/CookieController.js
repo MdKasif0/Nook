@@ -30,13 +30,13 @@ export class CookieController extends InteractiveObject {
 
     // Initial position: Sleeping in the warm sun on the bed (identical to nook-room.jpeg!)
     this.position.copy(COOKIE_LOCATIONS.BED_SUN_SPOT);
-    this.rotation.y = -0.4;
+    this.rotation.y = -0.7;
 
     this.roomScene.cookieGroup.add(this);
   }
 
   buildCatGeometry() {
-    this.visualRoot.scale.set(1.55, 1.55, 1.55);
+    this.visualRoot.scale.set(2.2, 2.2, 2.2);
 
     // 1. Materials
     this.bodyMat = new THREE.MeshStandardMaterial({

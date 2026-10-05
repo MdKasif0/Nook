@@ -19,10 +19,10 @@ export class TextureGenerator {
 
     // Base warm natural honey oak gradient
     const grad = ctx.createLinearGradient(0, 0, width, 0);
-    grad.addColorStop(0.0, '#e0aa6a');
-    grad.addColorStop(0.3, '#e7b679');
-    grad.addColorStop(0.6, '#dba361');
-    grad.addColorStop(1.0, '#e3af70');
+    grad.addColorStop(0.0, '#da9a5a');
+    grad.addColorStop(0.28, '#e3a96b');
+    grad.addColorStop(0.62, '#d49352');
+    grad.addColorStop(1.0, '#dda061');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
@@ -31,18 +31,18 @@ export class TextureGenerator {
     for (let y = 0; y < height; y += 2) {
       const lineGrad = ctx.createLinearGradient(0, y, width, y);
       const tone = Math.sin(y * 0.08) * 16;
-      lineGrad.addColorStop(0.0, tone > 0 ? '#b27838' : '#f5d5a8');
-      lineGrad.addColorStop(0.5, tone > 0 ? '#c78f4f' : '#fce3be');
-      lineGrad.addColorStop(1.0, tone > 0 ? '#a86c2e' : '#f2cfa0');
+      lineGrad.addColorStop(0.0, tone > 0 ? '#ad6d2f' : '#fae0b8');
+      lineGrad.addColorStop(0.5, tone > 0 ? '#be8140' : '#fcedd2');
+      lineGrad.addColorStop(1.0, tone > 0 ? '#a36427' : '#f5d9ad');
       ctx.fillStyle = lineGrad;
       ctx.fillRect(0, y, width, 1.5);
     }
 
     // Organic wavy grain streaks
-    ctx.globalAlpha = 0.03;
-    ctx.strokeStyle = '#996029';
+    ctx.globalAlpha = 0.032;
+    ctx.strokeStyle = '#935824';
     ctx.lineWidth = 2.5;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 22; i++) {
       ctx.beginPath();
       const startY = Math.random() * height;
       ctx.moveTo(0, startY);
@@ -55,7 +55,7 @@ export class TextureGenerator {
 
     // Delicate organic wood pores
     ctx.globalAlpha = 0.02;
-    ctx.fillStyle = '#824e1e';
+    ctx.fillStyle = '#7a461b';
     for (let i = 0; i < 2200; i++) {
       const rx = Math.random() * width;
       const ry = Math.random() * height;
@@ -378,30 +378,34 @@ export class TextureGenerator {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // Muted sage base
-    ctx.fillStyle = '#8ea889';
+    // Muted calming sage green base matching reference
+    ctx.fillStyle = '#8aa685';
     ctx.fillRect(0, 0, width, height);
 
-    // Waffle knit pattern
-    ctx.globalAlpha = 0.08;
-    ctx.fillStyle = '#5c7358';
-    for (let y = 0; y < height; y += 8) {
-      for (let x = 0; x < width; x += 8) {
-        if ((x + y) % 16 === 0) {
-          ctx.fillRect(x, y, 6, 6);
-        }
-      }
+    // Subtle horizontal knit ribbed grain
+    ctx.globalAlpha = 0.055;
+    for (let y = 0; y < height; y += 4) {
+      ctx.fillStyle = (y % 8 === 0) ? '#5e775a' : '#b2ccb0';
+      ctx.fillRect(0, y, width, 2);
     }
 
-    ctx.globalAlpha = 0.08;
-    ctx.fillStyle = '#b7d4b2';
-    for (let y = 0; y < height; y += 8) {
-      for (let x = 0; x < width; x += 8) {
-        if ((x + y) % 16 === 8) {
-          ctx.fillRect(x, y, 6, 6);
-        }
-      }
+    // Soft orthogonal cross-weave thread relief
+    ctx.globalAlpha = 0.035;
+    ctx.fillStyle = '#52694f';
+    for (let x = 0; x < width; x += 4) {
+      ctx.fillRect(x, 0, 1.5, height);
     }
+
+    // Subtle tactile fabric heather noise
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 8;
+      data[i] = Math.min(255, Math.max(0, data[i] + noise));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+    }
+    ctx.putImageData(imgData, 0, 0);
 
     ctx.globalAlpha = 1.0;
 
@@ -409,7 +413,7 @@ export class TextureGenerator {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(4, 4);
+    texture.repeat.set(3, 3);
     return texture;
   }
 

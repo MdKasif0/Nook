@@ -78,9 +78,9 @@ export const PALETTE = {
   outdoorTrees: 0x76a86c,
 
   // Lighting
-  sunlightGolden: 0xffe6c2,
+  sunlightGolden: 0xffdfb3,
   ambientSky: 0xfff7ee,
-  ambientGround: 0xe5d2b8,
+  ambientGround: 0xe8cca8,
   accentGlow: 0xffb86a,
 
   // Object & Prop Colors (Used by ObjectManager and CookieController)

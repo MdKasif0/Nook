@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import { PALETTE, MAIN_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
+import { MaterialSystem } from '../materials/MaterialSystem.js';
 
 export class FurnitureBuilder {
   constructor(roomScene) {
@@ -20,150 +21,134 @@ export class FurnitureBuilder {
   }
 
   createMaterials() {
-    const woodTexture = TextureGenerator.createHoneyWoodTexture(1024, 1024);
-    woodTexture.repeat.set(2, 2);
+    const pbr = MaterialSystem.getMaterials();
 
     const monitorTexture = TextureGenerator.createMonitorHelloTexture(1024, 640);
     const rugTexture = TextureGenerator.createRugBotanicalTexture(1024, 1024);
-    const vinylTexture = TextureGenerator.createVinylTexture(512, 512);
-    const blanketTexture = TextureGenerator.createBlanketTexture(512, 512);
     const notebookTexture = TextureGenerator.createNotebookTexture(512, 512);
 
     return {
-      // Honey Oak Furniture Wood
-      woodHoney: new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: woodTexture,
-        roughness: 0.52,
-        metalness: 0.02
-      }),
+      // Reusable PBR Materials from MaterialSystem:
+      Wood_Warm: pbr.Wood_Warm,
+      Wood_Light: pbr.Wood_Light,
+      Wood_Dark: pbr.Wood_Dark,
+      Wall_Cream: pbr.Wall_Cream,
+      Fabric_Cream: pbr.Fabric_Cream,
+      Fabric_Sage: pbr.Fabric_Sage,
+      Metal_Warm: pbr.Metal_Warm,
+      Ceramic_Cream: pbr.Ceramic_Cream,
+      Glass_Warm: pbr.Glass_Warm,
+      Paper: pbr.Paper,
+      Plant_Green: pbr.Plant_Green,
+      Vinyl_Black: pbr.Vinyl_Black,
 
-      // Darker Honey Oak for trims, legs, accents
-      woodTrim: new THREE.MeshStandardMaterial({
-        color: 0xf2e4d2,
-        map: woodTexture,
-        roughness: 0.48,
-        metalness: 0.03
-      }),
+      // Dedicated Furniture Wood Variations:
+      woodHoney: pbr.Wood_Warm,
+      woodDesk: pbr.Wood_Desk,
+      woodBed: pbr.Wood_Bed,
+      woodLight: pbr.Wood_Light,
+      woodTrim: pbr.Wood_Dark,
+      woodFloor: pbr.Wood_Floor,
 
-      // Cream Mattresses & Sheets
-      fabricCream: new THREE.MeshStandardMaterial({
-        color: PALETTE.bedSheets,
+      // PBR Fabrics:
+      fabricCream: pbr.Fabric_Cream,
+      fabricSage: pbr.Fabric_Sage,
+      fabricBeige: new THREE.MeshStandardMaterial({
+        color: 0xdecbb7,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.5, 0.5),
         roughness: 0.88,
         metalness: 0.01
       }),
+      boucleCream: pbr.Fabric_Boucle,
 
-      // Soft Sage Green Blanket & Ottoman
-      fabricSage: new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: blanketTexture,
-        roughness: 0.82,
-        metalness: 0.01
-      }),
-
-      // Chair Warm Gray Fabric
+      // Chair Fabric & Frame:
       fabricChairGray: new THREE.MeshStandardMaterial({
         color: 0x8a998e,
-        roughness: 0.78,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.4, 0.4),
+        roughness: 0.82,
         metalness: 0.02
       }),
-
-      // Chair Cream Frame & Caster Wheels
       chairFrameCream: new THREE.MeshStandardMaterial({
         color: 0xf5f0e6,
         roughness: 0.45,
         metalness: 0.04
       }),
 
-      // Chrome / Warm Metallic
-      metalChrome: new THREE.MeshStandardMaterial({
-        color: 0xdcd8d0,
-        roughness: 0.25,
-        metalness: 0.75
-      }),
+      // Metals & Ceramics:
+      metalChrome: pbr.Metal_Warm,
+      plasticWhite: pbr.Ceramic_Cream,
 
-      // Monitor Screen with "hello ♡" artwork
+      // Display Artwork:
       monitorScreen: new THREE.MeshBasicMaterial({
         map: monitorTexture
       }),
 
-      // White Electronics / Ceramics
-      plasticWhite: new THREE.MeshStandardMaterial({
-        color: PALETTE.ceramicWhite,
-        roughness: 0.35,
-        metalness: 0.02
-      }),
-
-      // Dark Tech Surfaces (Keyboards, phone glass)
+      // Dark Tech Surfaces:
       darkTech: new THREE.MeshStandardMaterial({
-        color: 0x222226,
+        color: 0x242428,
         roughness: 0.40,
         metalness: 0.15
       }),
 
-      // Vintage Dusty Rose Record Player Case
+      // Record Player & Vinyl:
       recordPlayerCase: new THREE.MeshStandardMaterial({
         color: PALETTE.recordPlayerDustyRose,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.25, 0.25),
         roughness: 0.65,
         metalness: 0.05
       }),
+      vinylMaterial: pbr.Vinyl_Black,
 
-      // Vinyl Record
-      vinylMaterial: new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: vinylTexture,
-        roughness: 0.28,
-        metalness: 0.18
-      }),
-
-      // Skateboard Grip Tape
+      // Skateboard Grip Tape:
       gripTape: new THREE.MeshStandardMaterial({
         color: PALETTE.skateboardBlack,
         roughness: 0.95,
         metalness: 0.0
       }),
 
-      // Bouclé Fluffy Pouf / Cat Bed
-      boucleCream: new THREE.MeshStandardMaterial({
-        color: 0xfcf8f2,
-        roughness: 0.96,
-        metalness: 0.0
-      }),
-
-      // Daisy Petals & Center
+      // Daisy Pillow Components:
       petalWhite: new THREE.MeshStandardMaterial({
         color: 0xfefcf7,
-        roughness: 0.75,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.3, 0.3),
+        roughness: 0.82,
         metalness: 0.0
       }),
       daisyYellow: new THREE.MeshStandardMaterial({
         color: PALETTE.pillowDaisyYellow,
-        roughness: 0.68,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.3, 0.3),
+        roughness: 0.78,
         metalness: 0.0
       }),
 
-      // Botanical Rug
+      // Botanical Rug:
       rugMaterial: new THREE.MeshStandardMaterial({
         color: 0xffffff,
         map: rugTexture,
+        normalMap: pbr.Fabric_Cream.normalMap,
+        normalScale: new THREE.Vector2(0.7, 0.7),
         roughness: 0.92,
         metalness: 0.01
       }),
 
-      // Foliage Green
-      foliageGreen: new THREE.MeshStandardMaterial({
-        color: PALETTE.plantGreen,
-        roughness: 0.62,
-        metalness: 0.02
-      }),
+      // Plant Foliage Variations:
+      foliageGreen: pbr.Plant_Green,
+      foliageOlive: pbr.Plant_Olive,
+      foliageDeep: pbr.Plant_Deep,
+      foliageGoldenGreen: pbr.Plant_GoldenGreen,
 
-      // Open Notebook
+      // Paper & Notebook:
       notebookMaterial: new THREE.MeshStandardMaterial({
         color: 0xffffff,
         map: notebookTexture,
-        roughness: 0.70,
-        metalness: 0.01
-      })
+        roughness: 0.92,
+        metalness: 0.0
+      }),
+      paper: pbr.Paper
     };
   }
 
@@ -287,7 +272,7 @@ export class FurnitureBuilder {
     const topD = 1.75;
     const topH = 0.10;
     const topGeo = new THREE.BoxGeometry(topW, topH, topD);
-    const topMesh = new THREE.Mesh(topGeo, this.materials.woodHoney);
+    const topMesh = new THREE.Mesh(topGeo, this.materials.woodDesk);
     topMesh.position.set(-2.85, 1.65, -2.52);
     topMesh.castShadow = true;
     topMesh.receiveShadow = true;
@@ -302,7 +287,7 @@ export class FurnitureBuilder {
 
     // Right Side Cabinet / Leg Unit (under desk)
     const rightLegGeo = new THREE.BoxGeometry(0.85, 1.32, 1.55);
-    const rightLeg = new THREE.Mesh(rightLegGeo, this.materials.woodHoney);
+    const rightLeg = new THREE.Mesh(rightLegGeo, this.materials.woodDesk);
     rightLeg.position.set(-1.15, MAIN_FLOOR_Y + 1.32 * 0.5, -2.52);
     rightLeg.castShadow = true;
     rightLeg.receiveShadow = true;
@@ -316,14 +301,14 @@ export class FurnitureBuilder {
     group.add(rightDrawerFront);
 
     const rightHandleGeo = new THREE.BoxGeometry(0.24, 0.035, 0.04);
-    const rightHandle = new THREE.Mesh(rightHandleGeo, this.materials.woodHoney);
+    const rightHandle = new THREE.Mesh(rightHandleGeo, this.materials.woodDesk);
     rightHandle.position.set(-1.15, MAIN_FLOOR_Y + 0.66, -1.72);
     rightHandle.castShadow = true;
     group.add(rightHandle);
 
     // Recessed Modesty Back Panel
     const modestyGeo = new THREE.BoxGeometry(2.3, 0.85, 0.04);
-    const modesty = new THREE.Mesh(modestyGeo, this.materials.woodHoney);
+    const modesty = new THREE.Mesh(modestyGeo, this.materials.woodDesk);
     modesty.position.set(-2.60, 1.15, -3.15);
     modesty.castShadow = true;
     group.add(modesty);
@@ -336,7 +321,7 @@ export class FurnitureBuilder {
     const nsZ = -2.55;
 
     const nsBoxGeo = new THREE.BoxGeometry(nsW, nsH, nsD);
-    const nsBox = new THREE.Mesh(nsBoxGeo, this.materials.woodHoney);
+    const nsBox = new THREE.Mesh(nsBoxGeo, this.materials.woodDesk);
     nsBox.position.set(nsX, MAIN_FLOOR_Y + nsH * 0.5, nsZ);
     nsBox.castShadow = true;
     nsBox.receiveShadow = true;
@@ -355,7 +340,7 @@ export class FurnitureBuilder {
     group.add(nsDrawer);
 
     const knobGeo = new THREE.CylinderGeometry(0.025, 0.02, 0.03, 12);
-    const knob = new THREE.Mesh(knobGeo, this.materials.woodHoney);
+    const knob = new THREE.Mesh(knobGeo, this.materials.woodDesk);
     knob.position.set(nsX, MAIN_FLOOR_Y + nsH - 0.22, nsZ + nsD * 0.5 + 0.035);
     knob.rotation.x = Math.PI * 0.5;
     group.add(knob);
@@ -374,7 +359,7 @@ export class FurnitureBuilder {
 
     // Cabinet Main Box
     const boxGeo = new THREE.BoxGeometry(cabW, cabH, cabD);
-    const boxMesh = new THREE.Mesh(boxGeo, this.materials.woodHoney);
+    const boxMesh = new THREE.Mesh(boxGeo, this.materials.woodDesk);
     boxMesh.position.set(-4.25, MAIN_FLOOR_Y + cabH * 0.5, -2.52);
     boxMesh.castShadow = true;
     boxMesh.receiveShadow = true;
@@ -401,7 +386,7 @@ export class FurnitureBuilder {
 
       // Recessed Horizontal Pull Handle
       const handleGeo = new THREE.BoxGeometry(0.35, 0.035, 0.04);
-      const handle = new THREE.Mesh(handleGeo, this.materials.woodHoney);
+      const handle = new THREE.Mesh(handleGeo, this.materials.woodDesk);
       handle.position.set(-4.25, dy, -1.72);
       handle.castShadow = true;
       group.add(handle);
@@ -916,7 +901,7 @@ export class FurnitureBuilder {
     // Headboard (against built-in shelves)
     const headboardH = 1.45;
     const headboardGeo = new THREE.BoxGeometry(bedW, headboardH, 0.16);
-    const headboard = new THREE.Mesh(headboardGeo, this.materials.woodHoney);
+    const headboard = new THREE.Mesh(headboardGeo, this.materials.woodBed);
     headboard.position.set(bedX, MAIN_FLOOR_Y + headboardH * 0.5, -3.32);
     headboard.castShadow = true;
     headboard.receiveShadow = true;
@@ -925,7 +910,7 @@ export class FurnitureBuilder {
     // Footboard (facing front toward viewer)
     const footboardH = 0.95;
     const footboardGeo = new THREE.BoxGeometry(bedW, footboardH, 0.16);
-    const footboard = new THREE.Mesh(footboardGeo, this.materials.woodHoney);
+    const footboard = new THREE.Mesh(footboardGeo, this.materials.woodBed);
     footboard.position.set(bedX, MAIN_FLOOR_Y + footboardH * 0.5, 0.42);
     footboard.castShadow = true;
     footboard.receiveShadow = true;
@@ -934,12 +919,12 @@ export class FurnitureBuilder {
     // Left and Right Side Rails
     const railH = 0.44;
     const railGeo = new THREE.BoxGeometry(0.14, railH, bedD - 0.2);
-    const railL = new THREE.Mesh(railGeo, this.materials.woodHoney);
+    const railL = new THREE.Mesh(railGeo, this.materials.woodBed);
     railL.position.set(bedX - bedW * 0.5 + 0.07, MAIN_FLOOR_Y + railH * 0.5 + 0.22, -1.45);
     railL.castShadow = true;
     group.add(railL);
 
-    const railR = new THREE.Mesh(railGeo, this.materials.woodHoney);
+    const railR = new THREE.Mesh(railGeo, this.materials.woodBed);
     railR.position.set(bedX + bedW * 0.5 - 0.07, MAIN_FLOOR_Y + railH * 0.5 + 0.22, -1.45);
     railR.castShadow = true;
     group.add(railR);
@@ -1036,13 +1021,9 @@ export class FurnitureBuilder {
     const group = new THREE.Group();
     group.name = 'Pillow_02';
 
-    // Muted Beige / Sand Pillow in center
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xdecbb7,
-      roughness: 0.85
-    });
+    // Muted Beige / Sand Pillow in center with tactile normal map
     const geo = new THREE.BoxGeometry(0.85, 0.22, 0.52);
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(geo, this.materials.fabricBeige);
     mesh.castShadow = true;
     group.add(mesh);
 
@@ -1346,8 +1327,15 @@ export class FurnitureBuilder {
     soil.position.set(0, 0.40, 0);
     group.add(soil);
 
-    // Large Fan Monstera Leaves
+    // Large Fan Monstera Leaves with natural color variations
     const leafAngles = [0.2, 1.4, 2.6, 3.8, 5.0];
+    const leafMats = [
+      this.materials.foliageGreen,
+      this.materials.foliageOlive,
+      this.materials.foliageDeep,
+      this.materials.foliageGoldenGreen,
+      this.materials.foliageGreen
+    ];
     for (let i = 0; i < leafAngles.length; i++) {
       const a = leafAngles[i];
       const stemCurve = new THREE.CatmullRomCurve3([
@@ -1356,12 +1344,12 @@ export class FurnitureBuilder {
         new THREE.Vector3(Math.cos(a) * 0.38, 0.88 + i * 0.08, Math.sin(a) * 0.38)
       ]);
       const stemGeo = new THREE.TubeGeometry(stemCurve, 10, 0.015, 6, false);
-      const stem = new THREE.Mesh(stemGeo, this.materials.foliageGreen);
+      const stem = new THREE.Mesh(stemGeo, leafMats[i % leafMats.length]);
       group.add(stem);
 
       // Broad Leaf
       const leafGeo = new THREE.PlaneGeometry(0.38, 0.52);
-      const leaf = new THREE.Mesh(leafGeo, this.materials.foliageGreen);
+      const leaf = new THREE.Mesh(leafGeo, leafMats[i % leafMats.length]);
       leaf.position.set(Math.cos(a) * 0.38, 0.88 + i * 0.08, Math.sin(a) * 0.38);
       leaf.rotation.x = -Math.PI * 0.35;
       leaf.rotation.y = a;
@@ -1380,23 +1368,31 @@ export class FurnitureBuilder {
     // On front-left raised platform curb
     group.position.set(-3.25, MAIN_FLOOR_Y + 0.14, 2.25);
 
-    // Stack of 2 Hardcover Books
+    // Stack of 2 Hardcover Books with textured Paper finish
     const b1Geo = new THREE.BoxGeometry(0.38, 0.05, 0.28);
-    const b1Mat = new THREE.MeshStandardMaterial({ color: 0xc89658 });
+    const b1Mat = new THREE.MeshStandardMaterial({
+      color: 0xc89658,
+      roughness: 0.92,
+      metalness: 0.0
+    });
     const b1 = new THREE.Mesh(b1Geo, b1Mat);
     b1.position.set(0, 0.025, 0);
     b1.castShadow = true;
     group.add(b1);
 
     const b2Geo = new THREE.BoxGeometry(0.34, 0.045, 0.26);
-    const b2Mat = new THREE.MeshStandardMaterial({ color: 0x8ea889 });
+    const b2Mat = new THREE.MeshStandardMaterial({
+      color: 0x8ea889,
+      roughness: 0.90,
+      metalness: 0.0
+    });
     const b2 = new THREE.Mesh(b2Geo, b2Mat);
     b2.position.set(0.01, 0.072, 0.01);
     b2.rotation.y = 0.14;
     b2.castShadow = true;
     group.add(b2);
 
-    // Small Potted Plant on top of the books
+    // Small Potted Plant on top of the books (Ceramic_Cream pot)
     const potGeo = new THREE.CylinderGeometry(0.065, 0.05, 0.10, 12);
     const pot = new THREE.Mesh(potGeo, this.materials.plasticWhite);
     pot.position.set(0, 0.145, 0);
@@ -1404,7 +1400,7 @@ export class FurnitureBuilder {
     group.add(pot);
 
     const plantGeo = new THREE.SphereGeometry(0.07, 8, 8);
-    const plant = new THREE.Mesh(plantGeo, this.materials.foliageGreen);
+    const plant = new THREE.Mesh(plantGeo, this.materials.foliageOlive);
     plant.position.set(0, 0.21, 0);
     plant.castShadow = true;
     group.add(plant);
@@ -1427,7 +1423,7 @@ export class FurnitureBuilder {
     group.add(pot);
 
     const plantGeo = new THREE.DodecahedronGeometry(0.07, 1);
-    const plant = new THREE.Mesh(plantGeo, this.materials.foliageGreen);
+    const plant = new THREE.Mesh(plantGeo, this.materials.foliageGoldenGreen);
     plant.position.set(0, 0.15, 0);
     plant.castShadow = true;
     group.add(plant);
