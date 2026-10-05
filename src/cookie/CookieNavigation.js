@@ -4,8 +4,7 @@
  * Calibrated directly to match the warm sun-spot sleeping pose from nook-room.jpeg.
  */
 
-import * as THREE from 'three';
-import { UPPER_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
+import { UPPER_FLOOR_Y, LOWER_FLOOR_Y, MAIN_FLOOR_Y } from '../utils/Constants.js';
 
 export const COOKIE_LOCATIONS = {
   // 1. Bed Sun Spot (Sleeping cat in nook-room.jpeg curled up on sage blanket)
