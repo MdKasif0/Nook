@@ -91,7 +91,26 @@ public struct InteractivePropComponent: Component {
         self.minBounds = minBounds
         self.maxBounds = maxBounds
     }
+    
+    /// Reads current transform from an entity and creates a Codable RoomPropTransform
+    public func currentTransform(for entity: Entity) -> RoomPropTransform {
+        RoomPropTransform(
+            propId: propId,
+            position: entity.position,
+            orientation: entity.orientation,
+            scale: entity.scale,
+            isCustomized: true
+        )
+    }
+    
+    /// Resets entity to its designated default transform
+    public func applyDefaultTransform(to entity: Entity) {
+        entity.position = defaultPosition
+        entity.orientation = defaultOrientation
+        entity.scale = defaultScale
+    }
 }
+
 
 /// Codable persistent transform representation stored in SwiftData.
 public struct RoomPropTransform: Codable, Equatable, Sendable {

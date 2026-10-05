@@ -6,6 +6,7 @@ import AppKit
 /// - Tucked head, tiny sleeping ears, closed eyes
 /// - Curled tail wrapping along the body
 /// - Gentle subtle procedural breathing idle animation
+/// - Reactive curious look-at animation when room objects are moved
 /// - Interactive hit-testing target for petting
 @MainActor
 final class CookieRealityEntity: Entity {
@@ -13,23 +14,23 @@ final class CookieRealityEntity: Entity {
     private var bodyModel: ModelEntity?
     private var headModel: ModelEntity?
     private var isPurring: Bool = false
+    private var isCuriousLooking: Bool = false
+    
+    static let defaultPos = SIMD3<Float>(0.48, RoomArchitectureEntity.upperFloorY + BedEntity.frameHeight + 0.16 + 0.045, -0.78)
+    static let defaultRot = simd_quatf(angle: -Float.pi * 0.15, axis: [0, 1, 0])
     
     required init() {
         super.init()
-        self.name = "cookie_character"
+        self.name = "prop_cookie"
         buildCookie()
         startBreathingAnimation()
     }
     
     private func buildCookie() {
         let mats = RoomMaterials.shared
-        let floorY = RoomArchitectureEntity.upperFloorY
-        let mattressTopY = floorY + BedEntity.frameHeight + 0.16
         
-        // Cookie curled up sleeping right in the middle of the bed
-        // X = +0.48, Y = mattressTopY + 0.045, Z = -0.78
-        self.position = [0.48, mattressTopY + 0.045, -0.78]
-        self.orientation = simd_quatf(angle: -Float.pi * 0.15, axis: [0, 1, 0])
+        self.position = Self.defaultPos
+        self.orientation = Self.defaultRot
         
         var gingerMat = PhysicallyBasedMaterial()
         gingerMat.baseColor = .init(tint: NSColor(red: 0.88, green: 0.52, blue: 0.26, alpha: 1.0))
@@ -96,10 +97,22 @@ final class CookieRealityEntity: Entity {
         tip.position = [0, 0.07, 0]
         tail.addChild(tip)
         
-        // 4. Interactive Collider
-        let collisionShape = ShapeResource.generateSphere(radius: 0.12)
+        // 4. Interactive Collider and Input Target
+        let collisionShape = ShapeResource.generateSphere(radius: 0.14)
         self.components.set(CollisionComponent(shapes: [collisionShape]))
         self.components.set(InputTargetComponent())
+        self.components.set(InteractivePropComponent(
+            propId: "prop_cookie",
+            displayName: "Cookie",
+            accessibilityLabel: "Cookie the sleeping calico cat",
+            category: .special,
+            allowsDragging: false,
+            allowsRotation: false,
+            allowsScaling: false,
+            defaultPosition: Self.defaultPos,
+            defaultOrientation: Self.defaultRot,
+            restingSurfaceY: RoomArchitectureEntity.upperFloorY + BedEntity.frameHeight + 0.16
+        ))
     }
     
     private func startBreathingAnimation() {
@@ -122,9 +135,30 @@ final class CookieRealityEntity: Entity {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.position.y = originalY + 0.025
+            self.scale = [1.04, 1.04, 1.04]
             try? await Task.sleep(nanoseconds: 180_000_000)
             self.position.y = originalY
+            self.scale = [1.0, 1.0, 1.0]
+            try? await Task.sleep(nanoseconds: 200_000_000)
             self.isPurring = false
+        }
+    }
+    
+    /// Cookie reacts to moved objects in the room by turning head curiously
+    func curiousLook(at targetPosition: SIMD3<Float>) {
+        guard !isCuriousLooking, let head = headModel else { return }
+        isCuriousLooking = true
+        
+        let delta = targetPosition - self.position
+        let angleY = atan2(delta.x, delta.z)
+        let clampedAngle = min(max(angleY * 0.35, -0.5), 0.5)
+        
+        Task { @MainActor [weak self] in
+            guard let self = self, let head = self.headModel else { return }
+            head.orientation = simd_quatf(angle: clampedAngle, axis: [0, 1, 0]) * simd_quatf(angle: Float.pi * 0.08, axis: [0, 0, 1])
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            head.orientation = simd_quatf(angle: Float.pi * 0.1, axis: [0, 0, 1])
+            self.isCuriousLooking = false
         }
     }
 }

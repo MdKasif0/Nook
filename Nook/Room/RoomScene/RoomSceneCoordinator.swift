@@ -4,8 +4,8 @@ import AppKit
 
 /// Central orchestrator for the Nook 3D RealityKit miniature room diorama.
 ///
-/// Builds the scene graph, synchronizes user data, manages lighting and time-of-day,
-/// and handles high-level user actions.
+/// Builds the scene graph hierarchy, synchronizes user data, manages lighting and time-of-day,
+/// and handles high-level user actions, prop transforms persistence, and native macOS undo.
 @MainActor
 @Observable
 final class RoomSceneCoordinator {
@@ -17,19 +17,19 @@ final class RoomSceneCoordinator {
     private(set) var lightingSystem: RoomLightingSystem?
     private(set) var interactionSystem: RoomInteractionSystem?
     
-    // Core Entities
-    private(set) var architecture: RoomArchitectureEntity?
-    private(set) var windowSetup: RoomWindowEntity?
-    private(set) var desk: DeskEntity?
-    private(set) var bed: BedEntity?
-    private(set) var bookshelves: BookshelvesEntity?
-    private(set) var chair: ChairEntity?
-    private(set) var audioLounge: AudioLoungeEntity?
-    private(set) var plants: PlantEntities?
-    private(set) var skateboard: SkateboardEntity?
-    private(set) var wallDecor: WallDecorEntities?
-    private(set) var rug: RugEntity?
+    // Area Hierarchy Nodes (Matching exact requested diorama hierarchy)
+    private(set) var architectureArea: RoomArchitectureEntity?
+    private(set) var windowArea: RoomWindowEntity?
+    private(set) var deskArea: DeskAreaEntity?
+    private(set) var bedArea: BedAreaEntity?
+    private(set) var shelfArea: ShelfAreaEntity?
+    private(set) var recordArea: RecordAreaEntity?
+    private(set) var floorObjectsArea: FloorObjectsAreaEntity?
     private(set) var cookie: CookieRealityEntity?
+    private(set) var chair: ChairEntity?
+    
+    // Registry of all interactive room props keyed by propId
+    private(set) var propEntities: [String: Entity] = [:]
     
     // Thought items group entity
     private let thoughtsContainer = Entity()
@@ -44,13 +44,13 @@ final class RoomSceneCoordinator {
     
     var isDeskLampOn: Bool = true {
         didSet {
-            desk?.setLampEnabled(isDeskLampOn)
+            deskArea?.lampEntity.setEnabled(isDeskLampOn)
         }
     }
     
     var isWallSconceOn: Bool = true {
         didSet {
-            wallDecor?.setSconceEnabled(isWallSconceOn)
+            floorObjectsArea?.wallDecor.setSconceEnabled(isWallSconceOn)
         }
     }
     
@@ -74,6 +74,9 @@ final class RoomSceneCoordinator {
     var onOpenItem: ((UUID) -> Void)?
     var onToggleLamp: (() -> Void)?
     var onPetCookie: (() -> Void)?
+    var onPropSelected: ((String?) -> Void)?
+    var onPropTransformSaved: ((RoomPropTransform) -> Void)?
+    var onPropTransformReset: ((String) -> Void)?
     
     init() {
         self.cameraRig = RoomCameraRig()
@@ -82,6 +85,122 @@ final class RoomSceneCoordinator {
         buildScene()
         self.interactionSystem?.coordinator = self
         startRecordSpinAnimation()
+    }
+    
+    // MARK: - Scene Construction
+    
+    private func buildScene() {
+        rootEntity.name = "RoomRoot"
+        
+        // 1. Camera Rig
+        rootEntity.addChild(cameraRig.cameraEntity)
+        
+        // 2. Lighting System
+        self.lightingSystem = RoomLightingSystem(root: rootEntity)
+        lightingSystem?.applyTimeOfDay(timeOfDay)
+        
+        // 3. Architecture (Floor, BackWall, LeftWall, Trim - Immovable)
+        let arch = RoomArchitectureEntity()
+        rootEntity.addChild(arch)
+        self.architectureArea = arch
+        
+        // 4. WindowArea (Window, Curtains, OutdoorEnvironment - Immovable)
+        let win = RoomWindowEntity()
+        rootEntity.addChild(win)
+        self.windowArea = win
+        
+        // 5. DeskArea (Desk, Monitor, Laptop, Keyboard, Mouse, Phone, Notebook, Lamp, Mug, Plant, Headphones)
+        let desk = DeskAreaEntity()
+        rootEntity.addChild(desk)
+        self.deskArea = desk
+        
+        // Ergonomic office chair in desk area
+        let ch = ChairEntity()
+        rootEntity.addChild(ch)
+        self.chair = ch
+        
+        // 6. BedArea (Bed, Mattress, Sheets, Pillows, Blanket, BedDecor)
+        let bed = BedAreaEntity()
+        rootEntity.addChild(bed)
+        self.bedArea = bed
+        
+        // 7. ShelfArea (Shelf, Books, Plants, Clock, Decorations)
+        let shelf = ShelfAreaEntity()
+        rootEntity.addChild(shelf)
+        self.shelfArea = shelf
+        
+        // 8. RecordArea (Ottoman, RecordPlayer, Vinyl, Records)
+        let record = RecordAreaEntity()
+        rootEntity.addChild(record)
+        self.recordArea = record
+        
+        // 9. FloorObjects (Skateboard, BouclePouf, Monstera, FloorPlant, StepBooks, StepSucculent, Rug, WallDecor)
+        let floor = FloorObjectsAreaEntity()
+        rootEntity.addChild(floor)
+        self.floorObjectsArea = floor
+        
+        // 10. Cookie the Cat
+        let ck = CookieRealityEntity()
+        rootEntity.addChild(ck)
+        self.cookie = ck
+        
+        // 11. Thoughts Container
+        thoughtsContainer.name = "thoughts_container"
+        rootEntity.addChild(thoughtsContainer)
+        
+        // Register all interactive props
+        registerAllProps()
+    }
+    
+    private func registerAllProps() {
+        guard let desk = deskArea,
+              let bed = bedArea,
+              let shelf = shelfArea,
+              let record = recordArea,
+              let floor = floorObjectsArea,
+              let ck = cookie else { return }
+        
+        let allEntities: [Entity] = [
+            desk.monitorEntity,
+            desk.laptopEntity,
+            desk.keyboardEntity,
+            desk.mouseEntity,
+            desk.phoneEntity,
+            desk.notebookEntity,
+            desk.lampEntity,
+            desk.mugEntity,
+            desk.pencilCupEntity,
+            desk.plantEntity,
+            desk.headphonesEntity,
+            bed.daisyPillow,
+            bed.sagePillow,
+            bed.sleepingPillows,
+            bed.bedDecor,
+            shelf.clock,
+            shelf.catFigurine,
+            shelf.storageBox,
+            shelf.books,
+            shelf.shelfPlant,
+            record.recordPlayer,
+            record.albumStack,
+            floor.skateboard,
+            floor.bouclePouf,
+            floor.monstera,
+            floor.deskFloorPlant,
+            floor.stepBooks,
+            floor.stepSucculent,
+            ck
+        ]
+        
+        for entity in allEntities {
+            if let prop = entity.components[InteractivePropComponent.self] {
+                propEntities[prop.propId] = entity
+            }
+        }
+    }
+    
+    func findPropEntity(id: String) -> Entity? {
+        return propEntities[id]
     }
     
     // MARK: - Persistence Synchronization
@@ -94,6 +213,20 @@ final class RoomSceneCoordinator {
         self.isDeskLampOn = roomState.isDeskLampOn
         self.isWallSconceOn = roomState.isWallSconceOn
         self.isRecordSpinning = roomState.isRecordSpinning
+        
+        // Apply saved prop transforms
+        let savedTransforms = roomState.getPropTransforms()
+        applySavedPropTransforms(savedTransforms)
+    }
+    
+    func applySavedPropTransforms(_ transforms: [String: RoomPropTransform]) {
+        for (propId, transform) in transforms {
+            if let entity = propEntities[propId] {
+                entity.position = transform.position
+                entity.orientation = transform.orientation
+                entity.scale = transform.scale
+            }
+        }
     }
     
     func syncToRoomState(_ roomState: RoomState) {
@@ -103,6 +236,22 @@ final class RoomSceneCoordinator {
         roomState.isRecordSpinning = self.isRecordSpinning
         roomState.cookieLastInteractedAt = cookieController.state.lastInteraction
         roomState.updatedAt = .now
+    }
+    
+    func savePropTransform(_ transform: RoomPropTransform) {
+        onPropTransformSaved?(transform)
+    }
+    
+    func resetPropTransform(id: String) {
+        onPropTransformReset?(id)
+    }
+    
+    func applyPropTransform(_ transform: RoomPropTransform, animated: Bool = false) {
+        guard let entity = propEntities[transform.propId] else { return }
+        entity.position = transform.position
+        entity.orientation = transform.orientation
+        entity.scale = transform.scale
+        savePropTransform(transform)
     }
     
     func setTimeOfDay(_ tod: RoomTimeOfDay) {
@@ -120,74 +269,6 @@ final class RoomSceneCoordinator {
         updateItemPosition(id: id, position: worldPos)
     }
     
-    private func buildScene() {
-        rootEntity.name = "room_diorama_root"
-        
-        // 1. Camera
-        rootEntity.addChild(cameraRig.cameraEntity)
-        
-        // 2. Lighting System
-        self.lightingSystem = RoomLightingSystem(root: rootEntity)
-        lightingSystem?.applyTimeOfDay(timeOfDay)
-        
-        // 3. Architectural Shell
-        let arch = RoomArchitectureEntity()
-        rootEntity.addChild(arch)
-        self.architecture = arch
-        
-        // 4. Window & Outdoor Scenery
-        let win = RoomWindowEntity()
-        rootEntity.addChild(win)
-        self.windowSetup = win
-        
-        // 5. Furniture Elements
-        let d = DeskEntity()
-        rootEntity.addChild(d)
-        self.desk = d
-        
-        let b = BedEntity()
-        rootEntity.addChild(b)
-        self.bed = b
-        
-        let bs = BookshelvesEntity()
-        rootEntity.addChild(bs)
-        self.bookshelves = bs
-        
-        let ch = ChairEntity()
-        rootEntity.addChild(ch)
-        self.chair = ch
-        
-        let al = AudioLoungeEntity()
-        rootEntity.addChild(al)
-        self.audioLounge = al
-        
-        // 6. Decorations
-        let pl = PlantEntities()
-        rootEntity.addChild(pl)
-        self.plants = pl
-        
-        let sk = SkateboardEntity()
-        rootEntity.addChild(sk)
-        self.skateboard = sk
-        
-        let wd = WallDecorEntities()
-        rootEntity.addChild(wd)
-        self.wallDecor = wd
-        
-        let rg = RugEntity()
-        rootEntity.addChild(rg)
-        self.rug = rg
-        
-        // 7. Cookie the Cat
-        let ck = CookieRealityEntity()
-        rootEntity.addChild(ck)
-        self.cookie = ck
-        
-        // 8. Thoughts Container
-        thoughtsContainer.name = "thoughts_container"
-        rootEntity.addChild(thoughtsContainer)
-    }
-    
     // MARK: - Synchronizing SwiftData Items
     
     func syncItems(_ items: [NookItem]) {
@@ -202,7 +283,6 @@ final class RoomSceneCoordinator {
         // Add or update entities for items
         for item in items {
             if let existing = thoughtEntities[item.id] {
-                // Update position if changed
                 let targetPos = SIMD3<Float>(Float(item.roomPosition.x), Float(item.roomPosition.y), Float(item.roomPosition.z))
                 if distance(existing.position, targetPos) > 0.001 {
                     existing.position = targetPos
@@ -237,6 +317,7 @@ final class RoomSceneCoordinator {
     
     func toggleRecordPlayer() {
         isRecordSpinning.toggle()
+        recordArea?.recordPlayer.togglePlayback()
     }
     
     func petCookie() {
@@ -260,7 +341,6 @@ final class RoomSceneCoordinator {
     private func updateSelectionVisuals() {
         for (id, entity) in thoughtEntities {
             if id == selectedItemID {
-                // Gentle elevation and scale pop
                 entity.scale = [1.08, 1.08, 1.08]
             } else {
                 entity.scale = [1.0, 1.0, 1.0]
@@ -275,7 +355,7 @@ final class RoomSceneCoordinator {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 33_333_333) // ~30fps
                 guard let self = self, self.isRecordSpinning,
-                      let vinyl = self.audioLounge?.vinylRecordEntity else { continue }
+                      let vinyl = self.recordArea?.recordPlayer.vinylRecord else { continue }
                 angle += 0.04
                 vinyl.orientation = simd_quatf(angle: angle, axis: [0, 1, 0])
             }
