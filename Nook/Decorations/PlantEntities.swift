@@ -57,6 +57,40 @@ final class PlantEntities: Entity {
             vineRoot.addChild(strand)
         }
         
+        // 1b. Cascading Ivy Vines down Front-Left Wall Edge / Column (Matching prominent reference feature)
+        let frontVineRoot = Entity()
+        frontVineRoot.position = [-1.15, upperFloorY + 1.42, 0.32]
+        frontVineRoot.name = "front_trailing_ivy"
+        addChild(frontVineRoot)
+        
+        let frontVineOffsets: [(x: Float, z: Float, length: Float)] = [
+            (0.00, 0.00, 0.95),
+            (0.04, -0.03, 0.75),
+            (-0.03, 0.04, 0.60),
+            (0.05, 0.02, 0.85)
+        ]
+        
+        for v in frontVineOffsets {
+            let strand = Entity()
+            strand.position = [v.x, 0, v.z]
+            let stemMesh = MeshResource.generateCylinder(height: v.length, radius: 0.004)
+            let stem = ModelEntity(mesh: stemMesh, materials: [mats.foliageDeep])
+            stem.position = [0, -v.length * 0.5, 0]
+            strand.addChild(stem)
+            
+            let leafCount = Int(v.length / 0.055)
+            let leafMesh = MeshResource.generateBox(size: [0.034, 0.003, 0.044], cornerRadius: 0.008)
+            for j in 0..<leafCount {
+                let leafY = -Float(j) * 0.055 - 0.025
+                let leaf = ModelEntity(mesh: leafMesh, materials: [j % 2 == 0 ? mats.foliageDeep : mats.foliageLight])
+                let angle = Float(j) * 1.4
+                leaf.position = [cos(angle) * 0.024, leafY, sin(angle) * 0.024]
+                leaf.orientation = simd_quatf(angle: angle, axis: [0, 1, 0]) * simd_quatf(angle: Float.pi * 0.18, axis: [1, 0, 0])
+                strand.addChild(leaf)
+            }
+            frontVineRoot.addChild(strand)
+        }
+        
         // 2. Large Potted Monstera Deliciosa (Right side near record player bench)
         // Positioned at X = +1.02, Z = +0.10, Y = upperFloorY
         let monsteraRoot = Entity()
