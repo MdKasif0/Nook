@@ -1069,6 +1069,38 @@ struct RoomView: View {
     }
     
     private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        // 1. If a movable prop is selected, handle its direct manipulation
+        if let prop = selectedPropInfo {
+            if press.characters == "r" || press.characters == "R" {
+                sceneController.interactionSystem?.rotateProp(id: prop.propId, angleDegrees: 45, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .upArrow {
+                sceneController.interactionSystem?.nudgeProp(id: prop.propId, deltaX: 0, deltaZ: -0.02, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .downArrow {
+                sceneController.interactionSystem?.nudgeProp(id: prop.propId, deltaX: 0, deltaZ: 0.02, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .leftArrow {
+                sceneController.interactionSystem?.nudgeProp(id: prop.propId, deltaX: -0.02, deltaZ: 0, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .rightArrow {
+                sceneController.interactionSystem?.nudgeProp(id: prop.propId, deltaX: 0.02, deltaZ: 0, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .escape {
+                withAnimation(NookDesign.Animation.springy) {
+                    sceneController.interactionSystem?.clearPropSelection()
+                    selectedPropInfo = nil
+                }
+                return .handled
+            }
+        }
+        
+        // 2. Regular thought item navigation
         if press.key == .tab {
             if press.modifiers.contains(.shift) {
                 navigatePreviousItem()
