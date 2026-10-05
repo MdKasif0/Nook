@@ -64,6 +64,52 @@ enum SnapshotGenerator {
         .padding(16)
         .background(Color(red: 0.94, green: 0.92, blue: 0.88))
         saveView(thoughtDetailView, size: CGSize(width: 520, height: 460), to: "\(artifactDir)/nook_thought_detail.png")
+        
+        // 6. RealityKit 3D Miniature Room Diorama
+        renderRoomSnapshot(to: "\(artifactDir)/nook_reality_room.png")
+    }
+    
+    static func renderRoomSnapshot(to path: String) {
+        let coordinator = RoomSceneCoordinator()
+        let sampleItems = [
+            NookItem(title: "Morning Reflection", content: "Quiet, tactile focus.", itemType: .note, objectType: .paperNote, position: RoomPosition(x: 0.35, y: 0.45, z: 0.5)),
+            NookItem(title: "Warm Palette", content: "Warm ivory, honey oak, and muted sage.", itemType: .idea, objectType: .stickyNote, position: RoomPosition(x: 0.65, y: 0.55, z: 0.5)),
+            NookItem(title: "Memory", content: "A quiet moment with Cookie.", itemType: .photo, objectType: .polaroid, position: RoomPosition(x: 0.50, y: 0.30, z: 0.5))
+        ]
+        coordinator.syncItems(sampleItems)
+        
+        guard let device = MTLCreateSystemDefaultDevice() else { return }
+        let width = 1600
+        let height = 1100
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: width, height: height, mipmapped: false)
+        desc.usage = [.renderTarget, .shaderRead]
+        guard let texture = device.makeTexture(descriptor: desc) else { return }
+        
+        do {
+            let renderer = try RealityRenderer()
+            renderer.entities.append(coordinator.rootEntity)
+            renderer.activeCamera = coordinator.cameraRig.cameraEntity
+            
+            // Set warm cream background
+            var settings = RealityRenderer.CameraSettings()
+            settings.colorBackground = .color(CGColor(red: 0.98, green: 0.965, blue: 0.945, alpha: 1.0))
+            
+            let outputDesc = RealityRenderer.CameraOutput.Descriptor.singleProjection(colorTexture: texture)
+            let cameraOutput = try RealityRenderer.CameraOutput(outputDesc)
+            try renderer.updateAndRender(deltaTime: 0.016, cameraOutput: cameraOutput)
+            
+            guard let ci = CIImage(mtlTexture: texture, options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]) else { return }
+            let rep = NSCIImageRep(ciImage: ci)
+            let nsImage = NSImage(size: NSSize(width: width, height: height))
+            nsImage.addRepresentation(rep)
+            guard let tiff = nsImage.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiff),
+                  let png = bitmap.representation(using: .png, properties: [:]) else { return }
+            try png.write(to: URL(fileURLWithPath: path))
+            print("Successfully rendered reality room snapshot to: \(path)")
+        } catch {
+            print("Error rendering reality room snapshot: \(error)")
+        }
     }
     
     private static func saveView<V: View>(_ view: V, size: CGSize, to path: String) {
