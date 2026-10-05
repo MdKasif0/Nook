@@ -1,6 +1,7 @@
 /**
  * Nook 3D - RaycastManager
  * High-performance pointer tracking and raycasting for hover, selection, and drag operations.
+ * Tracks pointerdown, pointermove, pointerup, pointerenter, and pointerleave.
  */
 
 import * as THREE from 'three';
@@ -17,21 +18,27 @@ export class RaycastManager {
 
     this.hoveredObject = null;
     this.isPointerDown = false;
+    this.isPointerInside = false;
 
-    // Callbacks
+    // Callbacks & Event Hooks
     this.onHoverChange = null;
-    this.onClick = null;
-    this.onContextMenu = null;
+    this.onPointerDownEvent = null;
+    this.onPointerUpEvent = null;
+    this.onPointerEnterEvent = null;
+    this.onPointerLeaveEvent = null;
 
     this.initListeners();
   }
 
   initListeners() {
-    this.domElement.addEventListener('pointermove', this.onPointerMove.bind(this));
+    this.domElement.addEventListener('pointerenter', this.onPointerEnter.bind(this));
     this.domElement.addEventListener('pointerleave', this.onPointerLeave.bind(this));
+    this.domElement.addEventListener('pointerdown', this.onPointerDown.bind(this));
+    this.domElement.addEventListener('pointermove', this.onPointerMove.bind(this));
+    window.addEventListener('pointerup', this.onPointerUp.bind(this));
   }
 
-  onPointerMove(event) {
+  updatePointerCoordinates(event) {
     const rect = this.domElement.getBoundingClientRect();
     this.rawPointer.x = event.clientX;
     this.rawPointer.y = event.clientY;
@@ -40,18 +47,44 @@ export class RaycastManager {
     this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   }
 
-  onPointerLeave() {
+  onPointerEnter(event) {
+    this.isPointerInside = true;
+    this.updatePointerCoordinates(event);
+    if (this.onPointerEnterEvent) this.onPointerEnterEvent(event);
+  }
+
+  onPointerLeave(event) {
+    this.isPointerInside = false;
     this.pointer.set(-1000, -1000);
+
     if (this.hoveredObject) {
       this.hoveredObject.onHoverExit();
       this.hoveredObject = null;
       this.domElement.style.cursor = 'default';
       if (this.onHoverChange) this.onHoverChange(null);
     }
+
+    if (this.onPointerLeaveEvent) this.onPointerLeaveEvent(event);
+  }
+
+  onPointerDown(event) {
+    this.isPointerDown = true;
+    this.updatePointerCoordinates(event);
+    if (this.onPointerDownEvent) this.onPointerDownEvent(event);
+  }
+
+  onPointerMove(event) {
+    this.updatePointerCoordinates(event);
+  }
+
+  onPointerUp(event) {
+    this.isPointerDown = false;
+    if (this.onPointerUpEvent) this.onPointerUpEvent(event);
   }
 
   /**
    * Raycasts against registered interactive objects.
+   * Finds the uppermost root InteractiveObject ancestor.
    */
   getIntersectedObject() {
     if (this.pointer.x < -1 || this.pointer.x > 1 || this.pointer.y < -1 || this.pointer.y > 1) {
@@ -63,17 +96,19 @@ export class RaycastManager {
     const hits = this.raycaster.intersectObjects(candidateMeshes, false);
 
     if (hits.length > 0) {
-      // Find ancestor InteractiveObject
-      let current = hits[0].object;
-      while (current) {
-        if (current.userData && current.userData.isInteractiveObject) {
-          return {
-            interactiveObject: current.userData.instance,
-            hitPoint: hits[0].point,
-            distance: hits[0].distance
-          };
+      for (const hit of hits) {
+        let current = hit.object;
+        while (current) {
+          if (current.userData && current.userData.isInteractiveObject) {
+            return {
+              interactiveObject: current.userData.instance,
+              hitPoint: hit.point,
+              normal: hit.face ? hit.face.normal : new THREE.Vector3(0, 1, 0),
+              distance: hit.distance
+            };
+          }
+          current = current.parent;
         }
-        current = current.parent;
       }
     }
     return null;
@@ -90,8 +125,12 @@ export class RaycastManager {
     return hit ? target : null;
   }
 
+  /**
+   * Updates hover states smoothly when not dragging.
+   */
   update() {
-    // Only update hover state if not actively dragging
+    if (!this.isPointerInside) return;
+
     const result = this.getIntersectedObject();
     const newHover = result ? result.interactiveObject : null;
 
@@ -113,3 +152,4 @@ export class RaycastManager {
     }
   }
 }
+

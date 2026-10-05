@@ -1,7 +1,7 @@
 /**
- * Nook 3D - RoomState Persistence
+ * Nook 3D - RoomState Persistence & History
  * Local-first persistence engine saving object transforms, lamp states, and Cookie interactions.
- * Bridges seamlessly with localStorage and native macOS Swift WKWebView handlers.
+ * Includes complete undo history stack supporting Command/Ctrl+Z for move, rotate, and delete operations.
  */
 
 const STORAGE_KEY = 'nook_room_state_v1';
@@ -12,6 +12,9 @@ export class RoomState {
     this.lighting = lighting;
     this.cookieController = cookieController;
 
+    this.undoStack = [];
+    this.maxUndoHistory = 50;
+
     this.state = {
       version: 1,
       objects: {},
@@ -21,6 +24,54 @@ export class RoomState {
     };
 
     this.loadState();
+  }
+
+  pushUndo(action) {
+    if (!action) return;
+    this.undoStack.push(action);
+    if (this.undoStack.length > this.maxUndoHistory) {
+      this.undoStack.shift();
+    }
+  }
+
+  undo() {
+    if (this.undoStack.length === 0) {
+      return null;
+    }
+
+    const action = this.undoStack.pop();
+    if (!action) return null;
+
+    if (action.type === 'move') {
+      const obj = this.objectManager.getObjectById(action.objectId);
+      if (obj) {
+        obj.position.copy(action.previousPosition);
+        obj.rotation.copy(action.previousRotation);
+        obj.previousValidPosition.copy(action.previousPosition);
+        obj.previousValidRotation.copy(action.previousRotation);
+        this.saveState();
+        return { action, object: obj };
+      }
+    } else if (action.type === 'rotate') {
+      const obj = this.objectManager.getObjectById(action.objectId);
+      if (obj) {
+        obj.rotation.copy(action.previousRotation);
+        obj.previousValidRotation.copy(action.previousRotation);
+        this.saveState();
+        return { action, object: obj };
+      }
+    } else if (action.type === 'delete') {
+      if (action.objectInstance) {
+        this.objectManager.registerObject(action.objectInstance);
+        action.objectInstance.position.copy(action.previousPosition);
+        action.objectInstance.rotation.copy(action.previousRotation);
+        action.objectInstance.visible = true;
+        this.saveState();
+        return { action, object: action.objectInstance };
+      }
+    }
+
+    return null;
   }
 
   loadState() {
@@ -50,8 +101,10 @@ export class RoomState {
         const obj = this.objectManager.getObjectById(id);
         if (obj && record.position) {
           obj.position.set(record.position.x, record.position.y, record.position.z);
+          obj.previousValidPosition.copy(obj.position);
           if (record.rotationY !== undefined) {
             obj.rotation.y = record.rotationY;
+            obj.previousValidRotation.copy(obj.rotation);
           }
         }
       }
@@ -95,3 +148,4 @@ export class RoomState {
     }
   }
 }
+

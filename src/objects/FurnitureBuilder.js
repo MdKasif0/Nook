@@ -13,12 +13,15 @@ import * as THREE from 'three';
 import { PALETTE, MAIN_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { MaterialSystem } from '../materials/MaterialSystem.js';
+import { InteractiveObject } from './InteractiveObject.js';
 
 export class FurnitureBuilder {
   constructor(roomScene) {
     this.roomScene = roomScene;
     this.materials = this.createMaterials();
+    this.movableProps = [];
   }
+
 
   createMaterials() {
     const pbr = MaterialSystem.getMaterials();
@@ -158,14 +161,30 @@ export class FurnitureBuilder {
   buildAll() {
     const furnitureGroup = this.roomScene.furniture;
     furnitureGroup.clear();
+    this.movableProps = [];
 
-    // 1. Workstation: Desk & Desk_Drawers
+    // 1. Static Architecture & Large Furniture
     const desk = this.buildDesk();
     const deskDrawers = this.buildDeskDrawers();
+    const chair = this.buildOfficeChair();
+    const rug = this.buildDeskRug();
+    const bed = this.buildBed();
+    const mattress = this.buildMattress();
+    const blanket = this.buildBlanket();
+    const ottoman = this.buildOttoman();
+    const catBed = this.buildCatBed();
+
     furnitureGroup.add(desk);
     furnitureGroup.add(deskDrawers);
+    furnitureGroup.add(chair);
+    furnitureGroup.add(rug);
+    furnitureGroup.add(bed);
+    furnitureGroup.add(mattress);
+    furnitureGroup.add(blanket);
+    furnitureGroup.add(ottoman);
+    furnitureGroup.add(catBed);
 
-    // 2. Desk Objects
+    // 2. Interactive Movable & Special Objects (Managed by ObjectManager)
     const monitor = this.buildMonitor();
     const laptop = this.buildLaptop();
     const keyboard = this.buildKeyboard();
@@ -179,86 +198,74 @@ export class FurnitureBuilder {
     const headphones = this.buildHeadphones();
     const books = this.buildDeskBooks();
 
-    furnitureGroup.add(monitor);
-    furnitureGroup.add(laptop);
-    furnitureGroup.add(keyboard);
-    furnitureGroup.add(mouse);
-    furnitureGroup.add(phone);
-    furnitureGroup.add(notebook);
-    furnitureGroup.add(penHolder);
-    furnitureGroup.add(deskLamp);
-    furnitureGroup.add(mug);
-    furnitureGroup.add(smallPlant);
-    furnitureGroup.add(headphones);
-    furnitureGroup.add(books);
-
-    // 3. Office Chair & Desk Rug
-    const chair = this.buildOfficeChair();
-    const rug = this.buildDeskRug();
-    furnitureGroup.add(chair);
-    furnitureGroup.add(rug);
-
-    // 4. Bed & Bedding
-    const bed = this.buildBed();
-    const mattress = this.buildMattress();
-    const blanket = this.buildBlanket();
     const pillow1 = this.buildPillow01();
     const pillow2 = this.buildPillow02();
     const pillow3 = this.buildPillow03();
     const flowerPillow = this.buildFlowerPillow();
 
-    furnitureGroup.add(bed);
-    furnitureGroup.add(mattress);
-    furnitureGroup.add(blanket);
-    furnitureGroup.add(pillow1);
-    furnitureGroup.add(pillow2);
-    furnitureGroup.add(pillow3);
-    furnitureGroup.add(flowerPillow);
-
-    // 5. Ottoman & Record Player
-    const ottoman = this.buildOttoman();
     const recordPlayer = this.buildRecordPlayer();
-    furnitureGroup.add(ottoman);
-    furnitureGroup.add(recordPlayer);
-
-    // 6. Skateboard & Cat Bed
     const skateboard = this.buildSkateboard();
-    const catBed = this.buildCatBed();
-    furnitureGroup.add(skateboard);
-    furnitureGroup.add(catBed);
 
-    // 7. Floor Decorative Plants & Curb Books
     const monstera = this.buildMonsteraPlant();
     const curbBooks = this.buildCurbBooksAndPlant();
     const stepPlant = this.buildStepPlant();
-    furnitureGroup.add(monstera);
-    furnitureGroup.add(curbBooks);
-    furnitureGroup.add(stepPlant);
 
-    return {
-      desk,
-      deskDrawers,
+    this.movableProps = [
       monitor,
       laptop,
       keyboard,
       mouse,
       phone,
       notebook,
+      penHolder,
       deskLamp,
       mug,
       smallPlant,
       headphones,
-      chair,
-      bed,
-      mattress,
-      blanket,
+      books,
       pillow1,
       pillow2,
       pillow3,
-      ottoman,
+      flowerPillow,
       recordPlayer,
       skateboard,
-      catBed
+      monstera,
+      curbBooks,
+      stepPlant
+    ];
+
+    return {
+      desk,
+      deskDrawers,
+      chair,
+      rug,
+      bed,
+      mattress,
+      blanket,
+      ottoman,
+      catBed,
+      monitor,
+      laptop,
+      keyboard,
+      mouse,
+      phone,
+      notebook,
+      penHolder,
+      deskLamp,
+      mug,
+      smallPlant,
+      headphones,
+      books,
+      pillow1,
+      pillow2,
+      pillow3,
+      flowerPillow,
+      recordPlayer,
+      skateboard,
+      monstera,
+      curbBooks,
+      stepPlant,
+      movableProps: this.movableProps
     };
   }
 
@@ -397,77 +404,93 @@ export class FurnitureBuilder {
 
   // MARK: - 3. Monitor
   buildMonitor() {
-    const group = new THREE.Group();
-    group.name = 'Monitor';
+    const obj = new InteractiveObject({
+      id: 'prop_monitor',
+      name: 'Monitor',
+      accessibilityLabel: 'Desk monitor displaying warm hello screen',
+      category: 'special',
+      objectType: 'monitor',
+      collisionRadius: 0.45,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: false,
+      specialAction: () => {
+        // Subtle screen glow toggle
+      }
+    });
 
-    const deskTopY = 1.70;
-    const monX = -3.4;
-    const monZ = -2.85;
+    const screenW = 2.15;
+    const screenH = 1.25;
+    const screenD = 0.05;
 
     // Base Stand Plate
     const baseGeo = new THREE.BoxGeometry(0.65, 0.02, 0.42);
     const baseMesh = new THREE.Mesh(baseGeo, this.materials.metalChrome);
-    baseMesh.position.set(monX, deskTopY + 0.01, monZ);
+    baseMesh.position.set(0, 0.01, 0);
     baseMesh.castShadow = true;
-    group.add(baseMesh);
+    obj.visualRoot.add(baseMesh);
 
     // Vertical Stand Neck
     const neckGeo = new THREE.BoxGeometry(0.08, 0.62, 0.06);
     const neck = new THREE.Mesh(neckGeo, this.materials.metalChrome);
-    neck.position.set(monX, deskTopY + 0.32, monZ - 0.06);
+    neck.position.set(0, 0.32, -0.06);
     neck.rotation.x = 0.05;
     neck.castShadow = true;
-    group.add(neck);
+    obj.visualRoot.add(neck);
 
     // Screen Housing / Outer Bezel
-    const screenW = 2.15;
-    const screenH = 1.25;
-    const screenD = 0.05;
     const bezelGeo = new THREE.BoxGeometry(screenW, screenH, screenD);
     const bezel = new THREE.Mesh(bezelGeo, this.materials.plasticWhite);
-    bezel.position.set(monX, deskTopY + 0.88, monZ - 0.02);
+    bezel.position.set(0, 0.88, -0.02);
     bezel.castShadow = true;
-    group.add(bezel);
+    obj.visualRoot.add(bezel);
 
     // Active Display Screen Plane ("hello ♡" visual)
     const dispGeo = new THREE.PlaneGeometry(screenW - 0.08, screenH - 0.08);
     const display = new THREE.Mesh(dispGeo, this.materials.monitorScreen);
-    display.position.set(monX, deskTopY + 0.88, monZ + screenD * 0.5 + 0.002);
-    group.add(display);
+    display.position.set(0, 0.88, screenD * 0.5 + 0.002);
+    obj.visualRoot.add(display);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-3.4, 1.70, -2.85));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 4. Laptop
   buildLaptop() {
-    const group = new THREE.Group();
-    group.name = 'Laptop';
-
-    const x = -1.95;
-    const z = -2.62;
-    const y = 1.70;
-
-    // Rotated slightly toward the chair
-    group.position.set(x, y, z);
-    group.rotation.y = 0.32;
+    const obj = new InteractiveObject({
+      id: 'prop_laptop',
+      name: 'Laptop',
+      accessibilityLabel: 'Slim silver laptop computer',
+      category: 'movable',
+      objectType: 'laptop',
+      collisionRadius: 0.28,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Base Chassis
     const baseGeo = new THREE.BoxGeometry(0.72, 0.022, 0.52);
     const base = new THREE.Mesh(baseGeo, this.materials.chairFrameCream);
     base.position.set(0, 0.011, 0);
     base.castShadow = true;
-    group.add(base);
+    obj.visualRoot.add(base);
 
     // Keyboard Area & Trackpad
     const kbGeo = new THREE.BoxGeometry(0.64, 0.005, 0.28);
     const kb = new THREE.Mesh(kbGeo, this.materials.darkTech);
     kb.position.set(0, 0.023, -0.06);
-    group.add(kb);
+    obj.visualRoot.add(kb);
 
     const padGeo = new THREE.BoxGeometry(0.24, 0.002, 0.14);
     const pad = new THREE.Mesh(padGeo, this.materials.metalChrome);
     pad.position.set(0, 0.022, 0.15);
-    group.add(pad);
+    obj.visualRoot.add(pad);
 
     // Angled Display Lid (118 degrees open)
     const lidGroup = new THREE.Group();
@@ -485,65 +508,97 @@ export class FurnitureBuilder {
     screen.position.set(0, 0.25, 0.01);
     lidGroup.add(screen);
 
-    group.add(lidGroup);
-    return group;
+    obj.visualRoot.add(lidGroup);
+    obj.setDefaultTransform(new THREE.Vector3(-1.95, 1.70, -2.62), new THREE.Euler(0, 0.32, 0));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 5. Keyboard
   buildKeyboard() {
-    const group = new THREE.Group();
-    group.name = 'Keyboard';
-
-    group.position.set(-3.25, 1.70, -2.05);
+    const obj = new InteractiveObject({
+      id: 'prop_keyboard',
+      name: 'Keyboard',
+      accessibilityLabel: 'White mechanical keyboard',
+      category: 'movable',
+      objectType: 'keyboard',
+      collisionRadius: 0.25,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Keyboard Tray / Body
     const bodyGeo = new THREE.BoxGeometry(0.88, 0.024, 0.32);
     const body = new THREE.Mesh(bodyGeo, this.materials.plasticWhite);
     body.position.set(0, 0.012, 0);
     body.castShadow = true;
-    group.add(body);
+    obj.visualRoot.add(body);
 
     // Sculpted Keycap Rows
     const keysGeo = new THREE.BoxGeometry(0.82, 0.018, 0.26);
     const keys = new THREE.Mesh(keysGeo, this.materials.fabricCream);
     keys.position.set(0, 0.026, 0);
     keys.castShadow = true;
-    group.add(keys);
+    obj.visualRoot.add(keys);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-3.25, 1.70, -2.05));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 6. Mouse
   buildMouse() {
-    const group = new THREE.Group();
-    group.name = 'Mouse';
-
-    group.position.set(-2.05, 1.70, -2.02);
+    const obj = new InteractiveObject({
+      id: 'prop_mouse',
+      name: 'Mouse',
+      accessibilityLabel: 'Ergonomic wireless mouse',
+      category: 'movable',
+      objectType: 'mouse',
+      collisionRadius: 0.10,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     const mouseGeo = new THREE.CapsuleGeometry(0.045, 0.07, 8, 16);
     mouseGeo.scale(1.0, 0.55, 1.4);
     const mouseMesh = new THREE.Mesh(mouseGeo, this.materials.plasticWhite);
     mouseMesh.position.set(0, 0.02, 0);
     mouseMesh.castShadow = true;
-    group.add(mouseMesh);
+    obj.visualRoot.add(mouseMesh);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-2.05, 1.70, -2.02));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 7. Phone
   buildPhone() {
-    const group = new THREE.Group();
-    group.name = 'Phone';
-
-    group.position.set(-4.12, 1.70, -2.10);
-    group.rotation.y = 0.15;
+    const obj = new InteractiveObject({
+      id: 'prop_phone',
+      name: 'Phone',
+      accessibilityLabel: 'Smartphone on wooden desk stand',
+      category: 'movable',
+      objectType: 'phone',
+      collisionRadius: 0.14,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Small Wooden Easel Desk Stand
     const standGeo = new THREE.BoxGeometry(0.14, 0.18, 0.16);
     const stand = new THREE.Mesh(standGeo, this.materials.woodHoney);
     stand.position.set(0, 0.09, 0);
     stand.castShadow = true;
-    group.add(stand);
+    obj.visualRoot.add(stand);
 
     // Smartphone Body tilted back at 65°
     const phoneGeo = new THREE.BoxGeometry(0.12, 0.24, 0.014);
@@ -551,49 +606,70 @@ export class FurnitureBuilder {
     phoneMesh.position.set(0, 0.12, 0.04);
     phoneMesh.rotation.x = -0.35;
     phoneMesh.castShadow = true;
-    group.add(phoneMesh);
+    obj.visualRoot.add(phoneMesh);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-4.12, 1.70, -2.10), new THREE.Euler(0, 0.15, 0));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 8. Notebook
   buildNotebook() {
-    const group = new THREE.Group();
-    group.name = 'Notebook';
-
-    group.position.set(-3.85, 1.70, -1.75);
-    group.rotation.y = -0.18;
+    const obj = new InteractiveObject({
+      id: 'prop_notebook',
+      name: 'Notebook',
+      accessibilityLabel: 'Notebook with open pages and pen',
+      category: 'movable',
+      objectType: 'notebook',
+      collisionRadius: 0.22,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Open Notebook Pages
     const pagesGeo = new THREE.BoxGeometry(0.48, 0.018, 0.34);
     const pages = new THREE.Mesh(pagesGeo, this.materials.notebookMaterial);
     pages.position.set(0, 0.009, 0);
     pages.castShadow = true;
-    group.add(pages);
+    obj.visualRoot.add(pages);
 
     // Thin Pen resting in spine
     const penGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.26, 8);
     const pen = new THREE.Mesh(penGeo, this.materials.metalChrome);
     pen.position.set(0.02, 0.02, 0);
     pen.rotation.x = Math.PI * 0.5;
-    group.add(pen);
+    obj.visualRoot.add(pen);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-3.85, 1.70, -1.75), new THREE.Euler(0, -0.18, 0));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 9. Pen Holder
   buildPenHolder() {
-    const group = new THREE.Group();
-    group.name = 'PenHolder';
-
-    group.position.set(-4.42, 1.70, -2.45);
+    const obj = new InteractiveObject({
+      id: 'prop_penholder',
+      name: 'Pen Holder',
+      accessibilityLabel: 'Ceramic cup with colored pencils',
+      category: 'movable',
+      objectType: 'decoration',
+      collisionRadius: 0.12,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Ceramic Cup
     const cupGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.18, 16);
     const cup = new THREE.Mesh(cupGeo, this.materials.plasticWhite);
     cup.position.set(0, 0.09, 0);
     cup.castShadow = true;
-    group.add(cup);
+    obj.visualRoot.add(cup);
 
     // Colorful Pencils / Pens inside
     const pencilColors = [0xd68945, 0x8ea889, 0xd8a49c, 0xf7d057];
@@ -604,25 +680,41 @@ export class FurnitureBuilder {
       pencil.position.set((i - 1.5) * 0.025, 0.15, (Math.random() - 0.5) * 0.04);
       pencil.rotation.z = (Math.random() - 0.5) * 0.25;
       pencil.castShadow = true;
-      group.add(pencil);
+      obj.visualRoot.add(pencil);
     }
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-4.42, 1.70, -2.45));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 10. Desk Lamp
   buildDeskLamp() {
-    const group = new THREE.Group();
-    group.name = 'DeskLamp';
-
-    group.position.set(-1.48, 1.70, -2.95);
+    const obj = new InteractiveObject({
+      id: 'prop_desk_lamp',
+      name: 'Desk Lamp',
+      accessibilityLabel: 'Desk lamp with warm task light',
+      category: 'special',
+      objectType: 'lamp',
+      collisionRadius: 0.22,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: false,
+      specialAction: () => {
+        if (this.roomScene && this.roomScene.lighting) {
+          this.roomScene.lighting.toggleDeskLamp();
+        }
+      }
+    });
 
     // Weighted Round Base
     const baseGeo = new THREE.CylinderGeometry(0.16, 0.18, 0.03, 24);
     const base = new THREE.Mesh(baseGeo, this.materials.chairFrameCream);
     base.position.set(0, 0.015, 0);
     base.castShadow = true;
-    group.add(base);
+    obj.visualRoot.add(base);
 
     // Articulated Curved Stem
     const stemCurve = new THREE.CatmullRomCurve3([
@@ -634,7 +726,7 @@ export class FurnitureBuilder {
     const stemGeo = new THREE.TubeGeometry(stemCurve, 20, 0.016, 8, false);
     const stem = new THREE.Mesh(stemGeo, this.materials.chairFrameCream);
     stem.castShadow = true;
-    group.add(stem);
+    obj.visualRoot.add(stem);
 
     // Conical Lamp Shade pointing down onto desk
     const shadeGeo = new THREE.ConeGeometry(0.18, 0.24, 20, 1, true);
@@ -643,55 +735,78 @@ export class FurnitureBuilder {
     shade.rotation.x = Math.PI * 0.75;
     shade.rotation.y = -0.4;
     shade.castShadow = true;
-    group.add(shade);
+    obj.visualRoot.add(shade);
 
     // Soft Warm Task Light radiating from shade
     const lampLight = new THREE.PointLight(0xffecd0, 0.9, 4.0, 1.8);
     lampLight.position.set(-0.25, 0.44, 0.28);
-    lampLight.castShadow = false; // Soft ambient desk light
-    group.add(lampLight);
+    lampLight.castShadow = false;
+    obj.visualRoot.add(lampLight);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-1.48, 1.70, -2.95));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 11. Mug
   buildMug() {
-    const group = new THREE.Group();
-    group.name = 'Mug';
-
-    group.position.set(-1.62, 1.70, -2.25);
+    const obj = new InteractiveObject({
+      id: 'prop_mug',
+      name: 'Ceramic Mug',
+      accessibilityLabel: 'White ceramic coffee mug',
+      category: 'movable',
+      objectType: 'mug',
+      collisionRadius: 0.12,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Cup Body
     const cupGeo = new THREE.CylinderGeometry(0.065, 0.06, 0.13, 16);
     const cup = new THREE.Mesh(cupGeo, this.materials.plasticWhite);
     cup.position.set(0, 0.065, 0);
     cup.castShadow = true;
-    group.add(cup);
+    obj.visualRoot.add(cup);
 
     // Handle
     const handleGeo = new THREE.TorusGeometry(0.04, 0.01, 8, 16, Math.PI);
     const handle = new THREE.Mesh(handleGeo, this.materials.plasticWhite);
     handle.position.set(0.065, 0.065, 0);
     handle.rotation.z = -Math.PI * 0.5;
-    group.add(handle);
+    handle.castShadow = true;
+    obj.visualRoot.add(handle);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-1.62, 1.70, -2.25));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 12. Small Plant
   buildSmallPlant() {
-    const group = new THREE.Group();
-    group.name = 'SmallPlant';
+    const obj = new InteractiveObject({
+      id: 'prop_small_plant',
+      name: 'Small Plant',
+      accessibilityLabel: 'Small succulent in ceramic pot',
+      category: 'movable',
+      objectType: 'plant',
+      collisionRadius: 0.16,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
-    // Sits atop the bedside nightstand between desk and bed (matching reference image)
-    group.position.set(-0.32, MAIN_FLOOR_Y + 1.05 + 0.04, -2.55);
-
+    // Sits atop the bedside nightstand between desk and bed
     // Ceramic Pot
     const potGeo = new THREE.CylinderGeometry(0.08, 0.065, 0.12, 16);
     const pot = new THREE.Mesh(potGeo, this.materials.plasticWhite);
     pot.position.set(0, 0.06, 0);
     pot.castShadow = true;
-    group.add(pot);
+    obj.visualRoot.add(pot);
 
     // Succulent Leaves
     for (let i = 0; i < 6; i++) {
@@ -702,26 +817,36 @@ export class FurnitureBuilder {
       leaf.rotation.x = Math.sin(angle) * 0.45;
       leaf.rotation.z = -Math.cos(angle) * 0.45;
       leaf.castShadow = true;
-      group.add(leaf);
+      obj.visualRoot.add(leaf);
     }
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-0.32, MAIN_FLOOR_Y + 1.05 + 0.04, -2.55));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 13. Headphones
   buildHeadphones() {
-    const group = new THREE.Group();
-    group.name = 'Headphones';
-
-    // Hanging from pegboard behind desk
-    group.position.set(-1.58, 3.25, -3.36);
+    const obj = new InteractiveObject({
+      id: 'prop_headphones',
+      name: 'Headphones',
+      accessibilityLabel: 'Cream over-ear headphones',
+      category: 'movable',
+      objectType: 'headphones',
+      collisionRadius: 0.18,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Padded Headband
     const bandGeo = new THREE.TorusGeometry(0.14, 0.018, 8, 24, Math.PI);
     const band = new THREE.Mesh(bandGeo, this.materials.chairFrameCream);
     band.rotation.z = Math.PI;
     band.castShadow = true;
-    group.add(band);
+    obj.visualRoot.add(band);
 
     // Earcups
     const cupGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.04, 16);
@@ -729,36 +854,49 @@ export class FurnitureBuilder {
     cupL.position.set(-0.14, 0.04, 0);
     cupL.rotation.z = Math.PI * 0.5;
     cupL.castShadow = true;
-    group.add(cupL);
+    obj.visualRoot.add(cupL);
 
     const cupR = new THREE.Mesh(cupGeo, this.materials.chairFrameCream);
     cupR.position.set(0.14, 0.04, 0);
     cupR.rotation.z = Math.PI * 0.5;
     cupR.castShadow = true;
-    group.add(cupR);
+    obj.visualRoot.add(cupR);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-1.58, 3.25, -3.36));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 14. Desk Books
   buildDeskBooks() {
-    const group = new THREE.Group();
-    group.name = 'Books';
-
-    group.position.set(-1.38, 1.70, -1.95);
+    const obj = new InteractiveObject({
+      id: 'prop_desk_books',
+      name: 'Books',
+      accessibilityLabel: 'Stack of hardcover books',
+      category: 'movable',
+      objectType: 'book',
+      collisionRadius: 0.22,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     const bookColors = [0x8ea889, 0xd8a49c, 0xd69c5e];
     for (let i = 0; i < 3; i++) {
       const bGeo = new THREE.BoxGeometry(0.32, 0.045, 0.24);
-      const bMat = new THREE.MeshStandardMaterial({ color: bookColors[i] });
+      const bMat = new THREE.MeshStandardMaterial({ color: bookColors[i], roughness: 0.88 });
       const book = new THREE.Mesh(bGeo, bMat);
       book.position.set(0, 0.022 + i * 0.046, 0);
       book.rotation.y = (i - 1) * 0.12;
       book.castShadow = true;
-      group.add(book);
+      obj.visualRoot.add(book);
     }
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-1.38, 1.70, -1.95));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 15. Office Chair
@@ -1001,70 +1139,112 @@ export class FurnitureBuilder {
 
   // MARK: - 20. Pillows
   buildPillow01() {
-    const group = new THREE.Group();
-    group.name = 'Pillow_01';
+    const obj = new InteractiveObject({
+      id: 'prop_pillow_01',
+      name: 'Cream Pillow',
+      accessibilityLabel: 'Large cream sleeping pillow',
+      category: 'movable',
+      objectType: 'pillow',
+      collisionRadius: 0.35,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Cream Large Sleeping Pillow on left
     const geo = new THREE.BoxGeometry(0.95, 0.24, 0.58);
     const mesh = new THREE.Mesh(geo, this.materials.fabricCream);
     mesh.castShadow = true;
-    group.add(mesh);
+    obj.visualRoot.add(mesh);
 
-    group.position.set(1.05, MAIN_FLOOR_Y + 1.02, -2.75);
-    group.rotation.x = 0.28;
-    group.rotation.y = 0.08;
-
-    return group;
+    obj.setDefaultTransform(
+      new THREE.Vector3(1.05, MAIN_FLOOR_Y + 1.02, -2.75),
+      new THREE.Euler(0.28, 0.08, 0)
+    );
+    obj.cacheMaterials();
+    return obj;
   }
 
   buildPillow02() {
-    const group = new THREE.Group();
-    group.name = 'Pillow_02';
+    const obj = new InteractiveObject({
+      id: 'prop_pillow_02',
+      name: 'Beige Pillow',
+      accessibilityLabel: 'Textured beige accent pillow',
+      category: 'movable',
+      objectType: 'pillow',
+      collisionRadius: 0.32,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Muted Beige / Sand Pillow in center with tactile normal map
     const geo = new THREE.BoxGeometry(0.85, 0.22, 0.52);
     const mesh = new THREE.Mesh(geo, this.materials.fabricBeige);
     mesh.castShadow = true;
-    group.add(mesh);
+    obj.visualRoot.add(mesh);
 
-    group.position.set(1.85, MAIN_FLOOR_Y + 1.05, -2.62);
-    group.rotation.x = 0.32;
-    group.rotation.y = -0.12;
-
-    return group;
+    obj.setDefaultTransform(
+      new THREE.Vector3(1.85, MAIN_FLOOR_Y + 1.05, -2.62),
+      new THREE.Euler(0.32, -0.12, 0)
+    );
+    obj.cacheMaterials();
+    return obj;
   }
 
   buildPillow03() {
-    const group = new THREE.Group();
-    group.name = 'Pillow_03';
+    const obj = new InteractiveObject({
+      id: 'prop_pillow_03',
+      name: 'Sage Pillow',
+      accessibilityLabel: 'Sage green square pillow',
+      category: 'movable',
+      objectType: 'pillow',
+      collisionRadius: 0.30,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Sage Green Square Pillow on right
     const geo = new THREE.BoxGeometry(0.68, 0.22, 0.58);
     const mesh = new THREE.Mesh(geo, this.materials.fabricSage);
     mesh.castShadow = true;
-    group.add(mesh);
+    obj.visualRoot.add(mesh);
 
-    group.position.set(2.65, MAIN_FLOOR_Y + 1.08, -2.65);
-    group.rotation.x = 0.25;
-    group.rotation.y = 0.15;
-
-    return group;
+    obj.setDefaultTransform(
+      new THREE.Vector3(2.65, MAIN_FLOOR_Y + 1.08, -2.65),
+      new THREE.Euler(0.25, 0.15, 0)
+    );
+    obj.cacheMaterials();
+    return obj;
   }
 
   buildFlowerPillow() {
-    const group = new THREE.Group();
-    group.name = 'FlowerPillow';
-
-    // Decorative White Daisy Flower Cushion with Yellow Center
-    group.position.set(2.95, MAIN_FLOOR_Y + 0.95, -2.05);
-    group.rotation.x = 0.30;
-    group.rotation.y = -0.25;
+    const obj = new InteractiveObject({
+      id: 'prop_flower_pillow',
+      name: 'Daisy Pillow',
+      accessibilityLabel: 'White daisy flower cushion with yellow center',
+      category: 'movable',
+      objectType: 'pillow',
+      collisionRadius: 0.25,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Center Yellow Button
     const centerGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
     const center = new THREE.Mesh(centerGeo, this.materials.daisyYellow);
     center.castShadow = true;
-    group.add(center);
+    obj.visualRoot.add(center);
 
     // 6 White Rounded Petals
     for (let i = 0; i < 6; i++) {
@@ -1075,10 +1255,15 @@ export class FurnitureBuilder {
       petal.position.set(Math.cos(angle) * 0.22, 0, Math.sin(angle) * 0.22);
       petal.rotation.y = -angle;
       petal.castShadow = true;
-      group.add(petal);
+      obj.visualRoot.add(petal);
     }
 
-    return group;
+    obj.setDefaultTransform(
+      new THREE.Vector3(2.95, MAIN_FLOOR_Y + 0.95, -2.05),
+      new THREE.Euler(0.30, -0.25, 0)
+    );
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 21. Ottoman
@@ -1126,11 +1311,22 @@ export class FurnitureBuilder {
 
   // MARK: - 22. Record Player & Vinyl
   buildRecordPlayer() {
-    const group = new THREE.Group();
-    group.name = 'RecordPlayer';
-
-    // Sits at the foot of the bed / ottoman ledge
-    group.position.set(3.40, MAIN_FLOOR_Y + 0.78, 0.60);
+    const obj = new InteractiveObject({
+      id: 'prop_record_player',
+      name: 'Record Player',
+      accessibilityLabel: 'Vintage suitcase turntable with spinning vinyl record',
+      category: 'special',
+      objectType: 'record_player',
+      collisionRadius: 0.35,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: false,
+      specialAction: targetObj => {
+        targetObj.isSpinning = !targetObj.isSpinning;
+      }
+    });
 
     // Turntable Base Case (Vintage Dusty Rose Suitcase)
     const baseW = 0.72;
@@ -1140,19 +1336,19 @@ export class FurnitureBuilder {
     const base = new THREE.Mesh(baseGeo, this.materials.recordPlayerCase);
     base.position.set(0, baseH * 0.5, 0);
     base.castShadow = true;
-    group.add(base);
+    obj.visualRoot.add(base);
 
     // Turntable Platter
     const platterGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.02, 24);
     const platter = new THREE.Mesh(platterGeo, this.materials.darkTech);
     platter.position.set(-0.06, baseH + 0.01, 0);
-    group.add(platter);
+    obj.visualRoot.add(platter);
 
     // Spindle
     const spindleGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.04, 12);
     const spindle = new THREE.Mesh(spindleGeo, this.materials.metalChrome);
     spindle.position.set(-0.06, baseH + 0.03, 0);
-    group.add(spindle);
+    obj.visualRoot.add(spindle);
 
     // Independent Vinyl Record Mesh (Can spin!)
     const vinylGeo = new THREE.CylinderGeometry(0.23, 0.23, 0.008, 32);
@@ -1160,20 +1356,20 @@ export class FurnitureBuilder {
     vinylMesh.position.set(-0.06, baseH + 0.02, 0);
     vinylMesh.name = 'Vinyl';
     vinylMesh.castShadow = true;
-    group.add(vinylMesh);
+    obj.visualRoot.add(vinylMesh);
 
     // Tonearm with Cartridge and Pivot
     const pivotGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.06, 12);
     const pivot = new THREE.Mesh(pivotGeo, this.materials.metalChrome);
     pivot.position.set(0.24, baseH + 0.04, -0.18);
-    group.add(pivot);
+    obj.visualRoot.add(pivot);
 
     const armGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.32, 8);
     const arm = new THREE.Mesh(armGeo, this.materials.metalChrome);
     arm.position.set(0.14, baseH + 0.06, -0.04);
     arm.rotation.x = Math.PI * 0.5;
     arm.rotation.z = 0.42;
-    group.add(arm);
+    obj.visualRoot.add(arm);
 
     // Open Hinged Lid (Angled back at 65 degrees)
     const lidGroup = new THREE.Group();
@@ -1185,7 +1381,7 @@ export class FurnitureBuilder {
     lid.position.set(0, (baseH * 0.8) * 0.5, baseD * 0.5);
     lid.castShadow = true;
     lidGroup.add(lid);
-    group.add(lidGroup);
+    obj.visualRoot.add(lidGroup);
 
     // Stack of Album Jackets beside the player
     const jacketGroup = new THREE.Group();
@@ -1200,19 +1396,38 @@ export class FurnitureBuilder {
       jacket.castShadow = true;
       jacketGroup.add(jacket);
     }
-    group.add(jacketGroup);
+    obj.visualRoot.add(jacketGroup);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(3.40, MAIN_FLOOR_Y + 0.78, 0.60));
+
+    obj.isSpinning = true;
+    const baseUpdate = obj.update.bind(obj);
+    obj.update = delta => {
+      baseUpdate(delta);
+      if (obj.isSpinning && vinylMesh) {
+        vinylMesh.rotation.y += delta * 2.8;
+      }
+    };
+
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 23. Skateboard
   buildSkateboard() {
-    const group = new THREE.Group();
-    group.name = 'Skateboard';
-
-    // Resting on the raised platform step in the foreground
-    group.position.set(1.15, 0.22, 2.05);
-    group.rotation.y = -0.14;
+    const obj = new InteractiveObject({
+      id: 'prop_skateboard',
+      name: 'Skateboard',
+      accessibilityLabel: 'Maple skateboard with black grip tape and orange wheels',
+      category: 'movable',
+      objectType: 'skateboard',
+      collisionRadius: 0.40,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     const deckL = 1.35;
     const deckW = 0.36;
@@ -1223,13 +1438,13 @@ export class FurnitureBuilder {
     const deck = new THREE.Mesh(deckGeo, this.materials.woodHoney);
     deck.position.set(0, 0.08, 0);
     deck.castShadow = true;
-    group.add(deck);
+    obj.visualRoot.add(deck);
 
     // Black Grip Tape on Top
     const gripGeo = new THREE.BoxGeometry(deckL - 0.04, 0.005, deckW - 0.04);
     const grip = new THREE.Mesh(gripGeo, this.materials.gripTape);
     grip.position.set(0, 0.08 + deckH * 0.5 + 0.003, 0);
-    group.add(grip);
+    obj.visualRoot.add(grip);
 
     // Front & Rear Aluminum Trucks & 4 Wheels
     const truckOffsets = [-deckL * 0.35, deckL * 0.35];
@@ -1239,7 +1454,7 @@ export class FurnitureBuilder {
       const axle = new THREE.Mesh(axleGeo, this.materials.metalChrome);
       axle.position.set(tx, 0.045, 0);
       axle.rotation.x = Math.PI * 0.5;
-      group.add(axle);
+      obj.visualRoot.add(axle);
 
       // Left & Right Wheels
       const wheelGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.045, 16);
@@ -1247,16 +1462,21 @@ export class FurnitureBuilder {
       wheelL.position.set(tx, 0.04, -deckW * 0.5 - 0.02);
       wheelL.rotation.x = Math.PI * 0.5;
       wheelL.castShadow = true;
-      group.add(wheelL);
+      obj.visualRoot.add(wheelL);
 
       const wheelR = new THREE.Mesh(wheelGeo, this.materials.darkTech);
       wheelR.position.set(tx, 0.04, deckW * 0.5 + 0.02);
       wheelR.rotation.x = Math.PI * 0.5;
       wheelR.castShadow = true;
-      group.add(wheelR);
+      obj.visualRoot.add(wheelR);
     }
 
-    return group;
+    obj.setDefaultTransform(
+      new THREE.Vector3(1.15, 0.22, 2.05),
+      new THREE.Euler(0, -0.14, 0)
+    );
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 24. Cat Bed (Bouclé Pouf)
@@ -1308,24 +1528,33 @@ export class FurnitureBuilder {
 
   // MARK: - 25. Floor Decor: Monstera Plant
   buildMonsteraPlant() {
-    const group = new THREE.Group();
-    group.name = 'MonsteraPlant';
-
-    group.position.set(4.35, MAIN_FLOOR_Y, 1.45);
+    const obj = new InteractiveObject({
+      id: 'prop_monstera',
+      name: 'Monstera Plant',
+      accessibilityLabel: 'Large potted monstera plant',
+      category: 'movable',
+      objectType: 'plant',
+      collisionRadius: 0.32,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Ceramic White Planter
     const potGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.42, 20);
     const pot = new THREE.Mesh(potGeo, this.materials.plasticWhite);
     pot.position.set(0, 0.21, 0);
     pot.castShadow = true;
-    group.add(pot);
+    obj.visualRoot.add(pot);
 
     // Soil
     const soilGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16);
     const soilMat = new THREE.MeshStandardMaterial({ color: 0x3d2716 });
     const soil = new THREE.Mesh(soilGeo, soilMat);
     soil.position.set(0, 0.40, 0);
-    group.add(soil);
+    obj.visualRoot.add(soil);
 
     // Large Fan Monstera Leaves with natural color variations
     const leafAngles = [0.2, 1.4, 2.6, 3.8, 5.0];
@@ -1345,7 +1574,7 @@ export class FurnitureBuilder {
       ]);
       const stemGeo = new THREE.TubeGeometry(stemCurve, 10, 0.015, 6, false);
       const stem = new THREE.Mesh(stemGeo, leafMats[i % leafMats.length]);
-      group.add(stem);
+      obj.visualRoot.add(stem);
 
       // Broad Leaf
       const leafGeo = new THREE.PlaneGeometry(0.38, 0.52);
@@ -1354,19 +1583,29 @@ export class FurnitureBuilder {
       leaf.rotation.x = -Math.PI * 0.35;
       leaf.rotation.y = a;
       leaf.castShadow = true;
-      group.add(leaf);
+      obj.visualRoot.add(leaf);
     }
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(4.35, MAIN_FLOOR_Y, 1.45));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 26. Floor Decor: Curb Books & Plant
   buildCurbBooksAndPlant() {
-    const group = new THREE.Group();
-    group.name = 'CurbBooks';
-
-    // On front-left raised platform curb
-    group.position.set(-3.25, MAIN_FLOOR_Y + 0.14, 2.25);
+    const obj = new InteractiveObject({
+      id: 'prop_curb_books',
+      name: 'Books & Plant',
+      accessibilityLabel: 'Hardcover books with small potted plant',
+      category: 'movable',
+      objectType: 'book',
+      collisionRadius: 0.24,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     // Stack of 2 Hardcover Books with textured Paper finish
     const b1Geo = new THREE.BoxGeometry(0.38, 0.05, 0.28);
@@ -1378,7 +1617,7 @@ export class FurnitureBuilder {
     const b1 = new THREE.Mesh(b1Geo, b1Mat);
     b1.position.set(0, 0.025, 0);
     b1.castShadow = true;
-    group.add(b1);
+    obj.visualRoot.add(b1);
 
     const b2Geo = new THREE.BoxGeometry(0.34, 0.045, 0.26);
     const b2Mat = new THREE.MeshStandardMaterial({
@@ -1390,44 +1629,56 @@ export class FurnitureBuilder {
     b2.position.set(0.01, 0.072, 0.01);
     b2.rotation.y = 0.14;
     b2.castShadow = true;
-    group.add(b2);
+    obj.visualRoot.add(b2);
 
     // Small Potted Plant on top of the books (Ceramic_Cream pot)
     const potGeo = new THREE.CylinderGeometry(0.065, 0.05, 0.10, 12);
     const pot = new THREE.Mesh(potGeo, this.materials.plasticWhite);
     pot.position.set(0, 0.145, 0);
     pot.castShadow = true;
-    group.add(pot);
+    obj.visualRoot.add(pot);
 
     const plantGeo = new THREE.SphereGeometry(0.07, 8, 8);
     const plant = new THREE.Mesh(plantGeo, this.materials.foliageOlive);
     plant.position.set(0, 0.21, 0);
     plant.castShadow = true;
-    group.add(plant);
+    obj.visualRoot.add(plant);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-3.25, MAIN_FLOOR_Y + 0.14, 2.25));
+    obj.cacheMaterials();
+    return obj;
   }
 
   // MARK: - 27. Step Plant
   buildStepPlant() {
-    const group = new THREE.Group();
-    group.name = 'StepPlant';
-
-    // On corner of lower front step
-    group.position.set(-0.85, LOWER_FLOOR_Y + 0.06, 2.92);
+    const obj = new InteractiveObject({
+      id: 'prop_step_plant',
+      name: 'Step Plant',
+      accessibilityLabel: 'Small square potted plant on step',
+      category: 'movable',
+      objectType: 'plant',
+      collisionRadius: 0.14,
+      isMovable: true,
+      isDraggable: true,
+      isSelectable: true,
+      isRotatable: true,
+      isDeletable: true
+    });
 
     const potGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
     const pot = new THREE.Mesh(potGeo, this.materials.plasticWhite);
     pot.position.set(0, 0.06, 0);
     pot.castShadow = true;
-    group.add(pot);
+    obj.visualRoot.add(pot);
 
     const plantGeo = new THREE.DodecahedronGeometry(0.07, 1);
     const plant = new THREE.Mesh(plantGeo, this.materials.foliageGoldenGreen);
     plant.position.set(0, 0.15, 0);
     plant.castShadow = true;
-    group.add(plant);
+    obj.visualRoot.add(plant);
 
-    return group;
+    obj.setDefaultTransform(new THREE.Vector3(-0.85, LOWER_FLOOR_Y + 0.06, 2.92));
+    obj.cacheMaterials();
+    return obj;
   }
 }

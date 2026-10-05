@@ -1,17 +1,20 @@
 /**
  * Nook 3D - DragManager
  * Tactile physical 3D drag-and-drop controller.
- * Moves objects across room surfaces with smooth elevation lift and settling physics.
+ * Moves objects across room surfaces with smooth elevation lift, room boundary clamping,
+ * surface placement validation, collision avoidance, and damped harmonic drop settling physics.
  */
 
 import * as THREE from 'three';
 
 export class DragManager {
-  constructor(domElement, cameraInstance, raycastManager, placementManager) {
+  constructor(domElement, cameraInstance, raycastManager, surfaceManager, objectManager, roomState = null) {
     this.domElement = domElement;
     this.cameraInstance = cameraInstance;
     this.raycastManager = raycastManager;
-    this.placementManager = placementManager;
+    this.surfaceManager = surfaceManager;
+    this.objectManager = objectManager;
+    this.roomState = roomState;
 
     this.draggedObject = null;
     this.isDragging = false;
@@ -19,6 +22,9 @@ export class DragManager {
     this.dragThreshold = 4; // pixels
     this.potentialTarget = null;
     this.initialHitPoint = new THREE.Vector3();
+    this.dragOffset = new THREE.Vector3();
+    this.initialObjectPos = new THREE.Vector3();
+    this.initialObjectRot = new THREE.Euler();
 
     this.onDragStartCallback = null;
     this.onDragEndCallback = null;
@@ -33,7 +39,7 @@ export class DragManager {
   }
 
   onPointerDown(event) {
-    // Only primary button initiates drag
+    // Only primary (left) button initiates drag
     if (event.button !== 0) return;
 
     this.pointerDownPos = { x: event.clientX, y: event.clientY };
@@ -42,6 +48,15 @@ export class DragManager {
     if (hit && hit.interactiveObject && hit.interactiveObject.isDraggable) {
       this.potentialTarget = hit.interactiveObject;
       this.initialHitPoint.copy(hit.hitPoint);
+      this.initialObjectPos.copy(hit.interactiveObject.position);
+      this.initialObjectRot.copy(hit.interactiveObject.rotation);
+
+      // Preserve pick-up point offset relative to object root
+      this.dragOffset.set(
+        hit.interactiveObject.position.x - hit.hitPoint.x,
+        0,
+        hit.interactiveObject.position.z - hit.hitPoint.z
+      );
     } else {
       this.potentialTarget = null;
     }
@@ -54,11 +69,15 @@ export class DragManager {
     const dy = event.clientY - this.pointerDownPos.y;
     const dist = Math.hypot(dx, dy);
 
+    // Initiate drag once moved beyond threshold
     if (!this.isDragging && dist > this.dragThreshold) {
-      // Start drag
       this.isDragging = true;
       this.draggedObject = this.potentialTarget;
-      this.cameraInstance.controls.enabled = false;
+
+      // Lock camera rotation to prevent accidental diorama rotation
+      if (this.cameraInstance && this.cameraInstance.controls) {
+        this.cameraInstance.controls.enabled = false;
+      }
       this.domElement.style.cursor = 'grabbing';
 
       this.draggedObject.onDragStart(this.initialHitPoint);
@@ -69,26 +88,77 @@ export class DragManager {
     }
 
     if (this.isDragging && this.draggedObject) {
-      // Cast ray to horizontal plane at object's approximate current height
-      const targetPos = this.raycastManager.getFloorIntersection(this.draggedObject.position.y);
-      if (targetPos) {
-        const snapped = this.placementManager.clampAndSnapPosition(targetPos);
-        this.draggedObject.onDragUpdate(snapped.position);
+      // Cast ray against elevated horizontal plane
+      const planeY = this.draggedObject.position.y;
+      const hitPos = this.raycastManager.getFloorIntersection(planeY);
+
+      if (hitPos) {
+        // Apply pick-up offset
+        const candidatePos = hitPos.clone().add(this.dragOffset);
+
+        // Constrain strictly to room boundaries (prevent moving outside or through walls)
+        const radius = this.draggedObject.collisionRadius || 0.15;
+        const clampedPos = this.surfaceManager.clampToRoom(candidatePos, radius);
+
+        // Maintain current elevation height during drag
+        clampedPos.y = planeY;
+        this.draggedObject.onDragUpdate(clampedPos);
       }
     }
   }
 
   onPointerUp(event) {
     if (this.isDragging && this.draggedObject) {
-      // Compute final resting surface height
-      const finalResult = this.placementManager.clampAndSnapPosition(this.draggedObject.position);
-      this.draggedObject.onDragEnd(finalResult.position);
+      const currentPos = this.draggedObject.position;
+      const objectType = this.draggedObject.objectType;
 
-      this.cameraInstance.controls.enabled = true;
+      // 1. Surface Placement Check (boundary & allowed object type)
+      const surfaceResult = this.surfaceManager.findSurface(
+        currentPos.x,
+        currentPos.y,
+        currentPos.z,
+        objectType
+      );
+
+      // 2. Collision Check (prevent unnatural overlapping with other objects on the same surface)
+      const allObjects = this.objectManager ? this.objectManager.getAllObjects() : [];
+      const collisionResult = this.surfaceManager.checkCollision(
+        this.draggedObject,
+        surfaceResult.position,
+        allObjects,
+        Math.max(0.20, (this.draggedObject.collisionRadius || 0.15) * 1.5)
+      );
+
+      const isValid = surfaceResult.isValid && !collisionResult.hasCollision;
+
+      // 3. Drop settle or Invalid rebound
+      if (isValid) {
+        this.draggedObject.onDragEnd(surfaceResult.position, true);
+
+        // Record undo action if position moved
+        if (this.roomState && this.initialObjectPos.distanceTo(surfaceResult.position) > 0.04) {
+          this.roomState.pushUndo({
+            type: 'move',
+            objectId: this.draggedObject.itemId,
+            previousPosition: this.initialObjectPos.clone(),
+            previousRotation: this.initialObjectRot.clone(),
+            newPosition: surfaceResult.position.clone(),
+            newRotation: this.draggedObject.rotation.clone()
+          });
+        }
+      } else {
+        // Invalid surface or overlap -> Rebound back to previous position smoothly (object never disappears)
+        this.draggedObject.onDragEnd(null, false);
+      }
+
+      // Re-enable camera controls
+      if (this.cameraInstance && this.cameraInstance.controls) {
+        this.cameraInstance.controls.enabled = true;
+      }
       this.domElement.style.cursor = 'default';
 
       if (this.onDragEndCallback) {
-        this.onDragEndCallback(this.draggedObject, finalResult);
+        this.onDragEndCallback(this.draggedObject, surfaceResult, isValid);
       }
 
       this.isDragging = false;
@@ -98,3 +168,4 @@ export class DragManager {
     this.potentialTarget = null;
   }
 }
+
