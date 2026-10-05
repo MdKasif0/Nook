@@ -36,6 +36,8 @@ export class CookieController extends InteractiveObject {
   }
 
   buildCatGeometry() {
+    this.visualRoot.scale.set(1.55, 1.55, 1.55);
+
     // 1. Materials
     this.bodyMat = new THREE.MeshStandardMaterial({
       color: PALETTE.cookieWhite,

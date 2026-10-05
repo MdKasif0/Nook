@@ -28,7 +28,7 @@ export class PlacementManager {
       id: 'desk',
       name: 'Desk Top',
       minX: -4.9,
-      maxX: -1.0,
+      maxX: -0.8,
       minZ: -3.4,
       maxZ: -1.6,
       height: 1.70
@@ -38,21 +38,21 @@ export class PlacementManager {
     this.surfaces.push({
       id: 'bed',
       name: 'Bed Mattress',
-      minX: 0.35,
-      maxX: 3.65,
+      minX: 0.22,
+      maxX: 3.48,
       minZ: -3.3,
-      maxZ: 0.45,
-      height: 1.15
+      maxZ: 0.42,
+      height: 1.42
     });
 
     // 3. Foot Bench / Ottoman Bounds
     this.surfaces.push({
       id: 'bench',
       name: 'Ottoman Cushion',
-      minX: 2.3,
-      maxX: 3.8,
-      minZ: 0.55,
-      maxZ: 1.95,
+      minX: 2.2,
+      maxX: 3.7,
+      minZ: 0.45,
+      maxZ: 1.85,
       height: 0.78
     });
 

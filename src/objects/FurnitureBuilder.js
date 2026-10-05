@@ -282,13 +282,13 @@ export class FurnitureBuilder {
     const group = new THREE.Group();
     group.name = 'Desk';
 
-    // Desktop Plank
-    const topW = 3.9;
+    // Wide Wooden Desktop Plank (spans to left wall and connects naturally to right side)
+    const topW = 4.15;
     const topD = 1.75;
     const topH = 0.10;
     const topGeo = new THREE.BoxGeometry(topW, topH, topD);
     const topMesh = new THREE.Mesh(topGeo, this.materials.woodHoney);
-    topMesh.position.set(-2.95, 1.65, -2.52);
+    topMesh.position.set(-2.85, 1.65, -2.52);
     topMesh.castShadow = true;
     topMesh.receiveShadow = true;
     group.add(topMesh);
@@ -296,31 +296,69 @@ export class FurnitureBuilder {
     // Desktop Beveled Edge Lip
     const lipGeo = new THREE.BoxGeometry(topW + 0.04, 0.04, topD + 0.04);
     const lipMesh = new THREE.Mesh(lipGeo, this.materials.woodTrim);
-    lipMesh.position.set(-2.95, 1.68, -2.52);
+    lipMesh.position.set(-2.85, 1.68, -2.52);
     lipMesh.castShadow = true;
     group.add(lipMesh);
 
-    // Right Side Cabinet / Leg Unit (adjacent to bed)
-    const rightLegGeo = new THREE.BoxGeometry(0.75, 1.32, 1.55);
+    // Right Side Cabinet / Leg Unit (under desk)
+    const rightLegGeo = new THREE.BoxGeometry(0.85, 1.32, 1.55);
     const rightLeg = new THREE.Mesh(rightLegGeo, this.materials.woodHoney);
-    rightLeg.position.set(-1.38, MAIN_FLOOR_Y + 1.32 * 0.5, -2.52);
+    rightLeg.position.set(-1.15, MAIN_FLOOR_Y + 1.32 * 0.5, -2.52);
     rightLeg.castShadow = true;
     rightLeg.receiveShadow = true;
     group.add(rightLeg);
 
-    // Right Cabinet Drawer Line Inset
-    const rightDrawerFrontGeo = new THREE.BoxGeometry(0.77, 0.38, 0.03);
+    // Right Cabinet Drawer Line Inset & Pull Handle
+    const rightDrawerFrontGeo = new THREE.BoxGeometry(0.79, 0.38, 0.03);
     const rightDrawerFront = new THREE.Mesh(rightDrawerFrontGeo, this.materials.woodTrim);
-    rightDrawerFront.position.set(-1.38, MAIN_FLOOR_Y + 0.66, -1.74);
+    rightDrawerFront.position.set(-1.15, MAIN_FLOOR_Y + 0.66, -1.74);
     rightDrawerFront.castShadow = true;
     group.add(rightDrawerFront);
 
+    const rightHandleGeo = new THREE.BoxGeometry(0.24, 0.035, 0.04);
+    const rightHandle = new THREE.Mesh(rightHandleGeo, this.materials.woodHoney);
+    rightHandle.position.set(-1.15, MAIN_FLOOR_Y + 0.66, -1.72);
+    rightHandle.castShadow = true;
+    group.add(rightHandle);
+
     // Recessed Modesty Back Panel
-    const modestyGeo = new THREE.BoxGeometry(2.0, 0.85, 0.04);
+    const modestyGeo = new THREE.BoxGeometry(2.3, 0.85, 0.04);
     const modesty = new THREE.Mesh(modestyGeo, this.materials.woodHoney);
-    modesty.position.set(-2.75, 1.15, -3.15);
+    modesty.position.set(-2.60, 1.15, -3.15);
     modesty.castShadow = true;
     group.add(modesty);
+
+    // Bedside Nightstand Unit (Nestled between desk and bed as in reference image)
+    const nsW = 0.72;
+    const nsH = 1.05;
+    const nsD = 1.25;
+    const nsX = -0.32;
+    const nsZ = -2.55;
+
+    const nsBoxGeo = new THREE.BoxGeometry(nsW, nsH, nsD);
+    const nsBox = new THREE.Mesh(nsBoxGeo, this.materials.woodHoney);
+    nsBox.position.set(nsX, MAIN_FLOOR_Y + nsH * 0.5, nsZ);
+    nsBox.castShadow = true;
+    nsBox.receiveShadow = true;
+    group.add(nsBox);
+
+    const nsTopGeo = new THREE.BoxGeometry(nsW + 0.04, 0.04, nsD + 0.04);
+    const nsTop = new THREE.Mesh(nsTopGeo, this.materials.woodTrim);
+    nsTop.position.set(nsX, MAIN_FLOOR_Y + nsH + 0.02, nsZ);
+    nsTop.castShadow = true;
+    group.add(nsTop);
+
+    const nsDrawerGeo = new THREE.BoxGeometry(nsW - 0.06, 0.32, 0.03);
+    const nsDrawer = new THREE.Mesh(nsDrawerGeo, this.materials.woodTrim);
+    nsDrawer.position.set(nsX, MAIN_FLOOR_Y + nsH - 0.22, nsZ + nsD * 0.5 + 0.015);
+    nsDrawer.castShadow = true;
+    group.add(nsDrawer);
+
+    const knobGeo = new THREE.CylinderGeometry(0.025, 0.02, 0.03, 12);
+    const knob = new THREE.Mesh(knobGeo, this.materials.woodHoney);
+    knob.position.set(nsX, MAIN_FLOOR_Y + nsH - 0.22, nsZ + nsD * 0.5 + 0.035);
+    knob.rotation.x = Math.PI * 0.5;
+    group.add(knob);
 
     return group;
   }
@@ -660,7 +698,8 @@ export class FurnitureBuilder {
     const group = new THREE.Group();
     group.name = 'SmallPlant';
 
-    group.position.set(-1.22, 1.70, -2.65);
+    // Sits atop the bedside nightstand between desk and bed (matching reference image)
+    group.position.set(-0.32, MAIN_FLOOR_Y + 1.05 + 0.04, -2.55);
 
     // Ceramic Pot
     const potGeo = new THREE.CylinderGeometry(0.08, 0.065, 0.12, 16);
@@ -871,7 +910,7 @@ export class FurnitureBuilder {
 
     const bedW = 3.25;
     const bedD = 3.75;
-    const bedX = 2.0;
+    const bedX = 1.85;
     const bedZ = -1.45;
 
     // Headboard (against built-in shelves)
@@ -934,7 +973,7 @@ export class FurnitureBuilder {
 
     const matGeo = new THREE.BoxGeometry(matW, matH, matD);
     const matMesh = new THREE.Mesh(matGeo, this.materials.fabricCream);
-    matMesh.position.set(2.0, MAIN_FLOOR_Y + 0.44 + matH * 0.5, -1.45);
+    matMesh.position.set(1.85, MAIN_FLOOR_Y + 0.44 + matH * 0.5, -1.45);
     matMesh.castShadow = true;
     matMesh.receiveShadow = true;
     group.add(matMesh);
@@ -954,7 +993,7 @@ export class FurnitureBuilder {
 
     const bGeo = new THREE.BoxGeometry(bW, bH, bD);
     const bMesh = new THREE.Mesh(bGeo, this.materials.fabricSage);
-    bMesh.position.set(2.0, MAIN_FLOOR_Y + 0.88 + bH * 0.5, -0.42);
+    bMesh.position.set(1.85, MAIN_FLOOR_Y + 0.88 + bH * 0.5, -0.42);
     bMesh.castShadow = true;
     bMesh.receiveShadow = true;
     group.add(bMesh);
@@ -962,14 +1001,14 @@ export class FurnitureBuilder {
     // Turned-down Top Fold
     const foldGeo = new THREE.BoxGeometry(bW + 0.02, 0.09, 0.52);
     const fold = new THREE.Mesh(foldGeo, this.materials.fabricSage);
-    fold.position.set(2.0, MAIN_FLOOR_Y + 0.94 + 0.045, -1.25);
+    fold.position.set(1.85, MAIN_FLOOR_Y + 0.94 + 0.045, -1.25);
     fold.castShadow = true;
     group.add(fold);
 
     // Delicate bottom hem / fringe bar
     const fringeGeo = new THREE.BoxGeometry(bW, 0.06, 0.08);
     const fringe = new THREE.Mesh(fringeGeo, this.materials.fabricCream);
-    fringe.position.set(2.0, MAIN_FLOOR_Y + 0.88, 0.62);
+    fringe.position.set(1.85, MAIN_FLOOR_Y + 0.88, 0.62);
     group.add(fringe);
 
     return group;
@@ -986,7 +1025,7 @@ export class FurnitureBuilder {
     mesh.castShadow = true;
     group.add(mesh);
 
-    group.position.set(1.15, MAIN_FLOOR_Y + 1.02, -2.75);
+    group.position.set(1.05, MAIN_FLOOR_Y + 1.02, -2.75);
     group.rotation.x = 0.28;
     group.rotation.y = 0.08;
 
@@ -1007,7 +1046,7 @@ export class FurnitureBuilder {
     mesh.castShadow = true;
     group.add(mesh);
 
-    group.position.set(1.95, MAIN_FLOOR_Y + 1.05, -2.62);
+    group.position.set(1.85, MAIN_FLOOR_Y + 1.05, -2.62);
     group.rotation.x = 0.32;
     group.rotation.y = -0.12;
 
@@ -1024,7 +1063,7 @@ export class FurnitureBuilder {
     mesh.castShadow = true;
     group.add(mesh);
 
-    group.position.set(2.78, MAIN_FLOOR_Y + 1.08, -2.65);
+    group.position.set(2.65, MAIN_FLOOR_Y + 1.08, -2.65);
     group.rotation.x = 0.25;
     group.rotation.y = 0.15;
 
@@ -1036,7 +1075,7 @@ export class FurnitureBuilder {
     group.name = 'FlowerPillow';
 
     // Decorative White Daisy Flower Cushion with Yellow Center
-    group.position.set(3.05, MAIN_FLOOR_Y + 0.95, -2.05);
+    group.position.set(2.95, MAIN_FLOOR_Y + 0.95, -2.05);
     group.rotation.x = 0.30;
     group.rotation.y = -0.25;
 
@@ -1068,8 +1107,8 @@ export class FurnitureBuilder {
 
     const ottW = 1.45;
     const ottD = 1.35;
-    const ottX = 3.05;
-    const ottZ = 1.25;
+    const ottX = 2.95;
+    const ottZ = 1.15;
 
     // 4 Honey Oak Legs
     const legGeo = new THREE.BoxGeometry(0.10, 0.38, 0.10);
@@ -1110,7 +1149,7 @@ export class FurnitureBuilder {
     group.name = 'RecordPlayer';
 
     // Sits at the foot of the bed / ottoman ledge
-    group.position.set(3.52, MAIN_FLOOR_Y + 0.78, 0.52);
+    group.position.set(3.40, MAIN_FLOOR_Y + 0.78, 0.60);
 
     // Turntable Base Case (Vintage Dusty Rose Suitcase)
     const baseW = 0.72;
@@ -1191,7 +1230,7 @@ export class FurnitureBuilder {
     group.name = 'Skateboard';
 
     // Resting on the raised platform step in the foreground
-    group.position.set(1.15, 0.26, 2.12);
+    group.position.set(1.15, 0.22, 2.05);
     group.rotation.y = -0.14;
 
     const deckL = 1.35;
