@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Nook Changelog &amp; Updates</title>
+    <link>https://nook.app/appcast.xml</link>
+    <description>Most recent updates and release notes for Nook on macOS.</description>
+    <language>en</language>
+    <item>
+      <title>Nook 1.0.0</title>
+      <pubDate>Mon, 05 Oct 2026 11:53:33 +0000</pubDate>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <h2>What's New in Nook 1.0.0</h2>
+        <ul>
+          <li><strong>Interactive 3D Miniature Environment:</strong> Direct physical object interaction with RealityKit entities across desk, bed, shelves, audio lounge, and floor.</li>
+          <li><strong>Physical Drag &amp; Drop:</strong> Smooth pick-up elevation, surface height snapping, physical settling, and boundary wall constraints.</li>
+          <li><strong>Movable Prop Controls:</strong> 45° incremental rotation, constrained scaling (0.85x–1.25x), and native Undo/Redo integration.</li>
+          <li><strong>Companion Cat Reactivity:</strong> Cookie looks curiously at moving objects, purrs when petted, and keeps you company.</li>
+          <li><strong>Local-First Guarantee:</strong> SwiftData offline storage with persistent room coordinates and Zero-Cloud privacy.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://nook.app/downloads/Nook-1.0.0-Universal.dmg"
+        sparkle:version="1"
+        sparkle:shortVersionString="1.0.0"
+        sparkle:edSignature="2Rtva8ZLPtv4CjMuixzRuYx7z1Xu4TyO/C0P2dMJQN38ObuJ+j5rjgJ5+g5SJpPzX535di7X9/xlpYAjYHXdCw"
+        length="9716080"
+        type="application/octet-stream" />
+    </item>
+  </channel>
+</rss>
