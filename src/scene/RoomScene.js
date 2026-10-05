@@ -592,8 +592,10 @@ export class RoomScene {
     const backZ = -halfD;
 
     // 1. 3D Window Curtains with Rod, Rings, and Tiebacks
-    const curtains = this.shelfDecorBuilder.build3DCurtainsAndRod(WINDOW_CONFIG, halfW);
-    this.decorations.add(curtains);
+    this.curtainsGroup = this.shelfDecorBuilder.build3DCurtainsAndRod(WINDOW_CONFIG, halfW);
+    this.leftCurtain = this.curtainsGroup.userData.leftCurtain;
+    this.rightCurtain = this.curtainsGroup.userData.rightCurtain;
+    this.decorations.add(this.curtainsGroup);
 
     // 2. 3D Soft Outdoor Garden Foliage outside window
     const garden = this.shelfDecorBuilder.buildOutdoorGarden(WINDOW_CONFIG, halfW);
@@ -750,5 +752,19 @@ export class RoomScene {
   update(delta) {
     this.lighting.update(delta);
     this.environment.update(delta);
+
+    // Extremely subtle, imperceptible idle breathing of window curtains
+    // Does NOT constantly wave; breathes very slowly (0.45 rad/s, ~14s cycle) with micro-amplitude
+    if (this.leftCurtain && this.rightCurtain) {
+      this.curtainIdleTime = (this.curtainIdleTime || 0) + delta;
+      const subtleDrift = Math.sin(this.curtainIdleTime * 0.45) * 0.004;
+      const microSway = Math.cos(this.curtainIdleTime * 0.30) * 0.0025;
+
+      this.leftCurtain.rotation.z = subtleDrift;
+      this.leftCurtain.rotation.x = microSway;
+
+      this.rightCurtain.rotation.z = -subtleDrift * 0.8;
+      this.rightCurtain.rotation.x = microSway * 0.9;
+    }
   }
 }
