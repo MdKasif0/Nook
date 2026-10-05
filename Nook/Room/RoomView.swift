@@ -267,6 +267,7 @@ struct RoomView: View {
                     withAnimation(NookDesign.Animation.springy) {
                         sceneController.selectedItemID = nil
                         sceneController.resetCameraFraming()
+                        isRoomFocused = true
                     }
                     return true
                 }
@@ -277,6 +278,9 @@ struct RoomView: View {
                     return true
                 }
                 return false
+            }
+            GlobalShortcutManager.shared.onResetView = {
+                sceneController.resetCameraFraming()
             }
         }
         .onChange(of: appState.focusedItemID) { _, newID in
@@ -487,6 +491,50 @@ struct RoomView: View {
             .buttonStyle(.plain)
             .help(sceneController.isWallSconceOn ? "Turn off wall sconce" : "Turn on wall sconce")
             
+            // Reset View (⌘0)
+            Button {
+                sceneController.resetCameraFraming()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "camera.metering.center.weighted")
+                        .font(.system(size: 11))
+                    Text("Reset View")
+                        .font(NookDesign.Typography.caption)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .foregroundStyle(NookDesign.Colors.textSecondary)
+                .background(NookDesign.Colors.surface.opacity(0.88))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .help("Reset room camera to default reference composition (⌘0)")
+            
+            // Local Search (⌘K)
+            Button {
+                appState.openSearch()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 11))
+                    Text("Search")
+                        .font(NookDesign.Typography.caption)
+                    Text("⌘K")
+                        .font(NookDesign.Typography.mono)
+                        .font(.system(size: 9))
+                        .foregroundStyle(NookDesign.Colors.textTertiary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .foregroundStyle(NookDesign.Colors.textSecondary)
+                .background(NookDesign.Colors.surface.opacity(0.88))
+                .clipShape(Capsule())
+                .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .help("Search thoughts, objects, and notes (⌘K)")
+            
             Spacer()
             
             // Minimalist Objects Counter & Quick Add
@@ -625,7 +673,9 @@ struct RoomView: View {
                 Button {
                     withAnimation(NookDesign.Animation.springy) {
                         sceneController.selectedItemID = nil
+                        sceneController.resetCameraFraming()
                         isEditingSelectedItem = false
+                        isRoomFocused = true
                     }
                 } label: {
                     Image(systemName: "xmark")
@@ -705,12 +755,19 @@ struct RoomView: View {
                 Divider()
                     .foregroundStyle(NookDesign.Colors.surfaceBorder)
                 
-                // Footer: Timestamp & Actions
+                // Footer: Created / Updated timestamps & Native Action Bar
                 VStack(alignment: .leading, spacing: NookDesign.Spacing.sm) {
-                    HStack {
-                        Text(item.createdAt.formatted(date: .abbreviated, time: .shortened))
-                            .font(NookDesign.Typography.mono)
-                            .foregroundStyle(NookDesign.Colors.textTertiary)
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Created: \(item.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(NookDesign.Typography.mono)
+                                .font(.system(size: 9))
+                                .foregroundStyle(NookDesign.Colors.textTertiary)
+                            Text("Updated: \(item.updatedAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(NookDesign.Typography.mono)
+                                .font(.system(size: 9))
+                                .foregroundStyle(NookDesign.Colors.textTertiary)
+                        }
                         
                         Spacer()
                         
@@ -719,7 +776,7 @@ struct RoomView: View {
                             .foregroundStyle(NookDesign.Colors.textTertiary)
                     }
                     
-                    // Native Action Bar: Open, Edit, Move, Delete, Archive
+                    // Native Action Bar: Open, Edit, Move, Change Object, Archive, Delete
                     HStack(spacing: NookDesign.Spacing.xs) {
                         // Open Action
                         Button {
@@ -784,12 +841,48 @@ struct RoomView: View {
                         .menuStyle(.borderlessButton)
                         .help("Move object to a placement zone")
                         
+                        // Change Object Representation Menu
+                        Menu {
+                            ForEach(NookObjectType.allCases) { type in
+                                Button {
+                                    withAnimation(NookDesign.Animation.springy) {
+                                        NookActionService.shared.updateItem(
+                                            item,
+                                            title: item.title,
+                                            content: item.content,
+                                            objectType: type,
+                                            in: modelContext,
+                                            undoManager: undoManager,
+                                            appState: appState
+                                        )
+                                    }
+                                } label: {
+                                    Label(type.displayName, systemImage: type.iconName)
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: NookDesign.Spacing.xxs) {
+                                Image(systemName: "cube.transparent")
+                                    .font(.system(size: 10))
+                                Text("Change")
+                                    .font(NookDesign.Typography.caption)
+                            }
+                            .foregroundStyle(NookDesign.Colors.textPrimary)
+                            .padding(.horizontal, NookDesign.Spacing.sm)
+                            .padding(.vertical, NookDesign.Spacing.xxs + 1)
+                            .background(NookDesign.Colors.backgroundSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous))
+                        }
+                        .menuStyle(.borderlessButton)
+                        .help("Change 3D object representation (Pebble, Note, Sticky, etc.)")
+                        
                         Spacer()
                         
                         // Archive Action
                         Button {
                             withAnimation(NookDesign.Animation.standard) {
                                 sceneController.selectedItemID = nil
+                                sceneController.resetCameraFraming()
                                 NookActionService.shared.archiveItem(
                                     item,
                                     in: modelContext,
@@ -810,6 +903,7 @@ struct RoomView: View {
                         Button {
                             withAnimation(NookDesign.Animation.standard) {
                                 sceneController.selectedItemID = nil
+                                sceneController.resetCameraFraming()
                                 NookActionService.shared.deleteItem(
                                     item,
                                     in: modelContext,
@@ -1039,7 +1133,11 @@ struct RoomView: View {
     }
     
     private func placeNewThought(title: String, content: String, type: NookItemType, objectType: NookObjectType) {
-        let position = PlacementZone.deskCenter.naturalPosition(existingCount: items.count)
+        let targetZone = PlacementZone.defaultZone(for: type, objectType: objectType)
+        let existingWorldPositions = items.map { ThoughtEntityBuilder.worldPosition(for: $0.roomPosition) }
+        let naturalWorldPos = targetZone.allocateNaturalPosition(existingWorldPositions: existingWorldPositions)
+        let position = ThoughtEntityBuilder.roomPosition(from: naturalWorldPos)
+        
         let newItem = NookItem(
             title: title,
             content: content,

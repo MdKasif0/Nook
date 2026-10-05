@@ -74,6 +74,19 @@ struct NookApp: App {
                 }
                 .keyboardShortcut("k", modifiers: .command)
             }
+            
+            // Room & Camera Exploration (⌘0, ⌘S)
+            CommandMenu("Room") {
+                Button("Reset Room View") {
+                    GlobalShortcutManager.shared.onResetView?()
+                }
+                .keyboardShortcut("0", modifiers: .command)
+                
+                Button("Toggle Sidebar") {
+                    GlobalShortcutManager.shared.onToggleSidebar?()
+                }
+                .keyboardShortcut("s", modifiers: .command)
+            }
         }
         
         // MARK: - 2. Quick Capture Floating Paper Window

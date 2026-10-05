@@ -49,7 +49,12 @@ final class NookDataReliabilityTests {
             ("Sparkle 2 AppCast Feed XML & RFC 822 Parsing", testSparkleAppCastParsing),
             ("Sparkle Ed25519 Cryptographic Verification", testSparkleEd25519SignatureVerification),
             ("Sparkle Semantic Version Comparison", testSparkleSemanticVersionComparison),
-            ("Sparkle Minimum System Version Compatibility", testSparkleSystemCompatibility)
+            ("Sparkle Minimum System Version Compatibility", testSparkleSystemCompatibility),
+            ("Complete Interaction Flow (Pebble Lifecycle)", testCompleteInteractionFlowPebbleLifecycle),
+            ("All Object Representations 3D Geometry", testAllObjectRepresentations3DGeneration),
+            ("Crowded Surface Intelligent Fallback Placement", testCrowdedSurfaceFallbackPlacement),
+            ("Camera Exploration Clamping & Reset View", testCameraExplorationClampingAndReset),
+            ("Cookie Deterministic State Transitions", testCookieDeterministicStateTransitions)
         ]
         
         for (name, testBlock) in tests {
@@ -1047,6 +1052,148 @@ final class NookDataReliabilityTests {
         )
         guard !NookUpdateManager.shared.isSystemCompatible(item: futureItem) else {
             throw TestError("macOS 99.0 requirement should NOT be compatible.")
+        }
+    }
+    
+    // MARK: - Room & Interaction Model Tests
+    
+    private static func testCompleteInteractionFlowPebbleLifecycle() throws {
+        let container = try createInMemoryContainer()
+        let context = ModelContext(container)
+        let undoManager = UndoManager()
+        let appState = AppState()
+        
+        // 1. Create thought with Pebble representation
+        let promptText = "I want to build a local AI coding assistant."
+        let targetZone = PlacementZone.defaultZone(for: .thought, objectType: .pebble)
+        let initialPos = targetZone.allocateNaturalPosition(existingWorldPositions: [])
+        let roomPos = ThoughtEntityBuilder.roomPosition(from: initialPos)
+        
+        let item = NookItem(
+            title: promptText,
+            content: "Tiny physical room where my digital thoughts live.",
+            itemType: .thought,
+            objectType: .pebble,
+            position: roomPos
+        )
+        context.insert(item)
+        try context.save()
+        
+        // 2. Build RealityKit 3D Entity & verify physical components
+        let entity = ThoughtEntityBuilder.buildThoughtEntity(for: item)
+        guard let rep = entity.components[ThoughtRepresentationComponent.self], rep.objectType == .pebble else {
+            throw TestError("Pebble entity missing ThoughtRepresentationComponent")
+        }
+        guard entity.components[CollisionComponent.self] != nil else {
+            throw TestError("Pebble entity missing CollisionComponent")
+        }
+        
+        // 3. Move Pebble to new position
+        let movedWorldPos = initialPos + SIMD3<Float>(0.05, 0, 0.04)
+        let movedRoomPos = ThoughtEntityBuilder.roomPosition(from: movedWorldPos)
+        NookActionService.shared.moveItem(item, to: movedRoomPos, in: context, undoManager: undoManager, appState: appState)
+        try context.save()
+        
+        guard abs(item.roomPosition.x - movedRoomPos.x) < 0.001 && abs(item.roomPosition.z - movedRoomPos.z) < 0.001 else {
+            throw TestError("Pebble position did not update on move")
+        }
+        
+        // 4. Test Undo (⌘Z)
+        undoManager.undo()
+        try context.save()
+        guard abs(item.roomPosition.x - roomPos.x) < 0.001 else {
+            throw TestError("Undo did not restore Pebble initial position")
+        }
+        
+        // 5. Test Search
+        let searchIndex = LocalSearchIndex()
+        searchIndex.rebuild(with: [item])
+        let results = searchIndex.search(query: "coding assistant")
+        guard results.count == 1, results.first?.item.id == item.id else {
+            throw TestError("LocalSearchIndex failed to match 'coding assistant'")
+        }
+        
+        // 6. Test Delete
+        NookActionService.shared.deleteItem(item, in: context, undoManager: undoManager, appState: appState)
+        try context.save()
+        let fetchDescriptor = FetchDescriptor<NookItem>()
+        let remaining = try context.fetch(fetchDescriptor)
+        guard remaining.isEmpty else {
+            throw TestError("Pebble was not deleted from container")
+        }
+    }
+    
+    private static func testAllObjectRepresentations3DGeneration() throws {
+        let types: [NookObjectType] = [.pebble, .paperNote, .stickyNote, .card, .polaroid, .bookmark]
+        for type in types {
+            let item = NookItem(title: "Test \(type.displayName)", content: "Content", itemType: .thought, objectType: type)
+            let entity = ThoughtEntityBuilder.buildThoughtEntity(for: item)
+            guard let rep = entity.components[ThoughtRepresentationComponent.self], rep.objectType == type else {
+                throw TestError("Entity for \(type) missing correct ThoughtRepresentationComponent")
+            }
+            guard entity.components[CollisionComponent.self] != nil else {
+                throw TestError("Entity for \(type) missing CollisionComponent")
+            }
+        }
+    }
+    
+    private static func testCrowdedSurfaceFallbackPlacement() throws {
+        let zone = PlacementZone.deskCenter
+        var existing: [SIMD3<Float>] = []
+        
+        // Fill deskCenter slots with simulated items
+        for _ in 0..<16 {
+            let pos = zone.allocateNaturalPosition(existingWorldPositions: existing)
+            existing.append(pos)
+        }
+        
+        // Next allocation should detect crowding and place onto a valid nearby fallback zone
+        let fallbackPos = zone.allocateNaturalPosition(existingWorldPositions: existing)
+        
+        // Fallback position must not collide with the center of deskCenter
+        let center = zone.surfaceDescriptor.center
+        let dist = simd_distance(fallbackPos, center)
+        guard dist > 0.08 else {
+            throw TestError("Crowded surface did not divert new item to a fallback zone")
+        }
+    }
+    
+    private static func testCameraExplorationClampingAndReset() throws {
+        let rig = RoomCameraRig()
+        
+        // Orbit within bounds
+        rig.orbit(deltaYaw: 1.0, deltaPitch: 1.0)
+        
+        // Zoom
+        rig.zoom(by: 1.5)
+        
+        // Reset to default framing without animation for instant test
+        rig.resetToDefaultFraming(animated: false)
+        
+        let camPos = rig.cameraEntity.position
+        let diff = simd_distance(camPos, RoomCameraRig.defaultCameraPosition)
+        guard diff < 0.001 else {
+            throw TestError("resetToDefaultFraming did not restore default camera position")
+        }
+    }
+    
+    private static func testCookieDeterministicStateTransitions() throws {
+        let cookie = CookieRealityEntity()
+        cookie.wake()
+        cookie.curiousLook(at: SIMD3<Float>(-0.70, 0.735, -0.56))
+        cookie.shiftTowardDesk()
+        cookie.returnToBedCorner()
+        cookie.sleep()
+        cookie.happy()
+        
+        let intelligence = LocalDeterministicCookieIntelligence()
+        let mood = intelligence.evaluateActivity(recentEvents: [
+            .itemCreated(title: "Test", itemType: .thought, objectType: .pebble, position: RoomPosition(x: 0, y: 0, z: 0)),
+            .itemCreated(title: "Test 2", itemType: .thought, objectType: .pebble, position: RoomPosition(x: 0, y: 0, z: 0)),
+            .itemCreated(title: "Test 3", itemType: .thought, objectType: .pebble, position: RoomPosition(x: 0, y: 0, z: 0))
+        ], currentMood: .idle)
+        guard mood == .curious else {
+            throw TestError("LocalDeterministicCookieIntelligence did not evaluate to curious on 3 creations")
         }
     }
     

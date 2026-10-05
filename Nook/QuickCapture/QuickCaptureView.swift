@@ -190,8 +190,11 @@ struct QuickCaptureView: View {
             finalContent = trimmedContent
         }
         
-        // Find natural placement zone on desk
-        let position = PlacementZone.deskCenter.naturalPosition(existingCount: existingItems.count)
+        // Find intelligent placement zone and collision-free slot
+        let targetZone = PlacementZone.defaultZone(for: .thought, objectType: selectedObjectType)
+        let existingWorldPositions = existingItems.map { ThoughtEntityBuilder.worldPosition(for: $0.roomPosition) }
+        let naturalWorldPos = targetZone.allocateNaturalPosition(existingWorldPositions: existingWorldPositions)
+        let position = ThoughtEntityBuilder.roomPosition(from: naturalWorldPos)
         
         let item = NookItem(
             title: finalTitle,

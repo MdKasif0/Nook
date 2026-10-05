@@ -48,6 +48,7 @@ final class RoomMaterials {
     private(set) var windowGlass: PhysicallyBasedMaterial
     private(set) var daisyYellow: PhysicallyBasedMaterial
     private(set) var skateboardGrip: PhysicallyBasedMaterial
+    private(set) var paperWhite: PhysicallyBasedMaterial
     
     // Screen and decorative texture materials
     private(set) var monitorScreenMaterial: PhysicallyBasedMaterial
@@ -185,6 +186,13 @@ final class RoomMaterials {
         grip.roughness = .init(floatLiteral: 0.95)
         grip.metallic = .init(floatLiteral: 0.0)
         self.skateboardGrip = grip
+        
+        // 15b. Crisp Warm Paper White
+        var paper = PhysicallyBasedMaterial()
+        paper.baseColor = .init(tint: NSColor(red: 0.98, green: 0.97, blue: 0.95, alpha: 1.0))
+        paper.roughness = .init(floatLiteral: 0.85)
+        paper.specular = .init(floatLiteral: 0.12)
+        self.paperWhite = paper
         
         // 16. Procedural Textures & Materials
         self.monitorScreenMaterial = Self.makeMonitorScreenMaterial()

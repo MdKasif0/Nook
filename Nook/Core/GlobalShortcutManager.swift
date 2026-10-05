@@ -18,6 +18,8 @@ final class GlobalShortcutManager {
     weak var appState: AppState?
     var onOpenQuickCapture: (() -> Void)?
     var onEscapePressed: (() -> Bool)? // Returns true if an overlay/context was dismissed
+    var onResetView: (() -> Void)?
+    var onToggleSidebar: (() -> Void)?
     
     private init() {}
     
@@ -77,6 +79,18 @@ final class GlobalShortcutManager {
                 if let handled = self.onEscapePressed?(), handled {
                     return nil
                 }
+            }
+            
+            // 5. ⌘0 -> Reset Room Camera View
+            if flags == .command && chars == "0" {
+                self.onResetView?()
+                return nil
+            }
+            
+            // 6. ⌘S -> Toggle Sidebar
+            if flags == .command && chars == "s" {
+                self.onToggleSidebar?()
+                return nil
             }
             
             return event

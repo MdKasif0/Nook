@@ -85,6 +85,29 @@ final class RoomSceneCoordinator {
         buildScene()
         self.interactionSystem?.coordinator = self
         startRecordSpinAnimation()
+        setupEventBusSubscriptions()
+    }
+    
+    private func setupEventBusSubscriptions() {
+        _ = RoomEventBus.shared.subscribe { [weak self] event in
+            guard let self = self else { return }
+            Task { @MainActor in
+                switch event {
+                case .roomOpened(let duration):
+                    if duration > 45 {
+                        self.cookie?.wake()
+                    }
+                case .longIdle:
+                    self.cookie?.sleep()
+                case .itemCompleted:
+                    self.cookie?.happy()
+                case .cookiePetted:
+                    self.cookie?.pet()
+                default:
+                    break
+                }
+            }
+        }
     }
     
     // MARK: - Scene Construction
@@ -276,29 +299,58 @@ final class RoomSceneCoordinator {
         
         // Remove entities for deleted or archived items
         for (id, entity) in thoughtEntities where !currentItemIDs.contains(id) {
+            let lastPos = entity.position
             entity.removeFromParent()
             thoughtEntities.removeValue(forKey: id)
+            cookie?.lookAtDeleted(lastPosition: lastPos)
         }
         
         // Add or update entities for items
         for item in items {
             if let existing = thoughtEntities[item.id] {
-                let targetPos = SIMD3<Float>(Float(item.roomPosition.x), Float(item.roomPosition.y), Float(item.roomPosition.z))
-                if distance(existing.position, targetPos) > 0.001 {
-                    existing.position = targetPos
+                // Check if physical 3D representation type changed
+                let currentRep = existing.components[ThoughtRepresentationComponent.self]?.objectType
+                if currentRep != nil && currentRep != item.objectType {
+                    let curPos = existing.position
+                    existing.removeFromParent()
+                    let newEntity = ThoughtEntityBuilder.buildThoughtEntity(for: item)
+                    newEntity.position = curPos
+                    thoughtsContainer.addChild(newEntity)
+                    thoughtEntities[item.id] = newEntity
+                } else {
+                    let targetPos = ThoughtEntityBuilder.worldPosition(for: item.roomPosition)
+                    if simd_distance(existing.position, targetPos) > 0.001 {
+                        existing.position = targetPos
+                    }
                 }
             } else {
                 let entity = ThoughtEntityBuilder.buildThoughtEntity(for: item)
                 thoughtsContainer.addChild(entity)
                 thoughtEntities[item.id] = entity
+                
+                // Animate physical entrance into the room
+                if hasConfiguredFromSavedState {
+                    let targetPos = entity.position
+                    ThoughtEntityBuilder.animateEntrance(entity: entity, targetPosition: targetPos)
+                    cookie?.curiousLook(at: targetPos)
+                    if cookieController.state.consecutiveThoughtsCount >= 3 {
+                        cookie?.shiftTowardDesk()
+                    }
+                }
             }
         }
+        updateSelectionVisuals()
     }
     
     // MARK: - User Interactions
     
     func selectItem(_ id: UUID?) {
         self.selectedItemID = id
+        updateSelectionVisuals()
+        if let id = id, let entity = thoughtEntities[id] {
+            cameraRig.frameItem(at: entity.position)
+            cookie?.curiousLook(at: entity.position)
+        }
         onSelectItem?(id)
     }
     
@@ -308,6 +360,9 @@ final class RoomSceneCoordinator {
         }
         let roomPos = ThoughtEntityBuilder.roomPosition(from: position)
         onItemMoved?(id, roomPos)
+        
+        // Cookie watches moving objects
+        cookie?.curiousLook(at: position)
     }
     
     func toggleDeskLamp() {
@@ -329,6 +384,14 @@ final class RoomSceneCoordinator {
         selectItem(id)
         if let entity = thoughtEntities[id] {
             cameraRig.frameItem(at: entity.position)
+            cookie?.curiousLook(at: entity.position)
+            
+            // Subtle pulsing highlight on the selected object
+            Task { @MainActor in
+                entity.scale = [1.22, 1.22, 1.22]
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                entity.scale = [1.10, 1.10, 1.10]
+            }
         }
     }
     
@@ -341,7 +404,7 @@ final class RoomSceneCoordinator {
     private func updateSelectionVisuals() {
         for (id, entity) in thoughtEntities {
             if id == selectedItemID {
-                entity.scale = [1.08, 1.08, 1.08]
+                entity.scale = [1.10, 1.10, 1.10]
             } else {
                 entity.scale = [1.0, 1.0, 1.0]
             }
@@ -361,4 +424,25 @@ final class RoomSceneCoordinator {
             }
         }
     }
+    
+    // MARK: - Room Customization Architecture Extension Point
+    
+    /// Applies a future room customization configuration (wallpaper, flooring, furniture, lighting).
+    /// Architected so future custom themes never require rewriting the RealityKit diorama graph.
+    public func applyCustomization(_ config: RoomCustomizationConfiguration) {
+        // Future extensions will swap materials via RoomMaterials delegates
+    }
 }
+
+/// Extensible model defining room theme customization options.
+public struct RoomCustomizationConfiguration: Codable, Sendable {
+    public var wallTheme: String = "warm_cream_plaster"
+    public var flooringTheme: String = "natural_honey_oak"
+    public var furnitureFinish: String = "warm_scandinavian_wood"
+    public var accentFabric: String = "sage_green"
+    public var lightingPreset: String = "golden_afternoon"
+    public var activeDecorations: [String] = []
+    
+    public init() {}
+}
+

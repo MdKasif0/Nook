@@ -7,7 +7,7 @@
     <language>en</language>
     <item>
       <title>Nook 1.0.0</title>
-      <pubDate>Mon, 05 Oct 2026 13:49:54 +0000</pubDate>
+      <pubDate>Mon, 05 Oct 2026 14:15:03 +0000</pubDate>
       <sparkle:version>1</sparkle:version>
       <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
@@ -27,8 +27,8 @@
         url="https://nook.app/downloads/Nook-1.0.0-Universal.dmg"
         sparkle:version="1"
         sparkle:shortVersionString="1.0.0"
-        sparkle:edSignature="O/vSb+5l1sHgqV3J2fRav5wPEtg9gwl5HvLuc5LYUBev4JjquiD7oCT7brkHfhLl9ixkkZMOSQsn4dqFnW3jBw=="
-        length="9839886"
+        sparkle:edSignature="Pdl9sDBSGQTCUC4tQliuLOagwB3lOV64M4jFNpkXhEJoiLVqrC4byQl/qgW4AyXoo0rB6D2Chw+I/PtLBX5jBQ=="
+        length="9914978"
         type="application/x-apple-diskimage" />
     </item>
   </channel>

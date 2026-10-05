@@ -1,25 +1,33 @@
 import RealityKit
 import AppKit
 
-/// Builds the physical 3D sleeping Cookie the cat entity resting peacefully on the bed:
+/// Builds the physical 3D Cookie the cat companion residing in the miniature room:
 /// - Curved calico body with warm ginger and white patches
 /// - Tucked head, tiny sleeping ears, closed eyes
 /// - Curled tail wrapping along the body
 /// - Gentle subtle procedural breathing idle animation
-/// - Reactive curious look-at animation when room objects are moved
-/// - Interactive hit-testing target for petting
+/// - Reactive curious look-at animation when room objects are placed or moved
+/// - Smooth locomotion between bed and desk edge
+/// - Interactive hit-testing target for petting with purr reactions
 @MainActor
-final class CookieRealityEntity: Entity {
+public final class CookieRealityEntity: Entity {
     
     private var bodyModel: ModelEntity?
     private var headModel: ModelEntity?
+    private var tailModel: ModelEntity?
     private var isPurring: Bool = false
     private var isCuriousLooking: Bool = false
+    private var isMoving: Bool = false
     
-    static let defaultPos = SIMD3<Float>(0.48, RoomArchitectureEntity.upperFloorY + BedEntity.frameHeight + 0.16 + 0.045, -0.78)
-    static let defaultRot = simd_quatf(angle: -Float.pi * 0.15, axis: [0, 1, 0])
+    // Sleeping spot on daybed (default reference position)
+    public static let bedPerchPos = SIMD3<Float>(0.48, 0.28 + 0.28 + 0.16 + 0.045, -0.78)
+    public static let bedPerchRot = simd_quatf(angle: -Float.pi * 0.15, axis: [0, 1, 0])
     
-    required init() {
+    // Alert sitting spot near the desk edge of the bed
+    public static let deskObservingPos = SIMD3<Float>(-0.06, 0.28 + 0.28 + 0.16 + 0.045, -0.74)
+    public static let deskObservingRot = simd_quatf(angle: Float.pi * 0.18, axis: [0, 1, 0])
+    
+    public required init() {
         super.init()
         self.name = "prop_cookie"
         buildCookie()
@@ -29,8 +37,8 @@ final class CookieRealityEntity: Entity {
     private func buildCookie() {
         let mats = RoomMaterials.shared
         
-        self.position = Self.defaultPos
-        self.orientation = Self.defaultRot
+        self.position = Self.bedPerchPos
+        self.orientation = Self.bedPerchRot
         
         var gingerMat = PhysicallyBasedMaterial()
         gingerMat.baseColor = .init(tint: NSColor(red: 0.88, green: 0.52, blue: 0.26, alpha: 1.0))
@@ -92,26 +100,27 @@ final class CookieRealityEntity: Entity {
         tail.orientation = simd_quatf(angle: Float.pi * 0.45, axis: [0, 0, 1]) * simd_quatf(angle: Float.pi * 0.35, axis: [0, 1, 0])
         tail.position = [0.08, -0.015, -0.05]
         addChild(tail)
+        self.tailModel = tail
         
         let tip = ModelEntity(mesh: .generateSphere(radius: 0.018), materials: [whiteFurMat])
         tip.position = [0, 0.07, 0]
         tail.addChild(tip)
         
         // 4. Interactive Collider and Input Target
-        let collisionShape = ShapeResource.generateSphere(radius: 0.14)
+        let collisionShape = ShapeResource.generateSphere(radius: 0.15)
         self.components.set(CollisionComponent(shapes: [collisionShape]))
         self.components.set(InputTargetComponent())
         self.components.set(InteractivePropComponent(
             propId: "prop_cookie",
             displayName: "Cookie",
-            accessibilityLabel: "Cookie the sleeping calico cat",
+            accessibilityLabel: "Cookie the calico cat",
             category: .special,
             allowsDragging: false,
             allowsRotation: false,
             allowsScaling: false,
-            defaultPosition: Self.defaultPos,
-            defaultOrientation: Self.defaultRot,
-            restingSurfaceY: RoomArchitectureEntity.upperFloorY + BedEntity.frameHeight + 0.16
+            defaultPosition: Self.bedPerchPos,
+            defaultOrientation: Self.bedPerchRot,
+            restingSurfaceY: Self.bedPerchPos.y
         ))
     }
     
@@ -128,14 +137,18 @@ final class CookieRealityEntity: Entity {
         }
     }
     
-    func pet() {
+    // MARK: - Reactive Behaviors
+    
+    public func pet() {
         guard !isPurring else { return }
         isPurring = true
         let originalY = self.position.y
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
-            self.position.y = originalY + 0.025
-            self.scale = [1.04, 1.04, 1.04]
+            // Happy purr bounce
+            self.position.y = originalY + 0.022
+            self.scale = [1.05, 1.05, 1.05]
             try? await Task.sleep(nanoseconds: 180_000_000)
             self.position.y = originalY
             self.scale = [1.0, 1.0, 1.0]
@@ -144,21 +157,138 @@ final class CookieRealityEntity: Entity {
         }
     }
     
-    /// Cookie reacts to moved objects in the room by turning head curiously
-    func curiousLook(at targetPosition: SIMD3<Float>) {
+    /// Cookie reacts to a newly created or moved object by turning head curiously toward it.
+    public func curiousLook(at targetPosition: SIMD3<Float>) {
         guard !isCuriousLooking, let head = headModel else { return }
         isCuriousLooking = true
         
         let delta = targetPosition - self.position
         let angleY = atan2(delta.x, delta.z)
-        let clampedAngle = min(max(angleY * 0.35, -0.5), 0.5)
+        let clampedAngle = min(max(angleY * 0.40, -0.6), 0.6)
         
         Task { @MainActor [weak self] in
             guard let self = self, let head = self.headModel else { return }
-            head.orientation = simd_quatf(angle: clampedAngle, axis: [0, 1, 0]) * simd_quatf(angle: Float.pi * 0.08, axis: [0, 0, 1])
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            head.orientation = simd_quatf(angle: clampedAngle, axis: [0, 1, 0]) * simd_quatf(angle: Float.pi * 0.06, axis: [0, 0, 1])
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
             head.orientation = simd_quatf(angle: Float.pi * 0.1, axis: [0, 0, 1])
             self.isCuriousLooking = false
         }
+    }
+    
+    /// Smoothly walks / shifts Cookie closer to observe recent activity.
+    public func shiftTowardDesk() {
+        guard !isMoving else { return }
+        isMoving = true
+        
+        let startPos = self.position
+        let targetPos = Self.deskObservingPos
+        let targetRot = Self.deskObservingRot
+        
+        Task { @MainActor [weak self] in
+            let steps = 16
+            let interval = UInt64(30_000_000) // ~0.48s total
+            
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: interval)
+                guard let self = self else { return }
+                let t = Float(i) / Float(steps)
+                let ease = sin(t * Float.pi * 0.5)
+                
+                // Subtle walking bob
+                let bob = sin(t * Float.pi * 4.0) * 0.012
+                self.position = simd_mix(startPos, targetPos, SIMD3<Float>(ease, ease, ease))
+                self.position.y += bob
+                self.orientation = simd_slerp(Self.bedPerchRot, targetRot, ease)
+            }
+            
+            self?.position = targetPos
+            self?.orientation = targetRot
+            self?.isMoving = false
+        }
+    }
+    
+    /// Returns Cookie peacefully to the sleeping corner on the bed.
+    public func returnToBedCorner() {
+        guard !isMoving else { return }
+        isMoving = true
+        
+        let startPos = self.position
+        let targetPos = Self.bedPerchPos
+        let targetRot = Self.bedPerchRot
+        
+        Task { @MainActor [weak self] in
+            let steps = 16
+            let interval = UInt64(30_000_000)
+            
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: interval)
+                guard let self = self else { return }
+                let t = Float(i) / Float(steps)
+                let ease = sin(t * Float.pi * 0.5)
+                let bob = sin(t * Float.pi * 4.0) * 0.012
+                self.position = simd_mix(startPos, targetPos, SIMD3<Float>(ease, ease, ease))
+                self.position.y += bob
+                self.orientation = simd_slerp(targetRot, Self.bedPerchRot, ease)
+            }
+            
+            self?.position = targetPos
+            self?.orientation = targetRot
+            self?.isMoving = false
+        }
+    }
+    
+    /// Briefly looks toward where an object was just deleted.
+    public func lookAtDeleted(lastPosition: SIMD3<Float>) {
+        curiousLook(at: lastPosition)
+    }
+    
+    /// Cookie falls asleep comfortably in the bed corner when the room has been inactive.
+    public func sleep() {
+        guard !isMoving else { return }
+        returnToBedCorner()
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            self?.headModel?.orientation = simd_quatf(angle: Float.pi * 0.14, axis: [0, 0, 1])
+        }
+    }
+    
+    /// Cookie wakes up and stretches slightly when the user returns.
+    public func wake() {
+        guard !isMoving else { return }
+        Task { @MainActor [weak self] in
+            self?.headModel?.orientation = simd_quatf(angle: Float.pi * 0.05, axis: [0, 0, 1])
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            self?.headModel?.orientation = simd_quatf(angle: Float.pi * 0.1, axis: [0, 0, 1])
+        }
+    }
+    
+    /// Cookie celebrates happily when a thought or goal is completed.
+    public func happy() {
+        pet()
+    }
+}
+
+// MARK: - Future AI Extension Point Architecture
+
+/// Protocol defining the extension point where an optional AI module could later understand user activity.
+/// Strictly local, non-networked in v1.
+protocol CookieIntelligenceProvider: Sendable {
+    func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood
+}
+
+/// Default local deterministic behavioral provider for Cookie. Zero cloud calls.
+final class LocalDeterministicCookieIntelligence: CookieIntelligenceProvider {
+    init() {}
+    
+    public func evaluateActivity(recentEvents: [RoomEvent], currentMood: CookieMood) -> CookieMood {
+        let creations = recentEvents.filter {
+            if case .itemCreated = $0 { return true }
+            return false
+        }.count
+        
+        if creations >= 3 {
+            return .curious
+        }
+        return .idle
     }
 }
