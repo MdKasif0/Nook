@@ -78,6 +78,37 @@ final class RoomState {
         self.customPropPositionsJSON = nil
         self.updatedAt = .now
     }
+    
+    // MARK: - Movable Prop Transforms Persistence
+    
+    /// Returns dictionary of all persisted prop transforms
+    func getPropTransforms() -> [String: RoomPropTransform] {
+        guard let data = customPropPositionsJSON,
+              let dict = try? JSONDecoder().decode([String: RoomPropTransform].self, from: data) else {
+            return [:]
+        }
+        return dict
+    }
+    
+    /// Persists or updates transform for a given prop
+    func setPropTransform(_ transform: RoomPropTransform) {
+        var dict = getPropTransforms()
+        dict[transform.propId] = transform
+        if let encoded = try? JSONEncoder().encode(dict) {
+            self.customPropPositionsJSON = encoded
+            self.updatedAt = .now
+        }
+    }
+    
+    /// Resets transform for a given prop to default
+    func resetPropTransform(propId: String) {
+        var dict = getPropTransforms()
+        dict.removeValue(forKey: propId)
+        if let encoded = try? JSONEncoder().encode(dict) {
+            self.customPropPositionsJSON = encoded
+            self.updatedAt = .now
+        }
+    }
 }
 
 // MARK: - Custom Prop Coordinates Helpers
