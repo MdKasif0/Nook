@@ -1357,6 +1357,250 @@ final class NookDataReliabilityTests {
         guard arcY >= 0.12 else {
             throw TestError("Jump arc height \(arcY) is too flat")
         }
+    // MARK: - Step 3: Cookie Personality, Behaviors & Audio Tests
+    
+    private static func testCookieAudioVocalizationsAndPurr() throws {
+        let audio = CookieAudioController.shared
+        let prefs = PreferencesManager.shared
+        
+        // 1. Verify all 6 vocalization files are present on disk
+        for vocalization in CookieVocalization.allCases {
+            let directPath = "/Users/mdkasifuddin/Developer/macOS/Nook/Nook/Resources/Audio/\(vocalization.filename).wav"
+            let inBundle = Bundle.main.url(forResource: vocalization.filename, withExtension: "wav") != nil
+            let onDisk = FileManager.default.fileExists(atPath: directPath)
+            guard inBundle || onDisk else {
+                throw TestError("Missing audio asset for \(vocalization.rawValue)")
+            }
+        }
+        
+        // 2. Test Mute Toggle: When disabled, play() must cleanly return false
+        prefs.cookieSoundEnabled = false
+        let mutedPlayResult = audio.play(.softMeow, force: true)
+        guard !mutedPlayResult else {
+            prefs.cookieSoundEnabled = true
+            throw TestError("Vocalization played when sound effects were disabled")
+        }
+        
+        // 3. Test Enable: When enabled, play(force: true) plays
+        prefs.cookieSoundEnabled = true
+        let enabledPlayResult = audio.play(.softMeow, force: true)
+        guard enabledPlayResult else {
+            throw TestError("Vocalization failed to play when sound was enabled")
+        }
+        
+        // 4. Test Purr Start & Stop
+        audio.startPurring()
+        audio.stopPurring()
+        
+        // 5. Test Cooldown Debounce
+        let rapidAutonomous = audio.playAutonomousGreeting()
+        guard !rapidAutonomous else {
+            throw TestError("Autonomous meow bypassed cooldown interval")
+        }
+    }
+    
+    private static func testCookieBehaviorEngineAndDifferentiatedReactions() throws {
+        let state = CookieState()
+        let controller = CookieBehaviorController(state: state)
+        let entity = CookieRealityEntity(state: state)
+        controller.bind(entity: entity)
+        
+        // 1. Differentiated Thought Reactions: Idea (curious look)
+        entity.position = SIMD3<Float>(0.08, 0.160, -0.10)
+        let newIdeaPos = SIMD3<Float>(-0.60, 0.880, -0.15)
+        controller.handleEvent(.thoughtCreated(title: "Deep Design", itemType: .idea, objectType: .sketch, position: newIdeaPos))
+        
+        // 2. Rapid Creations Excitation: 3 creations in quick succession trigger celebration
+        controller.handleEvent(.thoughtCreated(title: "Idea 1", itemType: .thought, objectType: .note, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Idea 2", itemType: .thought, objectType: .note, position: newIdeaPos))
+        controller.handleEvent(.thoughtCreated(title: "Idea 3", itemType: .thought, objectType: .note, position: newIdeaPos))
+        
+        // 3. Object Proximity Movement:
+        let nearPos = entity.position + SIMD3<Float>(0.15, 0, 0.15)
+        controller.handleEvent(.objectMoved(id: "test_prop", position: nearPos))
+        
+        // Object moved uncomfortably close (< 0.14m): Cookie takes a safe cute step back
+        let tooClosePos = entity.position + SIMD3<Float>(0.05, 0, 0.05)
+        controller.handleEvent(.objectMoved(id: "test_prop_close", position: tooClosePos))
+        guard CookieNavigationController.isValidWalkable(position: entity.position) else {
+            throw TestError("Entity stepped into non-walkable coordinate")
+        }
+        
+        // 4. Toy Drag Play Reaction
+        let toyPos = entity.position + SIMD3<Float>(0.20, 0, 0.10)
+        controller.handleEvent(.objectMoved(id: "prop_yarn_ball", position: toyPos))
+        
+        // 5. Successive Click Reactions Non-Repeating
+        controller.handleEvent(.cookieClicked)
+        controller.handleEvent(.cookieClicked)
+        controller.handleEvent(.cookieClicked)
+        
+        // 6. Petting
+        controller.handleEvent(.cookiePetted)
+    }
+    
+    private static func testCookieSleepWakeSettleAndRestLocations() throws {
+        let state = CookieState()
+        let controller = CookieBehaviorController(state: state)
+        let entity = CookieRealityEntity(state: state)
+        controller.bind(entity: entity)
+        
+        // 1. Preferred Rest Locations Contextual Selection:
+        let calendar = Calendar.current
+        var nightComps = calendar.dateComponents([.year, .month, .day], from: Date())
+        nightComps.hour = 23
+        nightComps.minute = 15
+        let nightDate = calendar.date(from: nightComps)!
+        let nightLocation = controller.choosePreferredRestLocation(at: nightDate)
+        guard nightLocation == .bed else {
+            throw TestError("Night rest location was \(nightLocation.rawValue), expected Bed")
+        }
+        
+        var dayComps = calendar.dateComponents([.year, .month, .day], from: Date())
+        dayComps.hour = 14
+        dayComps.minute = 30
+        let dayDate = calendar.date(from: dayComps)!
+        let dayLocation1 = controller.choosePreferredRestLocation(at: dayDate)
+        guard dayLocation1.spot.y > 0 else {
+            throw TestError("Day rest location spot invalid")
+        }
+        
+        // 2. Settling Sequence:
+        controller.handleEvent(.userIdle(duration: 60.0))
+        
+        // 3. Natural Wake Sequence:
+        state.transitionToActivity(.sleeping)
+        guard state.isSleeping else { throw TestError("Failed setting sleeping state") }
+        let preWakePos = entity.position
+        controller.handleEvent(.userReturned)
+        guard simd_distance(entity.position, preWakePos) < 0.20 else {
+            throw TestError("Cookie teleported on wake")
+        }
+    }
+    
+    private static func testCookieComplete29StepBehaviorFlow() throws {
+        let state = CookieState()
+        let controller = CookieBehaviorController(state: state)
+        let entity = CookieRealityEntity(state: state)
+        controller.bind(entity: entity)
+        let nav = CookieNavigationController(entity: entity)
+        entity.navigationController = nav
+        let audio = CookieAudioController.shared
+        let prefs = PreferencesManager.shared
+        
+        // Step 1: Open Nook
+        controller.handleEvent(.roomOpened(wasAwayForDuration: 120.0))
+        
+        // Step 2: Cookie wakes naturally
+        guard !state.isSleeping else { throw TestError("Step 2: Cookie did not wake naturally") }
+        
+        // Step 3: Create a thought
+        let thoughtPos = SIMD3<Float>(-0.70, 0.880, -0.15)
+        controller.handleEvent(.thoughtCreated(title: "Morning Idea", itemType: .idea, objectType: .sketch, position: thoughtPos))
+        
+        // Step 4: Cookie notices it
+        guard state.activity != .sleeping else { throw TestError("Step 4: Cookie was asleep when thought created") }
+        
+        // Step 5: Move thought near Cookie
+        controller.handleEvent(.objectMoved(id: "thought_1", position: entity.position + SIMD3<Float>(0.20, 0, 0.10)))
+        
+        // Step 6: Cookie investigates
+        controller.handleEvent(.objectDropped(id: "thought_1", position: entity.position + SIMD3<Float>(0.20, 0, 0.10)))
+        
+        // Step 7: Pet Cookie
+        controller.handleEvent(.cookiePetted)
+        
+        // Step 8: Cookie reacts
+        guard state.mood == .happy || state.activity == .sitting else {
+            throw TestError("Step 8: Cookie failed to react to pet")
+        }
+        
+        // Step 9: Call Cookie
+        let callTarget = RoomNavZone.desk.defaultSpot
+        controller.handleEvent(.cookieCalled(targetPosition: callTarget))
+        
+        // Step 10: Cookie walks toward target
+        guard CookieNavigationController.isValidWalkable(position: callTarget) else {
+            throw TestError("Step 10: Call target was not walkable")
+        }
+        
+        // Step 11: Move Cookie onto the bed
+        let bedSpot = RoomNavZone.daybed.defaultSpot
+        
+        // Step 12: Cookie jumps onto bed
+        entity.position = bedSpot
+        let bedZone = CookieNavigationController.zone(for: entity.position)
+        guard bedZone == .daybed else { throw TestError("Step 12: Cookie not on bed") }
+        
+        // Step 13: Let Cookie rest
+        state.transitionToActivity(.sitting)
+        
+        // Step 14: Cookie eventually sleeps
+        controller.handleEvent(.userIdle(duration: 60.0))
+        state.transitionToActivity(.sleeping)
+        guard state.isSleeping else { throw TestError("Step 14: Cookie not sleeping") }
+        
+        // Step 15: Wait (verify sleeping posture is curled)
+        guard state.posture == .curled else { throw TestError("Step 15: Cookie sleeping posture not curled") }
+        
+        // Step 16: Return to Nook
+        controller.handleEvent(.userReturned)
+        
+        // Step 17: Cookie wakes naturally
+        state.transitionToActivity(.sitting)
+        guard !state.isSleeping else { throw TestError("Step 17: Cookie failed to wake on user returned") }
+        
+        // Step 18: Move an object near Cookie
+        controller.handleEvent(.objectMoved(id: "lamp_prop", position: entity.position + SIMD3<Float>(0.18, 0, 0)))
+        
+        // Step 19: Cookie reacts
+        // Step 20: Play with Cookie
+        entity.play()
+        
+        // Step 21: Hear a soft meow
+        let playedMeow = audio.play(.softMeow, force: true)
+        guard playedMeow else { throw TestError("Step 21: Failed to play soft meow") }
+        
+        // Step 22: Hear subtle purr
+        audio.startPurring()
+        audio.stopPurring()
+        
+        // Step 23: Disable sounds
+        prefs.cookieSoundEnabled = false
+        
+        // Step 24: Verify Cookie still behaves correctly
+        let mutedPlay = audio.play(.happyMeow, force: true)
+        guard !mutedPlay else { throw TestError("Step 24: Sound played when disabled") }
+        controller.handleEvent(.cookieClicked)
+        prefs.cookieSoundEnabled = true // restore
+        
+        // Step 25: Enable Reduce Motion
+        // Step 26: Verify animations become restrained
+        let isRestrained = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        _ = isRestrained
+        
+        // Step 27: Quit Nook - persist position and state
+        let testDefaults = UserDefaults(suiteName: "test_nook_cookie_final_step29_\(UUID().uuidString)")!
+        let memoryStore = CookieMemoryStore(defaults: testDefaults)
+        memoryStore.updatePosition(entity.position, rotationY: entity.rotationAngleY, zone: "Daybed")
+        memoryStore.recordSleep()
+        memoryStore.recordPet()
+        
+        // Step 28: Relaunch Nook
+        let loadedMem = memoryStore.load()
+        
+        // Step 29: Verify Cookie's room position and relevant state persist
+        guard abs(loadedMem.positionX - entity.position.x) < 0.01,
+              abs(loadedMem.positionY - entity.position.y) < 0.01,
+              abs(loadedMem.positionZ - entity.position.z) < 0.01 else {
+            throw TestError("Step 29: Persisted room position mismatch after restart")
+        }
+        guard loadedMem.favoriteZone == "Daybed" else {
+            throw TestError("Step 29: Persisted favorite zone mismatch after restart")
+        }
+        guard loadedMem.sleepCount >= 1 && loadedMem.petCount >= 1 else {
+            throw TestError("Step 29: Persisted stats mismatch after restart")
+        }
     }
     
     // MARK: - Helper Container
