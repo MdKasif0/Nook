@@ -78,6 +78,8 @@ final class RoomSceneCoordinator {
     var onPropTransformSaved: ((RoomPropTransform) -> Void)?
     var onPropTransformReset: ((String) -> Void)?
     
+    private var isPettingInProgress = false
+    
     init() {
         self.cameraRig = RoomCameraRig()
         self.interactionSystem = RoomInteractionSystem()
@@ -101,8 +103,6 @@ final class RoomSceneCoordinator {
                     self.cookie?.sleep()
                 case .itemCompleted:
                     self.cookie?.happy()
-                case .cookiePetted:
-                    self.cookie?.pet()
                 default:
                     break
                 }

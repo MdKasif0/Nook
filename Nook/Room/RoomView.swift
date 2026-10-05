@@ -1476,7 +1476,6 @@ struct RoomView: View {
     }
     
     private func handleCookieInteraction() {
-        sceneController.petCookie()
         currentRoomState.cookiePetCount += 1
         currentRoomState.cookieLastInteractedAt = .now
         persistRoomState()
