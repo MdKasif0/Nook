@@ -860,7 +860,7 @@ struct RoomView: View {
             // Display Name and micro-instruction
             VStack(alignment: .leading, spacing: 2) {
                 Text(prop.displayName)
-                    .font(NookDesign.Typography.subheadline)
+                    .font(NookDesign.Typography.subheading)
                     .fontWeight(.semibold)
                     .foregroundStyle(NookDesign.Colors.textPrimary)
                 
@@ -888,12 +888,12 @@ struct RoomView: View {
                                 .foregroundStyle(NookDesign.Colors.textTertiary)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
-                                .background(NookDesign.Colors.surfaceAlt)
+                                .background(NookDesign.Colors.backgroundTertiary)
                                 .clipShape(RoundedRectangle(cornerRadius: 3))
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(NookDesign.Colors.surfaceAlt)
+                        .background(NookDesign.Colors.backgroundTertiary)
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -912,7 +912,7 @@ struct RoomView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(NookDesign.Colors.surfaceAlt)
+                    .background(NookDesign.Colors.backgroundTertiary)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -939,7 +939,7 @@ struct RoomView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(NookDesign.Colors.borderSubtle, lineWidth: 0.8)
+                .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.8)
         )
         .nookShadow(NookDesign.Shadow.elevated)
         .accessibilityElement(children: .contain)
