@@ -1,17 +1,16 @@
 /**
- * Nook 3D - RoomScene
- * Manages the scene graph hierarchy, architecture, and diorama foundation
- * based on the nook-room.jpeg reference composition.
- *
- * Scene Root Hierarchy:
- * NookWorld
- *   ├── Architecture
- *   ├── Furniture
- *   ├── Decorations
- *   ├── InteractiveObjects
- *   ├── Cookie
- *   ├── Lighting
- *   └── Environment
+ * Nook 3D - RoomScene Architecture
+ * Reconstructs the exact architectural structure of nook-room.jpeg as true 3D geometry:
+ * 1. Left Wall (solid cream + upper trim)
+ * 2. Back Wall (solid cream + upper trim)
+ * 3. Right Wall (cutaway + window opening + wainscot)
+ * 4. Wooden Floor (sunken lower pit)
+ * 5. Raised Wooden Platform (elevated level)
+ * 6. Front Steps (intermediate wooden steps connecting levels)
+ * 7. Thick Wooden Upper Wall Trim (solid beveled honey oak headers)
+ * 8. Window Opening (large aperture pouring morning light)
+ * 9. Window Frame (casing, sill shelf, center mullion, glass, outdoor sky view)
+ * 10. Built-in Shelf Structure (back wall integrated bookshelves & uprights)
  */
 
 import * as THREE from 'three';
@@ -20,13 +19,17 @@ import {
   ROOM_DEPTH,
   ROOM_HEIGHT,
   WALL_THICKNESS,
-  FLOOR_THICKNESS,
-  WOOD_TRIM_HEIGHT,
-  WOOD_TRIM_DEPTH,
-  UPPER_FLOOR_Y,
+  BASE_PLATFORM_THICKNESS,
+  UPPER_TRIM_WIDTH,
+  UPPER_TRIM_HEIGHT,
   LOWER_FLOOR_Y,
+  UPPER_FLOOR_Y,
+  STEP_HEIGHT,
+  WINDOW_CONFIG,
+  SHELF_CONFIG,
   PALETTE
 } from '../utils/Constants.js';
+import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { Lighting } from './Lighting.js';
 import { Environment } from './Environment.js';
 
@@ -61,454 +64,463 @@ export class RoomScene {
     this.cookieGroup.name = 'Cookie';
     this.world.add(this.cookieGroup);
 
-    // Subsystems
+    // Lighting & Environment
     this.lighting = new Lighting(this.world);
     this.environment = new Environment(this.world);
 
-    // Materials Library
+    // Procedural PBR Materials Library
     this.materials = this.createMaterials();
 
-    // Construct Architecture & Foundational Layout
-    this.buildArchitecture();
-    this.buildFoundationalFurniture();
-    this.buildFoundationalDecorations();
+    // Construct Architecture
+    this.buildBasePlatform();
+    this.buildSteppedFloorsAndSteps();
+    this.buildLeftWall();
+    this.buildBackWall();
+    this.buildRightWallAndWindow();
+    this.buildThickUpperWallTrim();
+    this.buildBuiltInShelfStructure();
   }
 
   createMaterials() {
+    // 1. Procedural PBR Textures
+    const woodTexture = TextureGenerator.createHoneyWoodTexture(1024, 1024);
+    woodTexture.repeat.set(2, 2);
+
+    const floorPlanksTexture = TextureGenerator.createFloorPlanksTexture(1024, 1024, 14);
+    floorPlanksTexture.repeat.set(2, 2);
+
+    const wallTexture = TextureGenerator.createWallCreamTexture(512, 512);
+    wallTexture.repeat.set(4, 4);
+
     return {
+      // Warm Ivory / Cream Plaster
       wallCream: new THREE.MeshStandardMaterial({
         color: PALETTE.wallCream,
-        roughness: 0.85,
+        map: wallTexture,
+        roughness: 0.88,
         metalness: 0.02
       }),
+
+      // Warm Natural Honey Wood (Semi-matte finish, visible subtle grain)
       woodHoney: new THREE.MeshStandardMaterial({
         color: PALETTE.woodHoney,
-        roughness: 0.55,
+        map: woodTexture,
+        roughness: 0.52,
+        metalness: 0.04
+      }),
+
+      // Slightly darker honey wood for bevels and structural trims
+      woodTrim: new THREE.MeshStandardMaterial({
+        color: PALETTE.woodTrim,
+        map: woodTexture,
+        roughness: 0.48,
         metalness: 0.05
       }),
-      woodFloorLight: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodFloorLight,
+
+      // Floor Planks (Warm wood with board grooves)
+      floorPlanks: new THREE.MeshStandardMaterial({
+        color: PALETTE.woodPlanks,
+        map: floorPlanksTexture,
         roughness: 0.45,
         metalness: 0.04
       }),
-      woodTrim: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodTrim,
-        roughness: 0.5,
-        metalness: 0.05
-      }),
-      woodOakDark: new THREE.MeshStandardMaterial({
-        color: PALETTE.woodOakDark,
-        roughness: 0.6,
-        metalness: 0.05
-      }),
-      bedSheets: new THREE.MeshStandardMaterial({
-        color: PALETTE.bedSheets,
-        roughness: 0.9,
-        metalness: 0.0
-      }),
-      bedBlanket: new THREE.MeshStandardMaterial({
-        color: PALETTE.bedBlanketSage,
-        roughness: 0.85,
-        metalness: 0.0
-      }),
-      pillowCream: new THREE.MeshStandardMaterial({
-        color: PALETTE.bedPillowCream,
-        roughness: 0.9
-      }),
-      pillowSage: new THREE.MeshStandardMaterial({
-        color: PALETTE.bedPillowSage,
-        roughness: 0.88
-      }),
-      poufBoucle: new THREE.MeshStandardMaterial({
-        color: PALETTE.poufBoucle,
-        roughness: 0.95
-      }),
-      rug: new THREE.MeshStandardMaterial({
-        color: PALETTE.rugCream,
-        roughness: 0.92
-      }),
-      glassWindow: new THREE.MeshPhysicalMaterial({
+
+      // Window Glass
+      windowGlass: new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.25,
-        roughness: 0.1,
-        transmission: 0.85,
-        ior: 1.5
+        opacity: 0.22,
+        roughness: 0.08,
+        transmission: 0.88,
+        ior: 1.52
       }),
-      curtains: new THREE.MeshStandardMaterial({
-        color: 0xfcfbfa,
+
+      // Outdoor Sunny Sky Backdrop
+      outdoorSky: new THREE.MeshBasicMaterial({
+        color: PALETTE.outdoorSky
+      }),
+
+      // Base Platform Plinth
+      pedestal: new THREE.MeshStandardMaterial({
+        color: PALETTE.studioPedestal,
         roughness: 0.9,
-        transparent: true,
-        opacity: 0.88
-      }),
-      leaves: new THREE.MeshStandardMaterial({
-        color: PALETTE.plantGreen,
-        roughness: 0.6
-      }),
-      ceramic: new THREE.MeshStandardMaterial({
-        color: PALETTE.ceramicWhite,
-        roughness: 0.25
+        metalness: 0.04
       })
     };
   }
 
-  buildArchitecture() {
+  // MARK: - 1. Base Platform
+  buildBasePlatform() {
     const halfW = ROOM_WIDTH * 0.5;
     const halfD = ROOM_DEPTH * 0.5;
 
-    // 1. Solid Left Wall (-X)
-    const leftWallGeo = new THREE.BoxGeometry(WALL_THICKNESS, ROOM_HEIGHT, ROOM_DEPTH);
-    const leftWall = new THREE.Mesh(leftWallGeo, this.materials.wallCream);
-    leftWall.position.set(-halfW - WALL_THICKNESS * 0.5, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, 0);
-    leftWall.receiveShadow = true;
-    leftWall.castShadow = true;
-    leftWall.name = 'LeftWall';
-    this.architecture.add(leftWall);
+    // Outer thick wooden miniature diorama platform
+    const platformW = ROOM_WIDTH + WALL_THICKNESS * 2 + 0.3;
+    const platformD = ROOM_DEPTH + WALL_THICKNESS * 2 + 0.3;
+    const platformGeo = new THREE.BoxGeometry(platformW, BASE_PLATFORM_THICKNESS, platformD);
+    const platformMesh = new THREE.Mesh(platformGeo, this.materials.woodTrim);
+    platformMesh.position.set(0, -BASE_PLATFORM_THICKNESS * 0.5, 0);
+    platformMesh.receiveShadow = true;
+    platformMesh.castShadow = true;
+    platformMesh.name = 'DioramaBasePlatform';
+    this.architecture.add(platformMesh);
 
-    // Left Wall Top Header Wood Trim
-    const leftTrimGeo = new THREE.BoxGeometry(WOOD_TRIM_DEPTH, WOOD_TRIM_HEIGHT, ROOM_DEPTH + WOOD_TRIM_DEPTH);
-    const leftTrim = new THREE.Mesh(leftTrimGeo, this.materials.woodTrim);
-    leftTrim.position.set(-halfW - WALL_THICKNESS * 0.5, ROOM_HEIGHT + LOWER_FLOOR_Y + WOOD_TRIM_HEIGHT * 0.5, -WOOD_TRIM_DEPTH * 0.25);
-    leftTrim.castShadow = true;
-    leftTrim.receiveShadow = true;
-    this.architecture.add(leftTrim);
+    // Front lower outer stepped rim
+    const frontStepGeo = new THREE.BoxGeometry(platformW + 0.2, 0.16, 0.45);
+    const frontStepMesh = new THREE.Mesh(frontStepGeo, this.materials.woodHoney);
+    frontStepMesh.position.set(0, -BASE_PLATFORM_THICKNESS + 0.08, halfD + WALL_THICKNESS + 0.35);
+    frontStepMesh.receiveShadow = true;
+    frontStepMesh.castShadow = true;
+    this.architecture.add(frontStepMesh);
+  }
 
-    // 2. Solid Back Wall (-Z)
-    const backWallGeo = new THREE.BoxGeometry(ROOM_WIDTH, ROOM_HEIGHT, WALL_THICKNESS);
-    const backWall = new THREE.Mesh(backWallGeo, this.materials.wallCream);
-    backWall.position.set(0, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, -halfD - WALL_THICKNESS * 0.5);
-    backWall.receiveShadow = true;
-    backWall.castShadow = true;
-    backWall.name = 'BackWall';
-    this.architecture.add(backWall);
+  // MARK: - 2. Stepped Floors & Front Steps
+  buildSteppedFloorsAndSteps() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
 
-    // Back Wall Top Header Wood Trim
-    const backTrimGeo = new THREE.BoxGeometry(ROOM_WIDTH + WOOD_TRIM_DEPTH, WOOD_TRIM_HEIGHT, WOOD_TRIM_DEPTH);
-    const backTrim = new THREE.Mesh(backTrimGeo, this.materials.woodTrim);
-    backTrim.position.set(-WOOD_TRIM_DEPTH * 0.25, ROOM_HEIGHT + LOWER_FLOOR_Y + WOOD_TRIM_HEIGHT * 0.5, -halfD - WALL_THICKNESS * 0.5);
-    backTrim.castShadow = true;
-    backTrim.receiveShadow = true;
-    this.architecture.add(backTrim);
+    // A. Sunken Lower Floor (Desk Pit on Left)
+    // From X = -halfW (-5.0) to X = 0.2 (width 5.2), Z = -3.5 to +3.5 (depth 7.0)
+    const lowerW = 5.2;
+    const lowerFloorGeo = new THREE.BoxGeometry(lowerW, 0.14, ROOM_DEPTH);
+    const lowerFloor = new THREE.Mesh(lowerFloorGeo, this.materials.floorPlanks);
+    lowerFloor.position.set(-halfW + lowerW * 0.5, LOWER_FLOOR_Y - 0.07, 0);
+    lowerFloor.receiveShadow = true;
+    lowerFloor.name = 'SunkenLowerFloor';
+    this.architecture.add(lowerFloor);
 
-    // 3. Right Wall (+X) with Window Cutaway Aperture
-    // In reference: Back half of right wall has a large cozy window, front portion is cut open
-    const windowWallWidth = ROOM_DEPTH * 0.55;
-    const rightWallBottomGeo = new THREE.BoxGeometry(WALL_THICKNESS, 0.76, windowWallWidth);
-    const rightWallBottom = new THREE.Mesh(rightWallBottomGeo, this.materials.wallCream);
-    rightWallBottom.position.set(halfW + WALL_THICKNESS * 0.5, 0.38 + LOWER_FLOOR_Y, -halfD + windowWallWidth * 0.5);
-    rightWallBottom.receiveShadow = true;
-    rightWallBottom.castShadow = true;
-    this.architecture.add(rightWallBottom);
+    // B. Raised Upper Platform (Bed & Lounge on Right)
+    // From X = 0.2 to X = +halfW (+5.0) (width 4.8), Z = -3.5 to +3.5 (depth 7.0)
+    const upperW = ROOM_WIDTH - lowerW;
+    const upperFloorHeight = UPPER_FLOOR_Y - LOWER_FLOOR_Y;
+    const upperFloorGeo = new THREE.BoxGeometry(upperW, upperFloorHeight, ROOM_DEPTH);
+    const upperFloor = new THREE.Mesh(upperFloorGeo, this.materials.floorPlanks);
+    upperFloor.position.set(halfW - upperW * 0.5, LOWER_FLOOR_Y + upperFloorHeight * 0.5, 0);
+    upperFloor.receiveShadow = true;
+    upperFloor.castShadow = true;
+    upperFloor.name = 'RaisedUpperFloorPlatform';
+    this.architecture.add(upperFloor);
 
-    const rightWallTopGeo = new THREE.BoxGeometry(WALL_THICKNESS, 0.55, windowWallWidth);
-    const rightWallTop = new THREE.Mesh(rightWallTopGeo, this.materials.wallCream);
-    rightWallTop.position.set(halfW + WALL_THICKNESS * 0.5, ROOM_HEIGHT + LOWER_FLOOR_Y - 0.275, -halfD + windowWallWidth * 0.5);
-    rightWallTop.castShadow = true;
-    this.architecture.add(rightWallTop);
+    // Wood Riser dividing lower floor and upper platform (along X = 0.2)
+    const riserGeo = new THREE.BoxGeometry(0.06, upperFloorHeight, ROOM_DEPTH);
+    const riser = new THREE.Mesh(riserGeo, this.materials.woodTrim);
+    riser.position.set(0.2 - 0.03, LOWER_FLOOR_Y + upperFloorHeight * 0.5, 0);
+    riser.receiveShadow = true;
+    riser.castShadow = true;
+    this.architecture.add(riser);
 
-    // Window Frame Assembly (Open frame with mullions and outdoor view matching reference)
-    const windowGroup = new THREE.Group();
-    windowGroup.name = 'WindowAssembly';
-    const frameMat = this.materials.woodHoney;
-    const frameX = halfW + WALL_THICKNESS * 0.5;
-    const frameY = 1.42 + LOWER_FLOOR_Y;
-    const frameZ = -0.9;
-    const frameH = 1.32;
-    const frameW = 1.52;
-    const railThick = 0.06;
-    const railDepth = WALL_THICKNESS + 0.04;
+    // C. Front Steps (Connecting Sunken Pit to Upper Platform)
+    // Two distinct wooden steps in front of the platform divider
+    const stepWidth = 1.8;
+    const stepDepth = 0.52;
 
-    // Top & Bottom Rails
-    const hRailGeo = new THREE.BoxGeometry(railDepth, railThick, frameW);
-    const topRail = new THREE.Mesh(hRailGeo, frameMat);
-    topRail.position.set(frameX, frameY + frameH * 0.5 - railThick * 0.5, frameZ);
-    topRail.castShadow = true;
-    windowGroup.add(topRail);
-
-    const bottomRail = new THREE.Mesh(hRailGeo, frameMat);
-    bottomRail.position.set(frameX, frameY - frameH * 0.5 + railThick * 0.5, frameZ);
-    bottomRail.castShadow = true;
-    windowGroup.add(bottomRail);
-
-    // Left & Right Vertical Jambs
-    const vRailGeo = new THREE.BoxGeometry(railDepth, frameH, railThick);
-    const leftJamb = new THREE.Mesh(vRailGeo, frameMat);
-    leftJamb.position.set(frameX, frameY, frameZ - frameW * 0.5 + railThick * 0.5);
-    leftJamb.castShadow = true;
-    windowGroup.add(leftJamb);
-
-    const rightJamb = new THREE.Mesh(vRailGeo, frameMat);
-    rightJamb.position.set(frameX, frameY, frameZ + frameW * 0.5 - railThick * 0.5);
-    rightJamb.castShadow = true;
-    windowGroup.add(rightJamb);
-
-    // Center Cross Mullions
-    const centerHMullion = new THREE.Mesh(
-      new THREE.BoxGeometry(railDepth * 0.6, 0.035, frameW - 0.08),
-      frameMat
-    );
-    centerHMullion.position.set(frameX, frameY, frameZ);
-    centerHMullion.castShadow = true;
-    windowGroup.add(centerHMullion);
-
-    const centerVMullion = new THREE.Mesh(
-      new THREE.BoxGeometry(railDepth * 0.6, frameH - 0.08, 0.035),
-      frameMat
-    );
-    centerVMullion.position.set(frameX, frameY, frameZ);
-    centerVMullion.castShadow = true;
-    windowGroup.add(centerVMullion);
-
-    // Window Glass Pane
-    const windowGlassGeo = new THREE.BoxGeometry(0.015, frameH - 0.08, frameW - 0.08);
-    const windowGlass = new THREE.Mesh(windowGlassGeo, this.materials.glassWindow);
-    windowGlass.position.set(frameX, frameY, frameZ);
-    windowGroup.add(windowGlass);
-
-    // Outdoor Sunny View Backdrop Plane (Sky + distant treetops matching reference photo)
-    const outdoorBackdropGeo = new THREE.PlaneGeometry(2.4, 2.0);
-    const outdoorBackdropMat = new THREE.MeshBasicMaterial({
-      color: 0x8cc4e8
-    });
-    const outdoorBackdrop = new THREE.Mesh(outdoorBackdropGeo, outdoorBackdropMat);
-    outdoorBackdrop.position.set(frameX + 0.45, frameY, frameZ);
-    outdoorBackdrop.rotation.y = -Math.PI / 2;
-    windowGroup.add(outdoorBackdrop);
-
-    this.architecture.add(windowGroup);
-
-    // Window Sill Shelf (matching reference with small plants)
-    const sillGeo = new THREE.BoxGeometry(WALL_THICKNESS + 0.22, 0.08, 1.75);
-    const sill = new THREE.Mesh(sillGeo, this.materials.woodTrim);
-    sill.position.set(halfW - 0.04, 0.76 + LOWER_FLOOR_Y, -0.9);
-    sill.castShadow = true;
-    sill.receiveShadow = true;
-    this.architecture.add(sill);
-
-    // Right Wall Top Header Trim
-    const rightTrimGeo = new THREE.BoxGeometry(WOOD_TRIM_DEPTH, WOOD_TRIM_HEIGHT, windowWallWidth);
-    const rightTrim = new THREE.Mesh(rightTrimGeo, this.materials.woodTrim);
-    rightTrim.position.set(halfW + WALL_THICKNESS * 0.5, ROOM_HEIGHT + LOWER_FLOOR_Y + WOOD_TRIM_HEIGHT * 0.5, -halfD + windowWallWidth * 0.5);
-    rightTrim.castShadow = true;
-    this.architecture.add(rightTrim);
-
-    // 4. Stepped Wood Floor Architecture
-    // Base Plinth Slab
-    const baseFloorGeo = new THREE.BoxGeometry(ROOM_WIDTH, FLOOR_THICKNESS, ROOM_DEPTH);
-    const baseFloor = new THREE.Mesh(baseFloorGeo, this.materials.woodFloorLight);
-    baseFloor.position.set(0, LOWER_FLOOR_Y - FLOOR_THICKNESS * 0.5, 0);
-    baseFloor.receiveShadow = true;
-    baseFloor.name = 'BaseFloorSlab';
-    this.architecture.add(baseFloor);
-
-    // Raised Upper Platform (Right & Rear of room where bed and nightstand rest)
-    const upperW = ROOM_WIDTH * 0.52;
-    const upperD = ROOM_DEPTH * 0.72;
-    const upperPlatformGeo = new THREE.BoxGeometry(upperW, UPPER_FLOOR_Y - LOWER_FLOOR_Y, upperD);
-    const upperPlatform = new THREE.Mesh(upperPlatformGeo, this.materials.woodFloorLight);
-    upperPlatform.position.set(
-      halfW - upperW * 0.5,
-      (UPPER_FLOOR_Y + LOWER_FLOOR_Y) * 0.5,
-      -halfD + upperD * 0.5
-    );
-    upperPlatform.receiveShadow = true;
-    upperPlatform.castShadow = true;
-    upperPlatform.name = 'RaisedUpperFloorPlatform';
-    this.architecture.add(upperPlatform);
-
-    // Connecting Wooden Steps (front edge of upper platform)
-    const step1Geo = new THREE.BoxGeometry(upperW * 0.7, 0.075, 0.28);
+    // Step 1: Intermediate Step (Y = 0.21)
+    const step1Geo = new THREE.BoxGeometry(stepWidth, STEP_HEIGHT, stepDepth);
     const step1 = new THREE.Mesh(step1Geo, this.materials.woodTrim);
-    step1.position.set(halfW - upperW * 0.5 - 0.1, LOWER_FLOOR_Y + 0.0375, -halfD + upperD + 0.14);
+    step1.position.set(0.2 + stepWidth * 0.5 - 0.4, LOWER_FLOOR_Y + STEP_HEIGHT * 0.5, 1.4);
     step1.receiveShadow = true;
     step1.castShadow = true;
     this.architecture.add(step1);
 
-    // Diorama Cutaway Wooden Rim Borders (front and right outer edges)
-    const frontRimGeo = new THREE.BoxGeometry(ROOM_WIDTH + WALL_THICKNESS, 0.18, 0.08);
-    const frontRim = new THREE.Mesh(frontRimGeo, this.materials.woodTrim);
-    frontRim.position.set(-WALL_THICKNESS * 0.5, LOWER_FLOOR_Y - 0.04, halfD + 0.04);
-    frontRim.castShadow = true;
-    this.architecture.add(frontRim);
+    // Step 1 Tread Plank
+    const step1TreadGeo = new THREE.BoxGeometry(stepWidth + 0.04, 0.04, stepDepth + 0.04);
+    const step1Tread = new THREE.Mesh(step1TreadGeo, this.materials.woodHoney);
+    step1Tread.position.set(0.2 + stepWidth * 0.5 - 0.4, LOWER_FLOOR_Y + STEP_HEIGHT + 0.02, 1.4);
+    step1Tread.receiveShadow = true;
+    step1Tread.castShadow = true;
+    this.architecture.add(step1Tread);
 
-    const rightRimGeo = new THREE.BoxGeometry(0.08, 0.18, ROOM_DEPTH * 0.45);
-    const rightRim = new THREE.Mesh(rightRimGeo, this.materials.woodTrim);
-    rightRim.position.set(halfW + 0.04, LOWER_FLOOR_Y - 0.04, halfD - (ROOM_DEPTH * 0.45) * 0.5);
-    rightRim.castShadow = true;
-    this.architecture.add(rightRim);
+    // Step 2: Top Step Edge / Nose
+    const step2Geo = new THREE.BoxGeometry(stepWidth, STEP_HEIGHT, stepDepth * 0.8);
+    const step2 = new THREE.Mesh(step2Geo, this.materials.woodTrim);
+    step2.position.set(0.2 + stepWidth * 0.5 - 0.4, LOWER_FLOOR_Y + STEP_HEIGHT * 1.5, 1.4 - stepDepth * 0.9);
+    step2.receiveShadow = true;
+    step2.castShadow = true;
+    this.architecture.add(step2);
+
+    // Step 2 Tread Plank
+    const step2TreadGeo = new THREE.BoxGeometry(stepWidth + 0.04, 0.04, stepDepth * 0.8 + 0.04);
+    const step2Tread = new THREE.Mesh(step2TreadGeo, this.materials.woodHoney);
+    step2Tread.position.set(0.2 + stepWidth * 0.5 - 0.4, UPPER_FLOOR_Y + 0.02, 1.4 - stepDepth * 0.9);
+    step2Tread.receiveShadow = true;
+    step2Tread.castShadow = true;
+    this.architecture.add(step2Tread);
   }
 
-  buildFoundationalFurniture() {
-    // 1. Large Honey Oak Desk (Left Wall)
-    const deskGroup = new THREE.Group();
-    deskGroup.name = 'DeskArchitecture';
+  // MARK: - 3. Left Wall
+  buildLeftWall() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
 
-    // Desk Top Surface
-    const topGeo = new THREE.BoxGeometry(1.6, 0.06, 0.75);
-    const deskTop = new THREE.Mesh(topGeo, this.materials.woodHoney);
-    deskTop.position.set(-1.15, 0.68, -0.65);
-    deskTop.castShadow = true;
-    deskTop.receiveShadow = true;
-    deskGroup.add(deskTop);
+    // Solid cream left wall
+    const wallGeo = new THREE.BoxGeometry(WALL_THICKNESS, ROOM_HEIGHT, ROOM_DEPTH);
+    const wall = new THREE.Mesh(wallGeo, this.materials.wallCream);
+    wall.position.set(-halfW - WALL_THICKNESS * 0.5, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, 0);
+    wall.receiveShadow = true;
+    wall.castShadow = true;
+    wall.name = 'LeftWall';
+    this.architecture.add(wall);
 
-    // Desk Left Drawer Unit
-    const drawerGeo = new THREE.BoxGeometry(0.42, 0.65, 0.68);
-    const deskDrawers = new THREE.Mesh(drawerGeo, this.materials.woodOakDark);
-    deskDrawers.position.set(-1.65, 0.325 + LOWER_FLOOR_Y, -0.65);
-    deskDrawers.castShadow = true;
-    deskDrawers.receiveShadow = true;
-    deskGroup.add(deskDrawers);
+    // Left wall baseboard
+    const baseboardGeo = new THREE.BoxGeometry(0.04, 0.22, ROOM_DEPTH);
+    const baseboard = new THREE.Mesh(baseboardGeo, this.materials.woodTrim);
+    baseboard.position.set(-halfW + 0.02, LOWER_FLOOR_Y + 0.11, 0);
+    baseboard.receiveShadow = true;
+    this.architecture.add(baseboard);
 
-    // Desk Right Legs
-    const legGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.65, 16);
-    const leg = new THREE.Mesh(legGeo, this.materials.woodTrim);
-    leg.position.set(-0.42, 0.325 + LOWER_FLOOR_Y, -0.35);
-    leg.castShadow = true;
-    deskGroup.add(leg);
-
-    this.furniture.add(deskGroup);
-
-    // 2. Cozy Bed Platform (Rear-Right Corner)
-    const bedGroup = new THREE.Group();
-    bedGroup.name = 'BedArchitecture';
-
-    // Wooden Frame Base
-    const bedFrameGeo = new THREE.BoxGeometry(1.35, 0.30, 1.85);
-    const bedFrame = new THREE.Mesh(bedFrameGeo, this.materials.woodHoney);
-    bedFrame.position.set(0.95, UPPER_FLOOR_Y + 0.15, -0.75);
-    bedFrame.castShadow = true;
-    bedFrame.receiveShadow = true;
-    bedGroup.add(bedFrame);
-
-    // Bed Headboard
-    const headboardGeo = new THREE.BoxGeometry(1.4, 0.65, 0.1);
-    const headboard = new THREE.Mesh(headboardGeo, this.materials.woodTrim);
-    headboard.position.set(0.95, UPPER_FLOOR_Y + 0.45, -1.65);
-    headboard.castShadow = true;
-    headboard.receiveShadow = true;
-    bedGroup.add(headboard);
-
-    // Mattress
-    const mattressGeo = new THREE.BoxGeometry(1.25, 0.22, 1.75);
-    const mattress = new THREE.Mesh(mattressGeo, this.materials.bedSheets);
-    mattress.position.set(0.95, UPPER_FLOOR_Y + 0.38, -0.75);
-    mattress.castShadow = true;
-    mattress.receiveShadow = true;
-    bedGroup.add(mattress);
-
-    // Sage Green Duvet / Folded Quilt
-    const duvetGeo = new THREE.BoxGeometry(1.30, 0.16, 1.25);
-    const duvet = new THREE.Mesh(duvetGeo, this.materials.bedBlanket);
-    duvet.position.set(0.95, UPPER_FLOOR_Y + 0.44, -0.45);
-    duvet.castShadow = true;
-    duvet.receiveShadow = true;
-    bedGroup.add(duvet);
-
-    // Pillows
-    const p1Geo = new THREE.BoxGeometry(0.48, 0.12, 0.32);
-    const p1 = new THREE.Mesh(p1Geo, this.materials.pillowCream);
-    p1.position.set(0.68, UPPER_FLOOR_Y + 0.52, -1.35);
-    p1.rotation.x = 0.15;
-    p1.castShadow = true;
-    bedGroup.add(p1);
-
-    const p2Geo = new THREE.BoxGeometry(0.48, 0.12, 0.32);
-    const p2 = new THREE.Mesh(p2Geo, this.materials.pillowSage);
-    p2.position.set(1.22, UPPER_FLOOR_Y + 0.52, -1.35);
-    p2.rotation.x = 0.15;
-    p2.castShadow = true;
-    bedGroup.add(p2);
-
-    this.furniture.add(bedGroup);
-
-    // 3. Low Ottoman / Turntable Bench (Foot of bed)
-    const benchGroup = new THREE.Group();
-    benchGroup.name = 'TurntableBench';
-    const benchBaseGeo = new THREE.BoxGeometry(0.72, 0.16, 0.65);
-    const benchBase = new THREE.Mesh(benchBaseGeo, this.materials.woodTrim);
-    benchBase.position.set(1.15, UPPER_FLOOR_Y + 0.08, 0.65);
-    benchBase.castShadow = true;
-    benchGroup.add(benchBase);
-
-    const benchCushionGeo = new THREE.BoxGeometry(0.68, 0.14, 0.62);
-    const benchCushion = new THREE.Mesh(benchCushionGeo, this.materials.pillowSage);
-    benchCushion.position.set(1.15, UPPER_FLOOR_Y + 0.22, 0.65);
-    benchCushion.castShadow = true;
-    benchGroup.add(benchCushion);
-    this.furniture.add(benchGroup);
-
-    // 4. Bouclé Pouf (Sunken front-right corner)
-    const poufGeo = new THREE.CylinderGeometry(0.38, 0.44, 0.28, 24);
-    const pouf = new THREE.Mesh(poufGeo, this.materials.poufBoucle);
-    pouf.position.set(1.22, LOWER_FLOOR_Y + 0.14, 1.45);
-    pouf.castShadow = true;
-    pouf.receiveShadow = true;
-    pouf.name = 'BouclePouf';
-    this.furniture.add(pouf);
+    // Front return column (corner frame)
+    const columnGeo = new THREE.BoxGeometry(WALL_THICKNESS + 0.06, ROOM_HEIGHT, 0.45);
+    const column = new THREE.Mesh(columnGeo, this.materials.wallCream);
+    column.position.set(-halfW - WALL_THICKNESS * 0.5, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, halfD - 0.225);
+    column.castShadow = true;
+    column.receiveShadow = true;
+    this.architecture.add(column);
   }
 
-  buildFoundationalDecorations() {
-    // 1. Back Wall Bookshelf Structure (recessed against back wall matching reference)
+  // MARK: - 4. Back Wall
+  buildBackWall() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
+
+    // Solid cream back wall
+    const wallGeo = new THREE.BoxGeometry(ROOM_WIDTH + WALL_THICKNESS * 2, ROOM_HEIGHT, WALL_THICKNESS);
+    const wall = new THREE.Mesh(wallGeo, this.materials.wallCream);
+    wall.position.set(0, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, -halfD - WALL_THICKNESS * 0.5);
+    wall.receiveShadow = true;
+    wall.castShadow = true;
+    wall.name = 'BackWall';
+    this.architecture.add(wall);
+
+    // Back wall baseboard
+    const baseboardGeo = new THREE.BoxGeometry(ROOM_WIDTH, 0.22, 0.04);
+    const baseboard = new THREE.Mesh(baseboardGeo, this.materials.woodTrim);
+    baseboard.position.set(0, LOWER_FLOOR_Y + 0.11, -halfD + 0.02);
+    baseboard.receiveShadow = true;
+    this.architecture.add(baseboard);
+  }
+
+  // MARK: - 5. Right Wall & Window
+  buildRightWallAndWindow() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
+
+    const wallX = halfW + WALL_THICKNESS * 0.5;
+    const winConfig = WINDOW_CONFIG;
+
+    // A. Back Solid Section of Right Wall (from Z = -halfD to window start)
+    const backSectionDepth = 1.7;
+    const backSectionGeo = new THREE.BoxGeometry(WALL_THICKNESS, ROOM_HEIGHT, backSectionDepth);
+    const backSection = new THREE.Mesh(backSectionGeo, this.materials.wallCream);
+    backSection.position.set(wallX, ROOM_HEIGHT * 0.5 + LOWER_FLOOR_Y, -halfD + backSectionDepth * 0.5);
+    backSection.receiveShadow = true;
+    backSection.castShadow = true;
+    this.architecture.add(backSection);
+
+    // B. Lower Wall section below window with wood wainscot paneling
+    const lowerWallGeo = new THREE.BoxGeometry(WALL_THICKNESS, winConfig.sillY, winConfig.width);
+    const lowerWall = new THREE.Mesh(lowerWallGeo, this.materials.wallCream);
+    lowerWall.position.set(wallX, winConfig.sillY * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ);
+    lowerWall.receiveShadow = true;
+    lowerWall.castShadow = true;
+    this.architecture.add(lowerWall);
+
+    // Lower Wainscot Honey Wood Paneling (under window as in nook-room.jpeg)
+    const wainscotGeo = new THREE.BoxGeometry(0.05, winConfig.sillY - 0.1, winConfig.width);
+    const wainscot = new THREE.Mesh(wainscotGeo, this.materials.woodHoney);
+    wainscot.position.set(halfW - 0.025, (winConfig.sillY - 0.1) * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ);
+    wainscot.castShadow = true;
+    wainscot.receiveShadow = true;
+    this.architecture.add(wainscot);
+
+    // C. Top Wall Header above window
+    const topWallHeight = ROOM_HEIGHT - (winConfig.sillY + winConfig.height);
+    const topWallGeo = new THREE.BoxGeometry(WALL_THICKNESS, topWallHeight, winConfig.width);
+    const topWall = new THREE.Mesh(topWallGeo, this.materials.wallCream);
+    topWall.position.set(wallX, ROOM_HEIGHT + LOWER_FLOOR_Y - topWallHeight * 0.5, winConfig.centerZ);
+    topWall.castShadow = true;
+    this.architecture.add(topWall);
+
+    // D. Front Cutaway Column of Right Wall
+    const frontColDepth = 1.1;
+    const frontColGeo = new THREE.BoxGeometry(WALL_THICKNESS, ROOM_HEIGHT * 0.68, frontColDepth);
+    const frontCol = new THREE.Mesh(frontColGeo, this.materials.wallCream);
+    frontCol.position.set(wallX, (ROOM_HEIGHT * 0.68) * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ + winConfig.width * 0.5 + frontColDepth * 0.5);
+    frontCol.receiveShadow = true;
+    frontCol.castShadow = true;
+    this.architecture.add(frontCol);
+
+    // E. Window Frame & Sash Assembly
+    const frameGroup = new THREE.Group();
+    frameGroup.name = 'WindowFrameAssembly';
+
+    const frameDepth = WALL_THICKNESS + 0.12;
+    const frameThick = winConfig.frameThickness;
+
+    // Window Sill Shelf (Prominent honey wood shelf with potted plants in reference)
+    const sillGeo = new THREE.BoxGeometry(frameDepth + 0.28, 0.12, winConfig.width + 0.38);
+    const sill = new THREE.Mesh(sillGeo, this.materials.woodTrim);
+    sill.position.set(halfW - 0.06, winConfig.sillY + LOWER_FLOOR_Y + 0.06, winConfig.centerZ);
+    sill.castShadow = true;
+    sill.receiveShadow = true;
+    frameGroup.add(sill);
+
+    // Top Frame Rail
+    const topRailGeo = new THREE.BoxGeometry(frameDepth, frameThick, winConfig.width);
+    const topRail = new THREE.Mesh(topRailGeo, this.materials.woodHoney);
+    topRail.position.set(wallX, winConfig.sillY + winConfig.height + LOWER_FLOOR_Y - frameThick * 0.5, winConfig.centerZ);
+    topRail.castShadow = true;
+    frameGroup.add(topRail);
+
+    // Left & Right Vertical Jambs
+    const jambGeo = new THREE.BoxGeometry(frameDepth, winConfig.height - frameThick, frameThick);
+    const leftJamb = new THREE.Mesh(jambGeo, this.materials.woodHoney);
+    leftJamb.position.set(wallX, winConfig.sillY + winConfig.height * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ - winConfig.width * 0.5 + frameThick * 0.5);
+    leftJamb.castShadow = true;
+    frameGroup.add(leftJamb);
+
+    const rightJamb = new THREE.Mesh(jambGeo, this.materials.woodHoney);
+    rightJamb.position.set(wallX, winConfig.sillY + winConfig.height * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ + winConfig.width * 0.5 - frameThick * 0.5);
+    rightJamb.castShadow = true;
+    frameGroup.add(rightJamb);
+
+    // Center Vertical Mullion (Dividing into two classic panes)
+    const mullionGeo = new THREE.BoxGeometry(frameDepth * 0.7, winConfig.height - frameThick * 2, winConfig.mullionWidth);
+    const centerMullion = new THREE.Mesh(mullionGeo, this.materials.woodHoney);
+    centerMullion.position.set(wallX, winConfig.sillY + winConfig.height * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ);
+    centerMullion.castShadow = true;
+    frameGroup.add(centerMullion);
+
+    // Window Glass Panes (Light streaming through)
+    const glassGeo = new THREE.BoxGeometry(0.015, winConfig.height - frameThick * 2, winConfig.width - frameThick * 2);
+    const glass = new THREE.Mesh(glassGeo, this.materials.windowGlass);
+    glass.position.set(wallX, winConfig.sillY + winConfig.height * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ);
+    frameGroup.add(glass);
+
+    // Sunny Outdoor Backdrop Plane (Blue sky & warm green foliage outside the window)
+    const outdoorGeo = new THREE.PlaneGeometry(5.2, 4.0);
+    const outdoorBackdrop = new THREE.Mesh(outdoorGeo, this.materials.outdoorSky);
+    outdoorBackdrop.position.set(wallX + 1.2, winConfig.sillY + winConfig.height * 0.5 + LOWER_FLOOR_Y, winConfig.centerZ);
+    outdoorBackdrop.rotation.y = -Math.PI / 2;
+    frameGroup.add(outdoorBackdrop);
+
+    this.architecture.add(frameGroup);
+  }
+
+  // MARK: - 6. Thick Wooden Upper Wall Trim
+  buildThickUpperWallTrim() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
+
+    const trimW = UPPER_TRIM_WIDTH;
+    const trimH = UPPER_TRIM_HEIGHT;
+    const trimY = ROOM_HEIGHT + LOWER_FLOOR_Y + trimH * 0.5;
+
+    // A. Left Wall Top Header Trim
+    const leftTrimGeo = new THREE.BoxGeometry(trimW, trimH, ROOM_DEPTH + trimW);
+    const leftTrim = new THREE.Mesh(leftTrimGeo, this.materials.woodTrim);
+    leftTrim.position.set(-halfW - WALL_THICKNESS * 0.5, trimY, 0);
+    leftTrim.castShadow = true;
+    leftTrim.receiveShadow = true;
+    this.architecture.add(leftTrim);
+
+    // B. Back Wall Top Header Trim
+    const backTrimGeo = new THREE.BoxGeometry(ROOM_WIDTH + WALL_THICKNESS * 2 + trimW, trimH, trimW);
+    const backTrim = new THREE.Mesh(backTrimGeo, this.materials.woodTrim);
+    backTrim.position.set(0, trimY, -halfD - WALL_THICKNESS * 0.5);
+    backTrim.castShadow = true;
+    backTrim.receiveShadow = true;
+    this.architecture.add(backTrim);
+
+    // C. Right Wall Top Header Trim (Covering the back solid section of right wall)
+    const rightTrimGeo = new THREE.BoxGeometry(trimW, trimH, 2.5);
+    const rightTrim = new THREE.Mesh(rightTrimGeo, this.materials.woodTrim);
+    rightTrim.position.set(halfW + WALL_THICKNESS * 0.5, trimY, -halfD + 1.25);
+    rightTrim.castShadow = true;
+    rightTrim.receiveShadow = true;
+    this.architecture.add(rightTrim);
+  }
+
+  // MARK: - 7. Built-in Shelf Structure (Back Wall)
+  buildBuiltInShelfStructure() {
+    const halfD = ROOM_DEPTH * 0.5;
     const shelfGroup = new THREE.Group();
-    shelfGroup.name = 'BackBookshelfArchitecture';
+    shelfGroup.name = 'BackWallBuiltInShelving';
 
-    // Flush back panel
-    const shelfBackGeo = new THREE.BoxGeometry(1.35, 1.45, 0.04);
-    const shelfBack = new THREE.Mesh(shelfBackGeo, this.materials.woodHoney);
-    shelfBack.position.set(0.15, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.02);
-    shelfBack.castShadow = true;
-    shelfBack.receiveShadow = true;
-    shelfGroup.add(shelfBack);
+    const woodMat = this.materials.woodHoney;
+    const trimMat = this.materials.woodTrim;
+    const backZ = -halfD + 0.05;
 
-    // Left and right vertical uprights
-    const uprightGeo = new THREE.BoxGeometry(0.04, 1.45, 0.22);
-    const leftUpright = new THREE.Mesh(uprightGeo, this.materials.woodTrim);
-    leftUpright.position.set(0.15 - 1.35 * 0.5 + 0.02, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
+    // A. Tall Shelving Unit (Center-Right behind bed)
+    // Vertical Side Uprights
+    const uprightH = 3.6;
+    const uprightW = 0.08;
+    const uprightD = 0.48;
+
+    const uprightGeo = new THREE.BoxGeometry(uprightW, uprightH, uprightD);
+
+    const leftUpright = new THREE.Mesh(uprightGeo, trimMat);
+    leftUpright.position.set(0.2, 1.8 + uprightH * 0.5 + LOWER_FLOOR_Y, backZ + uprightD * 0.5);
     leftUpright.castShadow = true;
     shelfGroup.add(leftUpright);
 
-    const rightUpright = new THREE.Mesh(uprightGeo, this.materials.woodTrim);
-    rightUpright.position.set(0.15 + 1.35 * 0.5 - 0.02, 1.65 + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
+    const rightUpright = new THREE.Mesh(uprightGeo, trimMat);
+    rightUpright.position.set(2.8, 1.8 + uprightH * 0.5 + LOWER_FLOOR_Y, backZ + uprightD * 0.5);
     rightUpright.castShadow = true;
     shelfGroup.add(rightUpright);
 
-    // Horizontal shelves
-    for (let y = 1.05; y <= 2.15; y += 0.42) {
-      const plankGeo = new THREE.BoxGeometry(1.30, 0.035, 0.22);
-      const plank = new THREE.Mesh(plankGeo, this.materials.woodTrim);
-      plank.position.set(0.15, y + LOWER_FLOOR_Y, -ROOM_DEPTH * 0.5 + 0.11);
+    // Top Storage Box Ledge (Crown beam)
+    const topLedgeGeo = new THREE.BoxGeometry(2.8 - 0.2 + uprightW * 2, 0.12, uprightD + 0.08);
+    const topLedge = new THREE.Mesh(topLedgeGeo, trimMat);
+    topLedge.position.set(1.5, 1.8 + uprightH + LOWER_FLOOR_Y + 0.06, backZ + uprightD * 0.5);
+    topLedge.castShadow = true;
+    shelfGroup.add(topLedge);
+
+    // Horizontal Shelves
+    const shelfWidth = 2.8 - 0.2;
+    const shelfPlankGeo = new THREE.BoxGeometry(shelfWidth, 0.06, uprightD);
+
+    const shelfHeights = [2.2, 3.0, 3.8, 4.6];
+    for (const y of shelfHeights) {
+      const plank = new THREE.Mesh(shelfPlankGeo, woodMat);
+      plank.position.set(1.5, y + LOWER_FLOOR_Y, backZ + uprightD * 0.5);
       plank.castShadow = true;
+      plank.receiveShadow = true;
       shelfGroup.add(plank);
     }
-    this.decorations.add(shelfGroup);
 
-    // 2. Woven Rug in Sunken Desk Area
-    const rugGeo = new THREE.PlaneGeometry(1.4, 1.1);
-    const rug = new THREE.Mesh(rugGeo, this.materials.rug);
-    rug.rotation.x = -Math.PI / 2;
-    rug.position.set(-0.75, LOWER_FLOOR_Y + 0.005, 0.15);
-    rug.receiveShadow = true;
-    rug.name = 'DeskWovenRug';
-    this.decorations.add(rug);
+    // Flush Warm Wood Backing Panel for the Bookshelf
+    const backPanelGeo = new THREE.BoxGeometry(shelfWidth, uprightH, 0.03);
+    const backPanel = new THREE.Mesh(backPanelGeo, woodMat);
+    backPanel.position.set(1.5, 1.8 + uprightH * 0.5 + LOWER_FLOOR_Y, backZ + 0.015);
+    backPanel.receiveShadow = true;
+    shelfGroup.add(backPanel);
 
-    // 3. Window Curtains
-    const rodGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.85, 16);
-    const rod = new THREE.Mesh(rodGeo, this.materials.woodTrim);
-    rod.rotation.z = Math.PI / 2;
-    rod.position.set(ROOM_WIDTH * 0.5 - 0.08, 2.15 + LOWER_FLOOR_Y, -0.9);
-    this.decorations.add(rod);
+    // B. Upper Floating Bookshelf (Left side, above desk workstation)
+    const deskShelfWidth = 3.6;
+    const deskShelfPlankGeo = new THREE.BoxGeometry(deskShelfWidth, 0.06, 0.42);
 
-    const curtainLeftGeo = new THREE.BoxGeometry(0.04, 1.45, 0.28);
-    const curtainLeft = new THREE.Mesh(curtainLeftGeo, this.materials.curtains);
-    curtainLeft.position.set(ROOM_WIDTH * 0.5 - 0.1, 1.42 + LOWER_FLOOR_Y, -1.65);
-    curtainLeft.castShadow = true;
-    this.decorations.add(curtainLeft);
+    const deskShelfHeights = [3.6, 4.4];
+    for (const y of deskShelfHeights) {
+      const plank = new THREE.Mesh(deskShelfPlankGeo, woodMat);
+      plank.position.set(-2.8, y + LOWER_FLOOR_Y, backZ + 0.21);
+      plank.castShadow = true;
+      plank.receiveShadow = true;
+      shelfGroup.add(plank);
+    }
 
-    const curtainRightGeo = new THREE.BoxGeometry(0.04, 1.45, 0.28);
-    const curtainRight = new THREE.Mesh(curtainRightGeo, this.materials.curtains);
-    curtainRight.position.set(ROOM_WIDTH * 0.5 - 0.1, 1.42 + LOWER_FLOOR_Y, -0.15);
-    curtainRight.castShadow = true;
-    this.decorations.add(curtainRight);
+    // Vertical dividers between desk shelves
+    const dividerGeo = new THREE.BoxGeometry(0.06, 0.74, 0.40);
+    const div1 = new THREE.Mesh(dividerGeo, trimMat);
+    div1.position.set(-2.8, 4.0 + LOWER_FLOOR_Y, backZ + 0.21);
+    div1.castShadow = true;
+    shelfGroup.add(div1);
+
+    const div2 = new THREE.Mesh(dividerGeo, trimMat);
+    div2.position.set(-4.2, 4.0 + LOWER_FLOOR_Y, backZ + 0.21);
+    div2.castShadow = true;
+    shelfGroup.add(div2);
+
+    this.architecture.add(shelfGroup);
   }
 
   update(delta) {

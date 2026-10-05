@@ -54,8 +54,8 @@ export class MathUtils {
    */
   static getNaturalFloorHeight(x, z) {
     // Reference layout:
-    // Sunken pit is in the front/center region (X between -1.8 and 0.4, Z between -0.4 and 1.8)
-    if (x < 0.4 && z > -0.6) {
+    // Sunken desk pit is on the left side (X <= 0.2)
+    if (x <= 0.2) {
       return LOWER_FLOOR_Y;
     }
     return UPPER_FLOOR_Y;

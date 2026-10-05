@@ -1,125 +1,110 @@
 /**
- * Nook 3D - Global Dimensions, Coordinates, Palettes, and Architectural Constants
- * Carefully calibrated to match the reference composition (nook-room.jpeg).
+ * Nook 3D - Architectural Dimensions, Proportions, Palettes, and Camera Setup
+ * Calibrated specifically to match the 10 × 7 × 5.6 diorama proportions of nook-room.jpeg.
  *
  * Coordinate System:
  *   Y = Vertical (Up / Down)
- *   X = Horizontal (Left / Right)
- *   Z = Depth (Front / Back)
- * Room is centered around world origin (0, 0, 0).
+ *   X = Horizontal (Left / Right, Left Wall = -X, Right Wall = +X)
+ *   Z = Depth (Front / Back, Back Wall = -Z, Open Front = +Z)
+ * Centered around origin (0, 0, 0).
  */
 
-export const ROOM_WIDTH = 4.0;
-export const ROOM_DEPTH = 4.0;
-export const ROOM_HEIGHT = 2.6;
-export const WALL_THICKNESS = 0.16;
-export const FLOOR_THICKNESS = 0.18;
-export const WOOD_TRIM_HEIGHT = 0.14;
-export const WOOD_TRIM_DEPTH = 0.22;
+// Room Proportions specified by user
+export const ROOM_WIDTH = 10.0;
+export const ROOM_DEPTH = 7.0;
+export const ROOM_HEIGHT = 5.6;
 
-// Stepped floor architecture (matching reference: sunken desk pit + raised bed platform)
-export const UPPER_FLOOR_Y = 0.0;
-export const LOWER_FLOOR_Y = -0.15;
-export const STEP_HEIGHT = 0.075;
+// Structural Architecture
+export const WALL_THICKNESS = 0.38;
+export const BASE_PLATFORM_THICKNESS = 0.52;
+export const UPPER_TRIM_WIDTH = 0.58;
+export const UPPER_TRIM_HEIGHT = 0.38;
 
-// Placement / Droppable surface elevations
+// Stepped Levels
+export const LOWER_FLOOR_Y = 0.0;       // Sunken desk pit / lower floor
+export const UPPER_FLOOR_Y = 0.42;      // Raised bed / entry platform
+export const STEP_HEIGHT = 0.21;        // Intermediate step height
+
 export const SURFACE_HEIGHTS = {
   FLOOR_UPPER: UPPER_FLOOR_Y,
   FLOOR_LOWER: LOWER_FLOOR_Y,
-  DESK_TOP: 0.62,
-  BED_MATTRESS: 0.44,
-  BENCH_TOP: 0.28,
-  SHELF_LOW: 1.15,
-  SHELF_MID: 1.55,
-  SHELF_HIGH: 1.95,
-  WINDOW_SILL: 0.76,
-  POUF_TOP: 0.18
+  DESK_TOP: 1.45,
+  BED_MATTRESS: 0.95,
+  BENCH_TOP: 0.65,
+  WINDOW_SILL: 2.2,
+  POUF_TOP: 0.42
 };
 
-// Warm miniature palette directly matching nook-room.jpeg
+// Window Architecture (Right Wall)
+export const WINDOW_CONFIG = {
+  centerZ: -0.2,
+  width: 3.2,
+  sillY: 2.2,
+  height: 2.3,
+  frameThickness: 0.14,
+  mullionWidth: 0.08
+};
+
+// Built-in Shelving Structure (Back Wall)
+export const SHELF_CONFIG = {
+  leftX: -1.0,
+  rightX: 3.2,
+  bottomY: 2.2,
+  topY: 5.2,
+  depth: 0.55,
+  plankThickness: 0.08
+};
+
+// Warm Ivory / Cream & Natural Honey Wood Palettes
 export const PALETTE = {
-  // Wood finishes
-  woodHoney: 0xd49b5c,
-  woodOakDark: 0x9b612e,
-  woodOakBevel: 0xb5783d,
-  woodFloorLight: 0xddaa6f,
-  woodFloorDark: 0xc89052,
-  woodTrim: 0x8a5426,
-
-  // Architecture & walls
-  wallCream: 0xf6f0e4,
+  // Walls
+  wallCream: 0xf5eedf,
+  wallCreamLight: 0xf9f4ea,
   wallCreamShade: 0xede3d2,
-  baseboard: 0x915c2d,
 
-  // Textiles & Comfort
-  bedSheets: 0xf9f7f2,
-  bedBlanketSage: 0x6e8a72,
-  bedPillowCream: 0xf4eee4,
-  bedPillowSage: 0x879f8b,
-  pillowDaisyYellow: 0xefa744,
-  rugCream: 0xeee7db,
-  rugPatternGreen: 0x647e68,
-  poufBoucle: 0xede5db,
+  // Warm Natural Honey Wood (No dark mahogany, no neon orange)
+  woodHoney: 0xd69c5e,
+  woodHoneyLight: 0xdfab6f,
+  woodHoneyDark: 0xb5783d,
+  woodTrim: 0xa86c35,
+  woodPlanks: 0xd09758,
 
-  // Accents & Props
-  ceramicWhite: 0xf7f5f0,
-  plantGreen: 0x3d6e40,
-  plantGreenLight: 0x5a915e,
-  terracotta: 0xc66946,
-  recordPlayerDustyRose: 0xd69d9d,
-  recordVinyl: 0x222022,
-  skateboardBlack: 0x232326,
-  chairFabric: 0xc8d7cb,
-  chairPlastic: 0xf2f0ea,
-  lampWarmBrass: 0xd8b273,
-  lampShade: 0xf8f5ee,
+  // Environment & Backing
+  environmentBg: 0xede3d6,
+  studioPedestal: 0xdfd4c4,
+  glassWindow: 0xffffff,
+  outdoorSky: 0x8cc4e8,
+  outdoorTrees: 0x6e9f65,
 
-  // Cat (Cookie)
-  cookieWhite: 0xfcfaf5,
-  cookieGinger: 0xcc7b38,
-  cookieDarkBrown: 0x3d322b,
-  cookieBlush: 0xf8a6a6,
-  cookieEarsPink: 0xf3bfbf,
-
-  // Environment & Lighting
-  sunlightWarm: 0xffebd0,
-  ambientSky: 0xfff6ec,
-  ambientGround: 0xdfcbb4,
-  lampGlow: 0xffaf58,
-  environmentBg: 0xebdccf,
-  tabletopShadow: 0xd4c2b0
+  // Lighting
+  sunlightGolden: 0xffe2b8,
+  ambientSky: 0xfff7ed,
+  ambientGround: 0xdfcbaf,
+  accentGlow: 0xffb568
 };
 
-// Camera framing (isometric-leaning miniature perspective)
+// NookMainCamera reference configuration
 export const CAMERA_CONFIG = {
-  fov: 34,
+  name: 'NookMainCamera',
+  fov: 32,
   near: 0.1,
-  far: 50.0,
-  defaultPosition: [5.6, 4.6, 5.6],
-  defaultTarget: [0.0, 0.35, 0.0],
-  minDistance: 3.2,
-  maxDistance: 11.0,
-  minPolarAngle: Math.PI * 0.16, // ~28 degrees from top
-  maxPolarAngle: Math.PI * 0.44, // ~79 degrees
-  minAzimuthAngle: -Math.PI * 0.15, // Clamped exploration around the cutaway
-  maxAzimuthAngle: Math.PI * 0.65
+  far: 80.0,
+  defaultPosition: [-3.8, 10.6, 14.6],
+  defaultTarget: [0.2, 1.8, -0.2],
+  minDistance: 6.0,
+  maxDistance: 24.0,
+  minPolarAngle: Math.PI * 0.18,
+  maxPolarAngle: Math.PI * 0.42,
+  minAzimuthAngle: -Math.PI * 0.45,
+  maxAzimuthAngle: Math.PI * 0.25
 };
 
-// Lighting intensities (photometrically balanced, non-overexposing)
+// Photometric lighting intensities
 export const LIGHTING_CONFIG = {
-  sunlightIntensity: 2.2,
-  ambientSkyIntensity: 0.6,
-  deskLampIntensity: 1.4,
-  accentShelfIntensity: 0.8,
-  windowRimIntensity: 0.4,
-  exposure: 1.05
-};
-
-// Interactive Object Categories
-export const OBJECT_CATEGORIES = {
-  THOUGHT: 'thought',
-  FURNITURE: 'furniture',
-  PROP: 'prop',
-  CHARACTER: 'character',
-  LIGHTING: 'lighting'
+  sunlightIntensity: 3.2,
+  ambientSkyIntensity: 0.72,
+  ambientGroundIntensity: 0.38,
+  frontFillIntensity: 0.35,
+  shelfAccentIntensity: 0.25,
+  exposure: 1.02
 };

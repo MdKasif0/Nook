@@ -80,6 +80,13 @@ class NookApplication {
     // 5. Cookie the Calico Companion Cat
     this.cookie = new CookieController(this.roomScene);
     this.objectManager.registerObject(this.cookie);
+
+    // Initial state: Pure Architectural Blueprint mode
+    this.isArchOnly = true;
+    this.roomScene.interactiveObjects.visible = false;
+    this.roomScene.furniture.visible = false;
+    this.roomScene.decorations.visible = false;
+    this.roomScene.cookieGroup.visible = false;
   }
 
   initSubsystems() {
@@ -140,31 +147,6 @@ class NookApplication {
               label: 'Pet Cookie 🐾',
               icon: '❤️',
               action: () => this.cookie.behavior.pet()
-            },
-            { separator: true },
-            {
-              label: 'Call to Bed (Sun Spot)',
-              icon: '🛏️',
-              action: () => {
-                this.cookie.position.copy(COOKIE_LOCATIONS.BED_SUN_SPOT);
-                this.cookie.behavior.setMood('sleeping');
-              }
-            },
-            {
-              label: 'Call to Desk',
-              icon: '🖥️',
-              action: () => {
-                this.cookie.position.copy(COOKIE_LOCATIONS.DESK_COMPANION);
-                this.cookie.behavior.setMood('idle');
-              }
-            },
-            {
-              label: 'Call to Pouf',
-              icon: '🛋️',
-              action: () => {
-                this.cookie.position.copy(COOKIE_LOCATIONS.POUF_LOUNGE);
-                this.cookie.behavior.setMood('idle');
-              }
             }
           ]);
         } else {
@@ -177,30 +159,6 @@ class NookApplication {
                 this.selectionManager.select(obj);
                 this.cameraInstance.focusOn(obj.position);
               }
-            },
-            {
-              label: 'Inspect Details',
-              icon: '📄',
-              action: () => {
-                this.selectionManager.select(obj);
-              }
-            },
-            { separator: true },
-            {
-              label: 'Move to Desk Center',
-              icon: '📥',
-              action: () => {
-                obj.position.set(-1.0, 0.73, -0.6);
-                this.roomState.saveState();
-              }
-            },
-            {
-              label: 'Move to Bed',
-              icon: '🛏️',
-              action: () => {
-                obj.position.set(0.65, 0.52, -0.5);
-                this.roomState.saveState();
-              }
             }
           ]);
         }
@@ -208,25 +166,11 @@ class NookApplication {
         // Room Context Menu (Empty Space)
         this.contextMenu.show(e.clientX, e.clientY, [
           {
-            label: 'Toggle Desk Lamp',
-            icon: '💡',
-            action: () => {
-              this.roomScene.lighting.toggleDeskLamp();
-              this.roomState.saveState();
-            }
-          },
-          {
-            label: 'Toggle Accent Lights',
-            icon: '✨',
-            action: () => this.roomScene.lighting.toggleAccentLights()
-          },
-          { separator: true },
-          {
-            label: 'Reset Camera Framing',
+            label: 'Reset Reference Camera',
             icon: '🎥',
             action: () => {
               this.selectionManager.deselect();
-              this.cameraInstance.resetToDefault();
+              this.cameraInstance.resetCamera();
             }
           }
         ]);
@@ -243,43 +187,45 @@ class NookApplication {
     pill.innerHTML = `
       <div class="nook-brand">
         <span class="nook-brand-icon">🌱</span>
-        <span class="nook-brand-name">Nook</span>
+        <span class="nook-brand-name">Nook Architecture</span>
       </div>
       <div class="nook-pill-divider"></div>
-      <button class="nook-pill-btn" id="btn-lamp" title="Toggle Desk Lamp">💡 Lamp</button>
-      <button class="nook-pill-btn" id="btn-cookie" title="Pet Cookie">🐾 Pet Cookie</button>
-      <button class="nook-pill-btn" id="btn-reset" title="Reset View (Esc)">🎥 Reset View</button>
+      <button class="nook-pill-btn active" id="btn-arch" title="Toggle Architecture Only">🏛️ Architecture Only</button>
+      <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Reset Camera</button>
     `;
     this.uiContainer.appendChild(pill);
 
-    pill.querySelector('#btn-lamp').addEventListener('click', () => {
-      const isOn = this.roomScene.lighting.toggleDeskLamp();
-      this.roomState.saveState();
-      pill.querySelector('#btn-lamp').classList.toggle('active', isOn);
-    });
+    const archBtn = pill.querySelector('#btn-arch');
+    const updateVisibility = () => {
+      this.roomScene.interactiveObjects.visible = !this.isArchOnly;
+      this.roomScene.furniture.visible = !this.isArchOnly;
+      this.roomScene.decorations.visible = !this.isArchOnly;
+      this.roomScene.cookieGroup.visible = !this.isArchOnly;
+      archBtn.classList.toggle('active', this.isArchOnly);
+      archBtn.textContent = this.isArchOnly ? '🏛️ Architecture Only' : '🛋️ All Objects';
+    };
 
-    pill.querySelector('#btn-cookie').addEventListener('click', () => {
-      this.cookie.behavior.pet();
+    archBtn.addEventListener('click', () => {
+      this.isArchOnly = !this.isArchOnly;
+      updateVisibility();
     });
 
     pill.querySelector('#btn-reset').addEventListener('click', () => {
       this.selectionManager.deselect();
-      this.cameraInstance.resetToDefault();
+      this.cameraInstance.resetCamera();
     });
   }
 
   initNativeBridge() {
     // Expose clean JavaScript API for macOS WKWebView
     window.NookBridge = {
-      petCookie: () => this.cookie.behavior.pet(),
-      toggleLamp: () => this.roomScene.lighting.toggleDeskLamp(),
-      resetCamera: () => this.cameraInstance.resetToDefault(),
-      selectObject: id => {
-        const obj = this.objectManager.getObjectById(id);
-        if (obj) {
-          this.selectionManager.select(obj);
-          this.cameraInstance.focusOn(obj.position);
-        }
+      resetCamera: () => this.cameraInstance.resetCamera(),
+      setArchitectureOnly: enable => {
+        this.isArchOnly = enable;
+        this.roomScene.interactiveObjects.visible = !enable;
+        this.roomScene.furniture.visible = !enable;
+        this.roomScene.decorations.visible = !enable;
+        this.roomScene.cookieGroup.visible = !enable;
       },
       exportState: () => this.roomState.state
     };
