@@ -155,8 +155,8 @@ public struct CookieStateMachine: Sendable {
             return [.jumping, .sitting, .idle, .lookingAround].contains(target)
             
         case .jumping:
-            // After ballistic airborne arc, Cookie always lands into sitting, standing, walking, or idle
-            return [.sitting, .standing, .walking, .idle, .beingDragged].contains(target)
+            // After ballistic airborne arc, Cookie always lands into sitting, walking, or idle
+            return [.sitting, .walking, .idle, .beingDragged].contains(target)
             
         case .sitting:
             // From sitting posture, Cookie can idle, look around, groom, sleep, stretch, walk, or play
