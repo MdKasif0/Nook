@@ -5,29 +5,35 @@ import Foundation
 /// Cookie and other room components subscribe to these events to react
 /// naturally without tight coupling to the user interface.
 enum RoomEvent: Sendable {
-    /// A new item was placed inside the room diorama.
-    case itemCreated(title: String, itemType: NookItemType, objectType: NookObjectType, position: RoomPosition)
-    
-    /// An existing item was removed or deleted.
-    case itemDeleted(title: String)
-    
-    /// An item was archived or marked completed.
-    case itemCompleted(title: String)
-    
-    /// The user captured a thought via Quick Thought (⌘⇧Space).
-    case thoughtCaptured(title: String, objectType: NookObjectType)
-    
-    /// The user opened or focused the Nook window after being away.
+    // 1. Room & Window Lifecycle
     case roomOpened(wasAwayForDuration: TimeInterval)
-    
-    /// The Nook window closed or lost focus.
     case roomClosed
     
-    /// The user has been inactive for a prolonged period.
+    // 2. Thought/Item Lifecycle
+    case itemCreated(title: String, itemType: NookItemType, objectType: NookObjectType, position: RoomPosition)
+    case thoughtCreated(title: String, itemType: NookItemType, objectType: NookObjectType, position: SIMD3<Float>)
+    case thoughtOpened(id: UUID)
+    case thoughtEdited(id: UUID)
+    case itemDeleted(title: String)
+    case thoughtDeleted(id: UUID, lastPosition: SIMD3<Float>)
+    case itemCompleted(title: String)
+    case thoughtCaptured(title: String, objectType: NookObjectType)
+    
+    // 3. Physical Diorama Object Manipulation
+    case objectMoved(id: String, position: SIMD3<Float>)
+    case objectDropped(id: String, position: SIMD3<Float>)
+    
+    // 4. User Presence & Activity
+    case searchPerformed(query: String)
+    case userIdle(duration: TimeInterval)
+    case userReturned
     case longIdle
     
-    /// The user clicked or petted Cookie directly.
+    // 5. Direct Cookie Interaction
+    case cookieClicked
     case cookiePetted
+    case cookieDragged(startPosition: SIMD3<Float>, endPosition: SIMD3<Float>)
+    case cookieCalled(targetPosition: SIMD3<Float>)
 }
 
 /// A lightweight, native Swift event bus for publishing and subscribing to room events.

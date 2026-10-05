@@ -166,6 +166,7 @@ final class RoomSceneCoordinator {
         let ck = CookieRealityEntity()
         rootEntity.addChild(ck)
         self.cookie = ck
+        self.cookieController.bind(entity: ck)
         
         // 11. Thoughts Container
         thoughtsContainer.name = "thoughts_container"
