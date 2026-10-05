@@ -23,6 +23,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { VerticalTiltShiftShader } from 'three/addons/shaders/VerticalTiltShiftShader.js';
+import { soundManager } from './audio/SoundManager.js';
 
 class NookApplication {
   constructor() {
@@ -357,14 +358,67 @@ class NookApplication {
     pill.innerHTML = `
       <div class="nook-brand">
         <span class="nook-brand-icon">🌱</span>
-        <span class="nook-brand-name">Nook Room</span>
+        <span class="nook-brand-name">Nook</span>
       </div>
       <div class="nook-pill-divider"></div>
-      <button class="nook-pill-btn active" id="btn-arch" title="Toggle Furniture / Architecture Mode">🛋️ Room Furniture</button>
-      <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Reset Camera</button>
+      <button class="nook-pill-btn" id="btn-time" title="Cycle Daylight: Morning / Evening / Night">☀️ Morning</button>
+      <button class="nook-pill-btn active" id="btn-lamp" title="Toggle Desk Lamp Warm Glow">💡 Lamp: On</button>
+      <button class="nook-pill-btn" id="btn-sound" title="Toggle Procedural Audio Immersion">🔊 Sound</button>
+      <div class="nook-pill-divider"></div>
+      <button class="nook-pill-btn active" id="btn-arch" title="Toggle Furniture / Architecture Mode">🛋️ Room</button>
+      <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Camera</button>
     `;
     this.uiContainer.appendChild(pill);
 
+    // 1. Time of Day Cycle (Morning -> Evening -> Night -> Morning)
+    const timeBtn = pill.querySelector('#btn-time');
+    timeBtn.addEventListener('click', () => {
+      const newTime = this.roomScene.lighting.cycleTimeOfDay();
+      const labels = {
+        morning: '☀️ Morning',
+        evening: '🌇 Evening',
+        night: '🌙 Night'
+      };
+      timeBtn.textContent = labels[newTime] || '☀️ Morning';
+      updateLampBtn();
+    });
+
+    // 2. Desk Lamp Toggle
+    const lampBtn = pill.querySelector('#btn-lamp');
+    const updateLampBtn = () => {
+      const isOn = this.roomScene.lighting && this.roomScene.lighting.isDeskLampOn;
+      lampBtn.classList.toggle('active', isOn);
+      lampBtn.textContent = isOn ? '💡 Lamp: On' : '💡 Lamp: Off';
+    };
+
+    lampBtn.addEventListener('click', () => {
+      if (this.roomScene && this.roomScene.lighting) {
+        soundManager.playLampClick();
+        const isOn = this.roomScene.lighting.toggleDeskLamp();
+        const lampObj = this.objectManager.getObjectById('prop_desk_lamp');
+        if (lampObj) {
+          lampObj.isLampOn = isOn;
+          lampObj.traverse(child => {
+            if (child.isPointLight) child.visible = isOn;
+            if (child.isMesh && child.material && child.material.emissive) {
+              child.material.emissiveIntensity = isOn ? 1.6 : 0.0;
+            }
+          });
+        }
+        updateLampBtn();
+        this.roomState.saveState();
+      }
+    });
+
+    // 3. Procedural Sound Toggle
+    const soundBtn = pill.querySelector('#btn-sound');
+    soundBtn.addEventListener('click', () => {
+      const isMuted = soundManager.toggleMute();
+      soundBtn.textContent = isMuted ? '🔇 Muted' : '🔊 Sound';
+      soundBtn.classList.toggle('active', !isMuted);
+    });
+
+    // 4. Architecture / Furniture Toggle
     const archBtn = pill.querySelector('#btn-arch');
     const updateVisibility = () => {
       this.roomScene.interactiveObjects.visible = !this.isArchOnly;
@@ -372,7 +426,7 @@ class NookApplication {
       this.roomScene.decorations.visible = !this.isArchOnly;
       this.roomScene.cookieGroup.visible = !this.isArchOnly;
       archBtn.classList.toggle('active', !this.isArchOnly);
-      archBtn.textContent = this.isArchOnly ? '🏛️ Architecture Only' : '🛋️ Room Furniture';
+      archBtn.textContent = this.isArchOnly ? '🏛️ Arch' : '🛋️ Room';
     };
 
     archBtn.addEventListener('click', () => {
@@ -380,6 +434,7 @@ class NookApplication {
       updateVisibility();
     });
 
+    // 5. Reset Camera
     pill.querySelector('#btn-reset').addEventListener('click', () => {
       this.selectionManager.deselect();
       this.cameraInstance.resetCamera();
