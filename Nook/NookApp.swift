@@ -21,6 +21,7 @@ struct NookApp: App {
         }
         if CommandLine.arguments.contains("--run-tests") {
             let results = NookDataReliabilityTests.runAll()
+            fflush(stdout)
             let allPassed = results.allSatisfy { $0.passed }
             exit(allPassed ? 0 : 1)
         }
