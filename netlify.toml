@@ -1,0 +1,88 @@
+# ==============================================================================
+# Nook — Netlify Configuration
+#
+# Configures static hosting for the official Nook marketing & download website.
+# Pure Vanilla HTML, CSS, JavaScript — zero build step required.
+# ==============================================================================
+
+[build]
+  # The directory containing the static website files to deploy
+  publish = "web"
+  
+  # No build command needed because Nook's website is pure, fast, native static HTML/CSS/JS
+  command = ""
+
+# ------------------------------------------------------------------------------
+# Redirects & Clean URLs
+# ------------------------------------------------------------------------------
+
+# Route /download to the dedicated /downloads/ page
+[[redirects]]
+  from = "/download"
+  to = "/downloads/"
+  status = 301
+  force = true
+
+# Direct convenience URL for DMG download
+[[redirects]]
+  from = "/dmg"
+  to = "/downloads/Nook-1.0.0-Universal.dmg"
+  status = 302
+  force = true
+
+# ------------------------------------------------------------------------------
+# Headers & Security Policies
+# ------------------------------------------------------------------------------
+
+# Global Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; media-src 'self'; font-src 'self' data:;"
+
+# HTML files - ensure fresh content on new deployments
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/downloads/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Static assets (images, CSS, JS) - long term caching with revalidation
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+
+[[headers]]
+  for = "/index.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, must-revalidate"
+
+# macOS DMG Disk Images - correct MIME type and attachment disposition
+[[headers]]
+  for = "/*.dmg"
+  [headers.values]
+    Content-Type = "application/x-apple-diskimage"
+    Content-Disposition = "attachment"
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/downloads/*.dmg"
+  [headers.values]
+    Content-Type = "application/x-apple-diskimage"
+    Content-Disposition = "attachment"
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"

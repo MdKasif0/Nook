@@ -31,3 +31,6 @@ Icon
 .build/
 Packages/
 render_room
+
+# Distribution
+dist/
