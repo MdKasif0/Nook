@@ -645,43 +645,119 @@ public final class CookieRealityEntity: Entity {
         }
     }
     
-    public func swishTail() {
+/// Distinct tail motions communicating Cookie's emotional mood.
+public enum CookieTailMotion: Sendable {
+    case happy      // Gentle movement (slow, soft double sway)
+    case curious    // Slight twitch (single quick flick)
+    case relaxed    // Slow sway (calm sweeping wave)
+    case excited    // Faster movement (energetic repeated swishes)
+    case sleepy     // Mostly still (tiny subtle twitch or motionless)
+}
+
+    public func swishTail(_ motion: CookieTailMotion = .curious) {
         Task { @MainActor [weak self] in
-            await self?.performTailTwitch()
+            await self?.performTailMotion(motion)
         }
     }
     
-    private func performTailTwitch() async {
+    private func performTailMotion(_ motion: CookieTailMotion) async {
         guard let tailMid = tailMidModel, let tailTip = tailTipModel else { return }
+        guard !shouldReduceMotion else { return }
         
         let baseMidRot = tailMid.orientation
         let baseTipRot = tailTip.orientation
         
-        let twitchAngle = Float.random(in: 0.12...0.28)
-        let twitchSign: Float = Bool.random() ? 1.0 : -1.0
-        
-        let targetMidRot = baseMidRot * simd_quatf(angle: twitchAngle * twitchSign, axis: [0, 1, 0])
-        let targetTipRot = baseTipRot * simd_quatf(angle: twitchAngle * 1.3 * twitchSign, axis: [0, 0, 1])
-        
-        // Smooth ease out
-        let steps = 8
-        for i in 1...steps {
-            try? await Task.sleep(nanoseconds: 25_000_000)
-            let t = Float(i) / Float(steps)
-            tailMid.orientation = simd_slerp(baseMidRot, targetMidRot, t)
-            tailTip.orientation = simd_slerp(baseTipRot, targetTipRot, t)
+        switch motion {
+        case .sleepy:
+            // Mostly still: tiny subtle twitch
+            let targetMid = baseMidRot * simd_quatf(angle: 0.05, axis: [0, 1, 0])
+            tailMid.orientation = targetMid
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            tailMid.orientation = baseMidRot
+            
+        case .curious:
+            // Single inquisitive flick
+            let angle: Float = 0.22
+            let targetMid = baseMidRot * simd_quatf(angle: angle, axis: [0, 1, 0])
+            let targetTip = baseTipRot * simd_quatf(angle: angle * 1.3, axis: [0, 0, 1])
+            
+            let steps = 6
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: 20_000_000)
+                let t = Float(i) / Float(steps)
+                tailMid.orientation = simd_slerp(baseMidRot, targetMid, t)
+                tailTip.orientation = simd_slerp(baseTipRot, targetTip, t)
+            }
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: 22_000_000)
+                let t = Float(i) / Float(steps)
+                tailMid.orientation = simd_slerp(targetMid, baseMidRot, t)
+                tailTip.orientation = simd_slerp(targetTip, baseTipRot, t)
+            }
+            tailMid.orientation = baseMidRot
+            tailTip.orientation = baseTipRot
+            
+        case .relaxed:
+            // Slow, calming sway
+            let angle: Float = 0.14
+            let targetMid = baseMidRot * simd_quatf(angle: angle, axis: [0, 1, 0])
+            let steps = 10
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: 35_000_000)
+                let t = Float(i) / Float(steps)
+                tailMid.orientation = simd_slerp(baseMidRot, targetMid, t)
+            }
+            for i in 1...steps {
+                try? await Task.sleep(nanoseconds: 35_000_000)
+                let t = Float(i) / Float(steps)
+                tailMid.orientation = simd_slerp(targetMid, baseMidRot, t)
+            }
+            tailMid.orientation = baseMidRot
+            
+        case .happy:
+            // Gentle double sway
+            for cycle in 0..<2 {
+                let sign: Float = (cycle % 2 == 0) ? 1.0 : -1.0
+                let angle: Float = 0.16 * sign
+                let targetMid = baseMidRot * simd_quatf(angle: angle, axis: [0, 1, 0])
+                let steps = 6
+                for i in 1...steps {
+                    try? await Task.sleep(nanoseconds: 22_000_000)
+                    let t = Float(i) / Float(steps)
+                    tailMid.orientation = simd_slerp(baseMidRot, targetMid, t)
+                }
+                for i in 1...steps {
+                    try? await Task.sleep(nanoseconds: 22_000_000)
+                    let t = Float(i) / Float(steps)
+                    tailMid.orientation = simd_slerp(targetMid, baseMidRot, t)
+                }
+            }
+            tailMid.orientation = baseMidRot
+            
+        case .excited:
+            // Faster, rhythmic swishes
+            for cycle in 0..<3 {
+                let sign: Float = (cycle % 2 == 0) ? 1.0 : -1.0
+                let angle: Float = 0.28 * sign
+                let targetMid = baseMidRot * simd_quatf(angle: angle, axis: [0, 1, 0])
+                let targetTip = baseTipRot * simd_quatf(angle: angle * 1.2, axis: [0, 0, 1])
+                let steps = 4
+                for i in 1...steps {
+                    try? await Task.sleep(nanoseconds: 14_000_000)
+                    let t = Float(i) / Float(steps)
+                    tailMid.orientation = simd_slerp(baseMidRot, targetMid, t)
+                    tailTip.orientation = simd_slerp(baseTipRot, targetTip, t)
+                }
+                for i in 1...steps {
+                    try? await Task.sleep(nanoseconds: 14_000_000)
+                    let t = Float(i) / Float(steps)
+                    tailMid.orientation = simd_slerp(targetMid, baseMidRot, t)
+                    tailTip.orientation = simd_slerp(targetTip, baseTipRot, t)
+                }
+            }
+            tailMid.orientation = baseMidRot
+            tailTip.orientation = baseTipRot
         }
-        
-        // Settle back to resting curve
-        for i in 1...steps {
-            try? await Task.sleep(nanoseconds: 28_000_000)
-            let t = Float(i) / Float(steps)
-            tailMid.orientation = simd_slerp(targetMidRot, baseMidRot, t)
-            tailTip.orientation = simd_slerp(targetTipRot, baseTipRot, t)
-        }
-        
-        tailMid.orientation = baseMidRot
-        tailTip.orientation = baseTipRot
     }
     
     // MARK: - Emotional & Facial States
@@ -1091,11 +1167,15 @@ public final class CookieRealityEntity: Entity {
         animationController?.playSettleReaction()
     }
     
-    /// Playful hop and tail twitch interaction.
+    /// Playful hop, one ear cute rotation, excited tail swish, and bouncy landing.
     public func play() {
         animationController?.state.transitionToActivity(.playing)
         setMood(.happy, animated: true)
-        swishTail()
+        
+        let baseEarRight = simd_quatf(angle: -0.48, axis: [0, 0, 1]) * simd_quatf(angle: -0.10, axis: [1, 0, 0]) * simd_quatf(angle: 0.08, axis: [0, 1, 0])
+        rightEarModel?.orientation = baseEarRight * simd_quatf(angle: 0.22, axis: [0, 1, 0])
+        
+        swishTail(.excited)
         
         Task { @MainActor [weak self] in
             guard let self = self else { return }
@@ -1103,6 +1183,7 @@ public final class CookieRealityEntity: Entity {
             let hopPeak = cur + SIMD3<Float>(0, 0.05, 0)
             await self.animationController?.playJumpSequence(from: cur, to: hopPeak)
             self.position = cur
+            self.rightEarModel?.orientation = baseEarRight
             self.setPosture(.sitting, animated: true)
             self.animationController?.state.transitionToActivity(.sitting)
         }
