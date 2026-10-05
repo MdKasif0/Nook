@@ -202,8 +202,13 @@ public final class CookieBehaviorController {
                 entity.setPosture(.pointing, animated: true)
                 try? await Task.sleep(nanoseconds: 1_800_000_000)
                 
-            case .task:
-                // Task: Brief look, ear twitch, returns to calm resting
+            case .photo:
+                // Photo / Polaroid: Inspect with head tilt
+                entity.headModel?.orientation = simd_quatf(angle: 0.18, axis: [0, 0, 1])
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                
+            case .reminder, .thought, .link:
+                // Reminder: Brief look, ear twitch, returns to calm resting
                 entity.swishTail()
                 try? await Task.sleep(nanoseconds: 1_200_000_000)
                 
