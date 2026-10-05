@@ -58,7 +58,7 @@ export class ObjectInspector {
 
       <div class="nook-inspector-actions">
         <button class="nook-btn nook-btn-primary" id="btn-focus">Focus Camera</button>
-        ${object.id === 'prop_cookie' ? '<button class="nook-btn" id="btn-pet">Pet Cookie 🐾</button>' : ''}
+        ${object.itemId === 'prop_cookie' ? '<button class="nook-btn" id="btn-pet">Pet Cookie 🐾</button>' : ''}
       </div>
     `;
 
