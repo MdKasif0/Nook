@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import RealityKit
 
 /// Comprehensive test suite verifying Nook's local-first data reliability:
 /// - Create
@@ -11,6 +12,7 @@ import SwiftData
 /// - Archive (Room exclusion, search availability, unarchiving)
 /// - Undo (Native macOS UndoManager integration for move, edit, delete, redo)
 /// - Repeated Operations (High-frequency stress testing for stability)
+/// - 3D Miniature Environment Interactions (Hierarchy, categories, dragging, rotation, persistence)
 @MainActor
 final class NookDataReliabilityTests {
     
@@ -36,7 +38,12 @@ final class NookDataReliabilityTests {
             ("Local Search Indexing & Querying", testLocalSearch),
             ("Native macOS Undo/Redo (Move, Edit, Delete)", testUndoRedo),
             ("Repeated Operations Stress Stability", testRepeatedOperations),
-            ("Twenty Thoughts Complete Lifecycle & Persistence", testTwentyThoughtsProductionLifecycle)
+            ("Twenty Thoughts Complete Lifecycle & Persistence", testTwentyThoughtsProductionLifecycle),
+            ("Interactive Prop Hierarchy & Category Constraints", testInteractivePropHierarchyAndCategories),
+            ("Prop Transform Serialization & Persistence", testPropTransformSerializationAndPersistence),
+            ("Surface Height Detection & Boundary Clamping", testSurfaceHeightAndBoundaryClamping),
+            ("Tactile Prop Drag & Drop Physical Settling", testPropDragAndDropSettling),
+            ("Prop Rotation & Native macOS Undo", testPropRotationAndUndo)
         ]
         
         for (name, testBlock) in tests {
@@ -592,6 +599,231 @@ final class NookDataReliabilityTests {
             }
             ctx2.delete(malformedItem)
             try ctx2.save()
+        }
+    }
+    
+    // MARK: - 3D Miniature Environment & Interaction Tests
+    
+    private static func testInteractivePropHierarchyAndCategories() throws {
+        let coordinator = RoomSceneCoordinator()
+        
+        // 1. Verify all area hierarchy nodes exist under RoomRoot
+        guard coordinator.deskArea != nil else { throw TestError("DeskArea not initialized in hierarchy.") }
+        guard coordinator.bedArea != nil else { throw TestError("BedArea not initialized in hierarchy.") }
+        guard coordinator.shelfArea != nil else { throw TestError("ShelfArea not initialized in hierarchy.") }
+        guard coordinator.windowArea != nil else { throw TestError("WindowArea not initialized in hierarchy.") }
+        guard coordinator.recordArea != nil else { throw TestError("RecordArea not initialized in hierarchy.") }
+        guard coordinator.floorObjectsArea != nil else { throw TestError("FloorObjectsArea not initialized in hierarchy.") }
+        guard coordinator.architectureArea != nil else { throw TestError("ArchitectureArea not initialized in hierarchy.") }
+        guard coordinator.cookie != nil else { throw TestError("Cookie not initialized in hierarchy.") }
+        
+        // 2. Verify prop registry count
+        let props = coordinator.propEntities
+        guard props.count >= 20 else {
+            throw TestError("Expected at least 20 interactive props registered, found \(props.count).")
+        }
+        
+        // 3. Test Movable objects allow dragging & rotation
+        let movableIds = ["prop_laptop", "prop_lamp", "prop_mug", "prop_skateboard", "prop_monstera", "prop_daisy_pillow"]
+        for id in movableIds {
+            guard let entity = props[id],
+                  let prop = entity.components[InteractivePropComponent.self] else {
+                throw TestError("Movable prop \(id) missing or lacks InteractivePropComponent.")
+            }
+            guard prop.category == .movable else {
+                throw TestError("Prop \(id) should be categorized as .movable, got \(prop.category).")
+            }
+            guard prop.allowsDragging else {
+                throw TestError("Prop \(id) should allow dragging.")
+            }
+            guard prop.allowsRotation else {
+                throw TestError("Prop \(id) should allow rotation.")
+            }
+            guard !prop.displayName.isEmpty else {
+                throw TestError("Prop \(id) displayName is empty.")
+            }
+            guard !prop.accessibilityLabel.isEmpty else {
+                throw TestError("Prop \(id) accessibilityLabel is empty.")
+            }
+        }
+        
+        // 4. Test Immovable architectural objects forbid dragging
+        let desk = coordinator.deskArea!.deskEntity
+        guard let deskProp = desk.components[InteractivePropComponent.self],
+              deskProp.category == .immovable && !deskProp.allowsDragging else {
+            throw TestError("Desk table structure should be immovable and forbid dragging.")
+        }
+        
+        let bed = coordinator.bedArea!.bedFrame
+        guard let bedProp = bed.components[InteractivePropComponent.self],
+              bedProp.category == .immovable && !bedProp.allowsDragging else {
+            throw TestError("Bed platform structure should be immovable and forbid dragging.")
+        }
+        
+        // 5. Test Cookie companion permissions
+        let cookie = coordinator.cookie!
+        guard let cookieProp = cookie.components[InteractivePropComponent.self] else {
+            throw TestError("Cookie is missing InteractivePropComponent.")
+        }
+        guard cookieProp.category == .special && !cookieProp.allowsDragging else {
+            throw TestError("Cookie should be .special and forbid accidental dragging.")
+        }
+    }
+    
+    private static func testPropTransformSerializationAndPersistence() throws {
+        let container = try createInMemoryContainer()
+        let ctx = container.mainContext
+        
+        let roomState = RoomState()
+        ctx.insert(roomState)
+        try ctx.save()
+        
+        // 1. Initial state has no custom prop positions
+        guard roomState.getPropTransforms().isEmpty else {
+            throw TestError("Initial room state should have empty custom prop positions.")
+        }
+        
+        // 2. Save custom transform for skateboard
+        let customPos = SIMD3<Float>(0.25, 0.16, 0.35)
+        let customRot = simd_quatf(angle: Float.pi * 0.25, axis: [0, 1, 0])
+        let customScale = SIMD3<Float>(1.1, 1.1, 1.1)
+        let transform = RoomPropTransform(
+            propId: "prop_skateboard",
+            position: customPos,
+            orientation: customRot,
+            scale: customScale
+        )
+        
+        roomState.setPropTransform(transform)
+        try ctx.save()
+        
+        // 3. Read back transforms
+        let savedDict = roomState.getPropTransforms()
+        guard let savedSkateboard = savedDict["prop_skateboard"] else {
+            throw TestError("Failed to retrieve custom transform for prop_skateboard.")
+        }
+        
+        guard distance(savedSkateboard.position, customPos) < 0.001 else {
+            throw TestError("Persisted position mismatch: \(savedSkateboard.position) vs \(customPos).")
+        }
+        guard abs(savedSkateboard.rotW - customRot.real) < 0.001 else {
+            throw TestError("Persisted orientation mismatch.")
+        }
+        guard distance(savedSkateboard.scale, customScale) < 0.001 else {
+            throw TestError("Persisted scale mismatch.")
+        }
+        
+        // 4. Reset prop transform
+        roomState.resetPropTransform(propId: "prop_skateboard")
+        try ctx.save()
+        guard roomState.getPropTransforms()["prop_skateboard"] == nil else {
+            throw TestError("Resetting prop transform did not remove it from custom positions.")
+        }
+    }
+    
+    private static func testSurfaceHeightAndBoundaryClamping() throws {
+        // 1. Test surface height at desk
+        let deskH = RoomInteractionSystem.surfaceHeight(at: -0.80, z: -0.20)
+        guard abs(deskH - 0.88) < 0.01 else {
+            throw TestError("Surface height at desk should be 0.88m, got \(deskH).")
+        }
+        
+        // 2. Test surface height at bed
+        let bedH = RoomInteractionSystem.surfaceHeight(at: 0.50, z: -0.70)
+        guard abs(bedH - 0.60) < 0.01 else {
+            throw TestError("Surface height at bed should be 0.60m, got \(bedH).")
+        }
+        
+        // 3. Test surface height at upper floor platform
+        let upperH = RoomInteractionSystem.surfaceHeight(at: 0.00, z: 0.00)
+        guard abs(upperH - 0.16) < 0.01 else {
+            throw TestError("Surface height at upper floor should be 0.16m, got \(upperH).")
+        }
+        
+        // 4. Test surface height at lower floor platform
+        let lowerH = RoomInteractionSystem.surfaceHeight(at: 0.00, z: 0.50)
+        guard abs(lowerH - 0.02) < 0.01 else {
+            throw TestError("Surface height at lower floor should be 0.02m, got \(lowerH).")
+        }
+        
+        // 5. Test boundary clamping constants
+        guard RoomInteractionSystem.minRoomX < RoomInteractionSystem.maxRoomX else {
+            throw TestError("Invalid room X bounds.")
+        }
+        guard RoomInteractionSystem.minRoomZ < RoomInteractionSystem.maxRoomZ else {
+            throw TestError("Invalid room Z bounds.")
+        }
+    }
+    
+    private static func testPropDragAndDropSettling() throws {
+        let coordinator = RoomSceneCoordinator()
+        let interaction = coordinator.interactionSystem!
+        
+        guard let skateboard = coordinator.findPropEntity(id: "prop_skateboard") else {
+            throw TestError("Skateboard entity not found.")
+        }
+        let originalPos = skateboard.position
+        
+        // 1. Verify canDragEntity
+        guard interaction.canDragEntity(skateboard) else {
+            throw TestError("Interaction system reports skateboard cannot be dragged.")
+        }
+        
+        // 2. Start drag -> lifts by +4cm and scales to 1.03x
+        guard let target = interaction.handleDragStart(for: skateboard) else {
+            throw TestError("Failed to initiate drag on skateboard.")
+        }
+        guard abs(target.position.y - (originalPos.y + 0.04)) < 0.001 else {
+            throw TestError("Drag start did not elevate entity by +4cm. Got \(target.position.y), expected \(originalPos.y + 0.04).")
+        }
+        guard abs(target.scale.x - 1.03) < 0.01 else {
+            throw TestError("Drag start did not scale entity to 1.03x. Got \(target.scale.x).")
+        }
+        
+        // 3. Update drag
+        interaction.handleDragUpdate(target: target, translation: CGSize(width: 50, height: -50), startPos: originalPos)
+        guard target.position.x != originalPos.x else {
+            throw TestError("Drag update did not move entity along X axis.")
+        }
+        
+        // 4. End drag -> settles down to resting surface and resets scale
+        let undoManager = UndoManager()
+        interaction.handleDragEnd(target: target, undoManager: undoManager)
+        guard abs(target.scale.x - 1.0) < 0.001 else {
+            throw TestError("Drop settling did not return scale to 1.0x.")
+        }
+        guard target.position.y <= originalPos.y + 0.01 else {
+            throw TestError("Drop settling did not bring entity down to resting surface.")
+        }
+    }
+    
+    private static func testPropRotationAndUndo() throws {
+        let coordinator = RoomSceneCoordinator()
+        let interaction = coordinator.interactionSystem!
+        
+        guard let mug = coordinator.findPropEntity(id: "prop_mug") else {
+            throw TestError("Mug entity not found.")
+        }
+        let initialRot = mug.orientation
+        
+        let undoManager = UndoManager()
+        
+        // 1. Rotate 45°
+        interaction.rotateProp(id: "prop_mug", angleDegrees: 45.0, undoManager: undoManager)
+        let rotatedRot = mug.orientation
+        guard abs(rotatedRot.real - initialRot.real) > 0.01 else {
+            throw TestError("Rotation did not change mug orientation quaternion.")
+        }
+        
+        // 2. Perform Undo via UndoManager
+        guard undoManager.canUndo else {
+            throw TestError("UndoManager has no undo actions registered after rotation.")
+        }
+        undoManager.undo()
+        
+        let revertedRot = mug.orientation
+        guard abs(revertedRot.real - initialRot.real) < 0.01 else {
+            throw TestError("UndoManager failed to revert mug orientation back to initial rotation.")
         }
     }
     
