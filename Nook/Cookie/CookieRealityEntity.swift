@@ -74,7 +74,17 @@ public final class CookieRealityEntity: Entity {
     public private(set) var tailMidModel: ModelEntity!
     public private(set) var tailTipModel: ModelEntity!
     
-    // MARK: - Behavioral State
+    // MARK: - Controllers & Behavioral State
+    
+    public private(set) var animationController: CookieAnimationController?
+    public private(set) var navigationController: CookieNavigationController?
+    public private(set) var isSelected: Bool = false
+    public private(set) var isHovered: Bool = false
+    
+    public var rotationAngleY: Float {
+        let fwd = orientation.act(SIMD3<Float>(0, 0, 1))
+        return atan2(fwd.x, fwd.z)
+    }
     
     public private(set) var currentMoodRaw: String = CookieMood.idle.rawValue
     var currentMood: CookieMood = .idle {
@@ -113,6 +123,11 @@ public final class CookieRealityEntity: Entity {
         setupInteractionComponents()
         setupReduceMotionObserver()
         
+        let animCtrl = CookieAnimationController(entity: self)
+        self.animationController = animCtrl
+        let navCtrl = CookieNavigationController(entity: self)
+        self.navigationController = navCtrl
+        
         startBreathingAnimation()
         startBlinkAnimation()
         startTailAnimation()
@@ -130,8 +145,11 @@ public final class CookieRealityEntity: Entity {
     // MARK: - 3D Rig Construction
     
     private func buildCookieRig() {
-        self.position = Self.bedPerchPos
-        self.orientation = Self.bedPerchRot
+        // Restore deterministic local memory if available, or fall back to bed perch
+        let saved = CookieMemoryStore.shared.load()
+        let safePos = CookieNavigationController.clampToWalkable(saved.positionSIMD)
+        self.position = safePos
+        self.orientation = simd_quatf(angle: saved.rotationY, axis: [0, 1, 0])
         
         // --- 1. Materials Matching Visual Reference ---
         // Warm off-white / cream fur (#FAF4EE / #F7F0E8) - soft velvety matte toy finish
