@@ -912,6 +912,39 @@ struct RoomView: View {
                     .help("Rotate 45° (R)")
                 }
                 
+                if prop.allowsScaling {
+                    Button {
+                        sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 1.08, undoManager: undoManager)
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text("Scale")
+                                .font(NookDesign.Typography.caption)
+                                .fontWeight(.medium)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(NookDesign.Colors.backgroundTertiary)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Slightly enlarge (+)")
+                    
+                    Button {
+                        sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 0.92, undoManager: undoManager)
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 10, weight: .semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 5)
+                            .background(NookDesign.Colors.backgroundTertiary)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Slightly shrink (-)")
+                }
+                
                 Button {
                     sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
                 } label: {
@@ -1102,6 +1135,22 @@ struct RoomView: View {
             if press.key == .rightArrow {
                 sceneController.interactionSystem?.nudgeProp(id: prop.propId, deltaX: 0.02, deltaZ: 0, undoManager: undoManager)
                 return .handled
+            }
+            if (press.characters == "+" || press.characters == "="), prop.allowsScaling {
+                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 1.08, undoManager: undoManager)
+                return .handled
+            }
+            if (press.characters == "-" || press.characters == "_"), prop.allowsScaling {
+                sceneController.interactionSystem?.scaleProp(id: prop.propId, factor: 0.92, undoManager: undoManager)
+                return .handled
+            }
+            if press.key == .delete || press.key == .deleteForward {
+                if prop.allowsDeletion {
+                    sceneController.interactionSystem?.resetPropPosition(id: prop.propId, undoManager: undoManager)
+                    sceneController.interactionSystem?.clearPropSelection()
+                    selectedPropInfo = nil
+                    return .handled
+                }
             }
             if press.key == .escape {
                 withAnimation(NookDesign.Animation.springy) {

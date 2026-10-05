@@ -43,7 +43,8 @@ final class NookDataReliabilityTests {
             ("Prop Transform Serialization & Persistence", testPropTransformSerializationAndPersistence),
             ("Surface Height Detection & Boundary Clamping", testSurfaceHeightAndBoundaryClamping),
             ("Tactile Prop Drag & Drop Physical Settling", testPropDragAndDropSettling),
-            ("Prop Rotation & Native macOS Undo", testPropRotationAndUndo)
+            ("Prop Rotation & Native macOS Undo", testPropRotationAndUndo),
+            ("Prop Scaling Constraints & Native macOS Undo", testPropScalingConstraintsAndUndo)
         ]
         
         for (name, testBlock) in tests {
