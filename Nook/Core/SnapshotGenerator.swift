@@ -94,7 +94,12 @@ enum SnapshotGenerator {
             
             let outputDesc = RealityRenderer.CameraOutput.Descriptor.singleProjection(colorTexture: texture)
             let cameraOutput = try RealityRenderer.CameraOutput(outputDesc)
-            try renderer.updateAndRender(deltaTime: 0.016, cameraOutput: cameraOutput)
+            
+            let semaphore = DispatchSemaphore(value: 0)
+            try renderer.updateAndRender(deltaTime: 0.016, cameraOutput: cameraOutput, onComplete: { _ in
+                semaphore.signal()
+            })
+            semaphore.wait()
             
             guard let ci = CIImage(mtlTexture: texture, options: [.colorSpace: CGColorSpaceCreateDeviceRGB()]) else { return }
             let rep = NSCIImageRep(ciImage: ci)
