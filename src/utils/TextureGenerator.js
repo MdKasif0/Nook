@@ -447,4 +447,367 @@ export class TextureGenerator {
     texture.colorSpace = THREE.SRGBColorSpace;
     return texture;
   }
+
+  /**
+   * Generates vintage analog clock face with numerals, tick marks, and morning hands.
+   */
+  static createClockFaceTexture(size = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const cx = size * 0.5;
+    const cy = size * 0.5;
+    const radius = size * 0.46;
+
+    // Warm ivory dial background
+    ctx.fillStyle = '#fdfaf2';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer subtle gold/brass bezel rim
+    ctx.strokeStyle = '#c4a66a';
+    ctx.lineWidth = size * 0.035;
+    ctx.stroke();
+
+    // Inner thin border
+    ctx.strokeStyle = '#6e5e4a';
+    ctx.lineWidth = size * 0.008;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.92, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Hour & minute tick marks
+    for (let i = 0; i < 60; i++) {
+      const angle = (i / 60) * Math.PI * 2;
+      const isHour = i % 5 === 0;
+      const r1 = radius * (isHour ? 0.82 : 0.88);
+      const r2 = radius * 0.91;
+
+      ctx.strokeStyle = isHour ? '#2d261e' : '#998c7c';
+      ctx.lineWidth = isHour ? size * 0.015 : size * 0.006;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.sin(angle) * r1, cy - Math.cos(angle) * r1);
+      ctx.lineTo(cx + Math.sin(angle) * r2, cy - Math.cos(angle) * r2);
+      ctx.stroke();
+    }
+
+    // Numerals 1 to 12
+    ctx.fillStyle = '#2b231a';
+    ctx.font = `600 ${Math.round(size * 0.105)}px "Georgia", serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let h = 1; h <= 12; h++) {
+      const angle = (h / 12) * Math.PI * 2;
+      const nr = radius * 0.70;
+      const nx = cx + Math.sin(angle) * nr;
+      const ny = cy - Math.cos(angle) * nr;
+      ctx.fillText(h.toString(), nx, ny);
+    }
+
+    // Hands: set to calm morning 8:12
+    // Hour hand
+    const hourAngle = ((8 + 12 / 60) / 12) * Math.PI * 2;
+    ctx.strokeStyle = '#221c17';
+    ctx.lineWidth = size * 0.024;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.sin(hourAngle) * 20, cy + Math.cos(hourAngle) * 20);
+    ctx.lineTo(cx + Math.sin(hourAngle) * (radius * 0.48), cy - Math.cos(hourAngle) * (radius * 0.48));
+    ctx.stroke();
+
+    // Minute hand
+    const minAngle = (12 / 60) * Math.PI * 2;
+    ctx.lineWidth = size * 0.016;
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.sin(minAngle) * 25, cy + Math.cos(minAngle) * 25);
+    ctx.lineTo(cx + Math.sin(minAngle) * (radius * 0.72), cy - Math.cos(minAngle) * (radius * 0.72));
+    ctx.stroke();
+
+    // Center brass cap
+    ctx.fillStyle = '#c4a66a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.035, 0, Math.PI * 2);
+    ctx.fill();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates framed botanical watercolor art prints.
+   */
+  static createBotanicalArtTexture(variant = 0, width = 512, height = 640) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Warm museum paper mat
+    ctx.fillStyle = '#faf6ed';
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle paper grain
+    ctx.globalAlpha = 0.03;
+    ctx.fillStyle = '#6d5a43';
+    for (let i = 0; i < 1500; i++) {
+      ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+    }
+    ctx.globalAlpha = 1.0;
+
+    const cx = width * 0.5;
+    const cy = height * 0.5;
+
+    if (variant === 0) {
+      // Monstera leaf print (lush sage green)
+      ctx.fillStyle = '#5c7856';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 20, 110, 160, -0.15, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Stem
+      ctx.strokeStyle = '#43593e';
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(cx - 15, cy + 120);
+      ctx.quadraticCurveTo(cx - 10, cy + 190, cx - 5, cy + 240);
+      ctx.stroke();
+
+      // Cutout leaf fenestrations
+      ctx.fillStyle = '#faf6ed';
+      for (let i = 0; i < 5; i++) {
+        const sy = cy - 100 + i * 45;
+        ctx.beginPath();
+        ctx.ellipse(cx - 55, sy, 18, 40, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 45, sy + 15, 18, 38, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (variant === 1) {
+      // Delicate fern frond
+      ctx.strokeStyle = '#4e6949';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 220);
+      ctx.quadraticCurveTo(cx + 20, cy, cx - 15, cy - 200);
+      ctx.stroke();
+
+      ctx.fillStyle = '#65825f';
+      for (let i = 0; i < 16; i++) {
+        const t = i / 16;
+        const fy = cy + 180 - t * 360;
+        const fx = cx + Math.sin(t * Math.PI) * 15;
+        const len = Math.sin(t * Math.PI) * 75 + 10;
+
+        // Left leaflet
+        ctx.beginPath();
+        ctx.ellipse(fx - len * 0.5, fy, len * 0.5, 9, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Right leaflet
+        ctx.beginPath();
+        ctx.ellipse(fx + len * 0.5, fy - 6, len * 0.5, 9, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (variant === 2) {
+      // Eucalyptus coin leaves (muted blue-green/sage)
+      ctx.strokeStyle = '#5a7065';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 30, cy + 230);
+      ctx.quadraticCurveTo(cx + 40, cy + 50, cx - 20, cy - 210);
+      ctx.stroke();
+
+      ctx.fillStyle = '#7a9688';
+      for (let i = 0; i < 11; i++) {
+        const t = i / 11;
+        const ey = cy + 190 - t * 380;
+        const ex = cx + (i % 2 === 0 ? -45 : 45);
+        ctx.beginPath();
+        ctx.arc(ex, ey, 32 - t * 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Golden sunny landscape
+      const grad = ctx.createLinearGradient(0, cy - 140, 0, cy + 140);
+      grad.addColorStop(0, '#f2d096');
+      grad.addColorStop(0.5, '#e8aa78');
+      grad.addColorStop(1, '#8ea889');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 140, 140, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rolling pine hills
+      ctx.fillStyle = '#4c634b';
+      ctx.beginPath();
+      ctx.arc(cx - 40, cy + 110, 90, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#3a4e39';
+      ctx.beginPath();
+      ctx.arc(cx + 50, cy + 115, 80, Math.PI, 0);
+      ctx.fill();
+    }
+
+    // Border matting line
+    ctx.strokeStyle = '#dfd6c6';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(35, 35, width - 70, height - 70);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates miniature Polaroid snapshot textures with white borders.
+   */
+  static createPolaroidTexture(variant = 0, width = 360, height = 440) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Classic white Polaroid paper
+    ctx.fillStyle = '#fdfbf7';
+    ctx.fillRect(0, 0, width, height);
+
+    // Photo window area
+    const pX = 26;
+    const pY = 26;
+    const pW = width - 52;
+    const pH = height - 110;
+
+    const scenes = [
+      // 0: Sunny window & plant
+      () => {
+        const bg = ctx.createLinearGradient(pX, pY, pX, pY + pH);
+        bg.addColorStop(0, '#a5d2eb');
+        bg.addColorStop(0.6, '#fcedcb');
+        bg.addColorStop(1, '#e3b586');
+        ctx.fillStyle = bg;
+        ctx.fillRect(pX, pY, pW, pH);
+
+        ctx.fillStyle = '#5c8052';
+        ctx.beginPath();
+        ctx.arc(pX + pW * 0.5, pY + pH * 0.85, 45, Math.PI, 0);
+        ctx.fill();
+      },
+      // 1: Calico cat curled
+      () => {
+        ctx.fillStyle = '#ebe1d1';
+        ctx.fillRect(pX, pY, pW, pH);
+
+        // Blanket
+        ctx.fillStyle = '#8ea889';
+        ctx.fillRect(pX, pY + pH * 0.6, pW, pH * 0.4);
+
+        // Cat loaf
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(pX + pW * 0.5, pY + pH * 0.6, 50, 32, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#d48648';
+        ctx.beginPath();
+        ctx.ellipse(pX + pW * 0.58, pY + pH * 0.58, 24, 18, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      },
+      // 2: Golden morning sunbeam
+      () => {
+        const bg = ctx.createLinearGradient(pX, pY, pX + pW, pY + pH);
+        bg.addColorStop(0, '#fcdfa7');
+        bg.addColorStop(0.5, '#e8b27f');
+        bg.addColorStop(1, '#a67252');
+        ctx.fillStyle = bg;
+        ctx.fillRect(pX, pY, pW, pH);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(pX, pY);
+        ctx.lineTo(pX + pW * 0.6, pY);
+        ctx.lineTo(pX + pW, pY + pH * 0.7);
+        ctx.lineTo(pX + pW * 0.4, pY + pH);
+        ctx.fill();
+      },
+      // 3: Coffee mug on desk
+      () => {
+        ctx.fillStyle = '#f0ebe1';
+        ctx.fillRect(pX, pY, pW, pH);
+
+        // Table
+        ctx.fillStyle = '#caa36e';
+        ctx.fillRect(pX, pY + pH * 0.65, pW, pH * 0.35);
+
+        // Mug
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(pX + pW * 0.4, pY + pH * 0.45, 55, 55, [4, 4, 12, 12]);
+        ctx.fill();
+        ctx.fillStyle = '#593923';
+        ctx.beginPath();
+        ctx.ellipse(pX + pW * 0.4 + 27, pY + pH * 0.45, 24, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    ];
+
+    scenes[variant % scenes.length]();
+
+    // Subtle handwritten caption or heart at bottom
+    ctx.fillStyle = '#8f8373';
+    ctx.font = '500 16px "Comic Sans MS", cursive, sans-serif';
+    ctx.textAlign = 'center';
+    const captions = ['nook ♡', 'cozy morning', 'sunshine ☀️', 'cookie 🐾'];
+    ctx.fillText(captions[variant % captions.length], width * 0.5, height - 38);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates soft cream linen curtain fabric with subtle vertical pleat shading.
+   */
+  static createCurtainFabricTexture(width = 512, height = 1024) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Warm cream linen base
+    ctx.fillStyle = '#f7f2e7';
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle vertical fold shading lines
+    ctx.globalAlpha = 0.08;
+    for (let x = 0; x < width; x += 18) {
+      const grad = ctx.createLinearGradient(x, 0, x + 18, 0);
+      grad.addColorStop(0, '#000000');
+      grad.addColorStop(0.5, '#ffffff');
+      grad.addColorStop(1, '#000000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, 0, 18, height);
+    }
+
+    // Linen horizontal cross-hatch fibers
+    ctx.globalAlpha = 0.025;
+    ctx.fillStyle = '#8a775f';
+    for (let y = 0; y < height; y += 4) {
+      ctx.fillRect(0, y, width, 1.5);
+    }
+
+    ctx.globalAlpha = 1.0;
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }
 }

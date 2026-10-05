@@ -33,6 +33,8 @@ import { TextureGenerator } from '../utils/TextureGenerator.js';
 import { Lighting } from './Lighting.js';
 import { Environment } from './Environment.js';
 import { FurnitureBuilder } from '../objects/FurnitureBuilder.js';
+import { PlantBuilder } from '../objects/PlantBuilder.js';
+import { ShelfDecorBuilder } from '../objects/ShelfDecorBuilder.js';
 
 export class RoomScene {
   constructor() {
@@ -84,6 +86,11 @@ export class RoomScene {
     // Construct Major Furniture matching nook-room.jpeg
     this.furnitureBuilder = new FurnitureBuilder(this);
     this.furnitureItems = this.furnitureBuilder.buildAll();
+
+    // Construct Rich Visual Styling, Shelves, Greenery & Decor
+    this.plantBuilder = new PlantBuilder();
+    this.shelfDecorBuilder = new ShelfDecorBuilder();
+    this.buildVisualStyling();
   }
 
   createMaterials() {
@@ -614,6 +621,168 @@ export class RoomScene {
     shelfGroup.add(bridge);
 
     this.architecture.add(shelfGroup);
+  }
+
+  // MARK: - 8. Rich Visual Styling, Shelves, Greenery & Decor
+  buildVisualStyling() {
+    const halfW = ROOM_WIDTH * 0.5;
+    const halfD = ROOM_DEPTH * 0.5;
+    const backZ = -halfD;
+
+    // 1. 3D Window Curtains with Rod, Rings, and Tiebacks
+    const curtains = this.shelfDecorBuilder.build3DCurtainsAndRod(WINDOW_CONFIG, halfW);
+    this.decorations.add(curtains);
+
+    // 2. 3D Soft Outdoor Garden Foliage outside window
+    const garden = this.shelfDecorBuilder.buildOutdoorGarden(WINDOW_CONFIG, halfW);
+    this.decorations.add(garden);
+
+    // 3. Windowsill Potted Greenery
+    const winPlant1 = this.plantBuilder.buildWindowSillPlant(0);
+    winPlant1.position.set(halfW - 0.16, WINDOW_CONFIG.sillY + 0.12, WINDOW_CONFIG.centerZ - 0.65);
+    this.decorations.add(winPlant1);
+
+    const winPlant2 = this.plantBuilder.buildWindowSillPlant(1);
+    winPlant2.position.set(halfW - 0.16, WINDOW_CONFIG.sillY + 0.12, WINDOW_CONFIG.centerZ + 0.35);
+    this.decorations.add(winPlant2);
+
+    // 4. Floor Planter on Tripod Stand beside desk drawers
+    const floorPlanter = this.plantBuilder.buildFloorPlanter();
+    floorPlanter.position.set(-4.42, MAIN_FLOOR_Y, -0.65);
+    this.decorations.add(floorPlanter);
+
+    // 5. Cascading Trailing Ivy along Left Wall & Top Beam (matching nook-room.jpeg)
+    const leftIvyPaths = [
+      [
+        new THREE.Vector3(-halfW + 0.14, 5.25, -0.1),
+        new THREE.Vector3(-halfW + 0.16, 4.3, -0.35),
+        new THREE.Vector3(-halfW + 0.18, 3.4, -0.65),
+        new THREE.Vector3(-halfW + 0.15, 2.3, -0.95),
+        new THREE.Vector3(-halfW + 0.18, 1.8, -1.15)
+      ],
+      [
+        new THREE.Vector3(-halfW + 0.15, 5.25, 0.45),
+        new THREE.Vector3(-halfW + 0.17, 4.5, 0.15),
+        new THREE.Vector3(-halfW + 0.16, 3.7, -0.15),
+        new THREE.Vector3(-halfW + 0.18, 2.8, -0.45)
+      ],
+      [
+        new THREE.Vector3(-halfW + 0.18, 5.30, -2.4),
+        new THREE.Vector3(-halfW + 0.16, 5.25, -1.5),
+        new THREE.Vector3(-halfW + 0.14, 5.20, -0.6),
+        new THREE.Vector3(-halfW + 0.16, 4.40, -0.75),
+        new THREE.Vector3(-halfW + 0.18, 3.60, -0.85)
+      ]
+    ];
+    const leftWallIvy = this.plantBuilder.buildTrailingVines(leftIvyPaths, 1.15, 28);
+    this.decorations.add(leftWallIvy);
+
+    // 6. Cascading Pothos on Top Center Bookcase Ledge
+    const bookcasePothos = this.plantBuilder.buildPottedShelfPlant();
+    bookcasePothos.position.set(0.35, 5.46, backZ + 0.35);
+    this.decorations.add(bookcasePothos);
+
+    // 7. Upper Desk Shelf Trailing Greenery
+    const deskShelfPlant = this.plantBuilder.buildPottedShelfPlant();
+    deskShelfPlant.position.set(-3.45, 4.86, backZ + 0.35);
+    this.decorations.add(deskShelfPlant);
+
+    // 8. Center Bookcase Styling (Behind Bed)
+    // Crown Top Ledge (y = 5.46, below ceiling trim)
+    const kraftBox = this.shelfDecorBuilder.buildKraftStorageBox(2.15, 5.46, backZ + 0.35, 0.65, 0.28, 0.44);
+    this.decorations.add(kraftBox);
+
+    const catFigurine = this.shelfDecorBuilder.buildWhiteCatFigurine(1.35, 5.46, backZ + 0.32);
+    this.decorations.add(catFigurine);
+
+    // Shelf 4 (High interior shelf, y = 4.60)
+    const topBooks = this.shelfDecorBuilder.buildBookRow(0.38, 4.63, backZ + 0.24, 11, 0.08, { seed: 1, leanLast: true });
+    this.decorations.add(topBooks);
+
+    const topStack = this.shelfDecorBuilder.buildBookStack(2.15, 4.63, backZ + 0.24, 3, 'cup');
+    this.decorations.add(topStack);
+
+    // Shelf 3 (Middle interior shelf, y = 3.80)
+    const midBooks = this.shelfDecorBuilder.buildBookRow(0.38, 3.83, backZ + 0.24, 6, 0.08, { seed: 5, leanLast: true });
+    this.decorations.add(midBooks);
+
+    const midStack = this.shelfDecorBuilder.buildBookStack(1.42, 3.83, backZ + 0.24, 2);
+    this.decorations.add(midStack);
+
+    const analogClock = this.shelfDecorBuilder.buildAnalogClock(2.28, 3.83, backZ + 0.24);
+    this.decorations.add(analogClock);
+
+    // Shelf 2 (Lower interior shelf above headboard, y = 3.00)
+    const shelfArt = this.shelfDecorBuilder.buildFramedArt(0.36, 0.48, this.shelfDecorBuilder.materials.botArt3);
+    shelfArt.position.set(0.75, 3.32, backZ + 0.12);
+    shelfArt.rotation.x = -0.08;
+    this.decorations.add(shelfArt);
+
+    const lowBooks = this.shelfDecorBuilder.buildBookRow(1.30, 3.03, backZ + 0.24, 5, 0.08, { seed: 6 });
+    this.decorations.add(lowBooks);
+
+    const botStack = this.shelfDecorBuilder.buildBookStack(2.10, 3.03, backZ + 0.24, 2);
+    this.decorations.add(botStack);
+
+    // 9. Upper Desk Shelving Styling (Above Workstation)
+    const deskBooksLeft = this.shelfDecorBuilder.buildBookRow(-4.45, 4.83, backZ + 0.24, 7, 0.075, { seed: 8, leanFirst: true });
+    this.decorations.add(deskBooksLeft);
+
+    const deskArt = this.shelfDecorBuilder.buildFramedArt(0.52, 0.36, this.shelfDecorBuilder.materials.botArt4);
+    deskArt.position.set(-2.25, 5.06, backZ + 0.16);
+    this.decorations.add(deskArt);
+
+    const deskBooksRight = this.shelfDecorBuilder.buildBookRow(-1.60, 4.83, backZ + 0.24, 5, 0.075, { seed: 3 });
+    this.decorations.add(deskBooksRight);
+
+    // 10. Pegboard Polaroid Snapshots (behind monitor & laptop)
+    const polaroids = [
+      { x: -2.25, y: 3.25, v: 0 },
+      { x: -1.85, y: 3.52, v: 1 },
+      { x: -2.05, y: 2.88, v: 2 },
+      { x: -1.45, y: 3.10, v: 3 }
+    ];
+    for (const p of polaroids) {
+      const pol = this.shelfDecorBuilder.buildPolaroidWithTape(p.v, 1.2);
+      pol.position.set(p.x, p.y, backZ + 0.038);
+      this.decorations.add(pol);
+    }
+
+    // 11. Right Wall Art Gallery & Wall Sconce
+    // Upper section near window
+    const fernArt = this.shelfDecorBuilder.buildFramedArt(0.44, 0.58, this.shelfDecorBuilder.materials.botArt2);
+    fernArt.position.set(halfW - 0.02, 4.55, -2.15);
+    fernArt.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(fernArt);
+
+    const polW1 = this.shelfDecorBuilder.buildPolaroidWithTape(0, 0.92);
+    polW1.position.set(halfW - 0.015, 3.88, -2.35);
+    polW1.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(polW1);
+
+    const polW2 = this.shelfDecorBuilder.buildPolaroidWithTape(2, 0.92);
+    polW2.position.set(halfW - 0.015, 3.88, -1.95);
+    polW2.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(polW2);
+
+    // Lower section beside window / foot of bed
+    const sconce = this.shelfDecorBuilder.buildWallSconce(halfW - 0.02, 3.75, 2.35);
+    this.decorations.add(sconce);
+
+    const monArt = this.shelfDecorBuilder.buildFramedArt(0.44, 0.58, this.shelfDecorBuilder.materials.botArt1);
+    monArt.position.set(halfW - 0.02, 3.05, 2.50);
+    monArt.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(monArt);
+
+    const polW3 = this.shelfDecorBuilder.buildPolaroidWithTape(1, 0.92);
+    polW3.position.set(halfW - 0.015, 2.42, 2.30);
+    polW3.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(polW3);
+
+    const polW4 = this.shelfDecorBuilder.buildPolaroidWithTape(3, 0.92);
+    polW4.position.set(halfW - 0.015, 2.42, 2.68);
+    polW4.rotation.y = -Math.PI * 0.5;
+    this.decorations.add(polW4);
   }
 
   update(delta) {
