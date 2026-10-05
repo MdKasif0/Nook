@@ -73,6 +73,7 @@ struct RoomView: View {
                     handleItemMoved(id: id, newPosition: newPosition)
                 },
                 onOpenItem: { id in
+                    hasInteractedWithObject = true
                     if let item = items.first(where: { $0.id == id }) {
                         detailItem = item
                     }
@@ -86,6 +87,9 @@ struct RoomView: View {
                 }
             )
             .ignoresSafeArea()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Miniature Room with \(items.count) \(items.count == 1 ? "thought" : "thoughts")")
+            .accessibilityHint("Use Tab or arrow keys to cycle through objects. Press Return to open.")
             
             // Floating Overlays & Controls
             VStack(spacing: 0) {
@@ -102,10 +106,23 @@ struct RoomView: View {
                     .padding(.horizontal, NookDesign.Spacing.lg)
                     .padding(.top, NookDesign.Spacing.md)
                 
+                // First Launch Welcome Intro (subtle, non-intrusive, dismissible)
+                if !firstLaunchDismissed {
+                    firstLaunchIntroBanner
+                        .padding(.horizontal, NookDesign.Spacing.lg)
+                        .padding(.top, NookDesign.Spacing.sm)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                
                 Spacer()
                 
-                // Bottom Area: Undo Toast, Selected Item Inspector or Cookie Toast
+                // Bottom Area: Hover Hint, Undo Toast, Selected Item Inspector or Cookie Toast
                 VStack(spacing: NookDesign.Spacing.sm) {
+                    if !hasInteractedWithObject, sceneController.hoveredItemID != nil, selectedItem == nil {
+                        firstTimeHoverHint
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    }
+                    
                     if let undoMessage = appState.undoToastMessage {
                         undoToastPill(undoMessage)
                             .transition(.asymmetric(
@@ -153,7 +170,13 @@ struct RoomView: View {
                 .zIndex(100)
             }
         }
+        .focusable()
+        .focused($isRoomFocused)
+        .onKeyPress(phases: .down) { press in
+            handleKeyPress(press)
+        }
         .onAppear {
+            isRoomFocused = true
             sceneController.applySavedRoomState(currentRoomState)
             RoomEventBus.shared.publish(.roomOpened(wasAwayForDuration: 60))
             GlobalShortcutManager.shared.onEscapePressed = { [weak appState] in
@@ -161,10 +184,20 @@ struct RoomView: View {
                     appState.closeSearch()
                     return true
                 }
+                if isEditingSelectedItem {
+                    isEditingSelectedItem = false
+                    return true
+                }
                 if sceneController.selectedItemID != nil {
                     withAnimation(NookDesign.Animation.springy) {
                         sceneController.selectedItemID = nil
                         sceneController.resetCameraFraming()
+                    }
+                    return true
+                }
+                if !firstLaunchDismissed {
+                    withAnimation(NookDesign.Animation.standard) {
+                        firstLaunchDismissed = true
                     }
                     return true
                 }
@@ -407,9 +440,91 @@ struct RoomView: View {
             .clipShape(Capsule())
             .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
         }
-        .opacity(isHeaderHovered ? 1.0 : 0.82)
+        .opacity(isHeaderHovered ? 1.0 : 0.40)
         .onHover { isHeaderHovered = $0 }
         .animation(.easeInOut(duration: 0.2), value: isHeaderHovered)
+    }
+    
+    /// Single subtle introduction card on first launch.
+    /// Non-intrusive, no multi-page carousel, dismissible with xmark or Esc.
+    private var firstLaunchIntroBanner: some View {
+        HStack(alignment: .center, spacing: NookDesign.Spacing.md) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Welcome to your Nook.")
+                    .font(NookDesign.Typography.subheading)
+                    .fontWeight(.medium)
+                    .foregroundStyle(NookDesign.Colors.textPrimary)
+                
+                HStack(spacing: 5) {
+                    Text("Capture a thought with")
+                        .font(NookDesign.Typography.caption)
+                        .foregroundStyle(NookDesign.Colors.textSecondary)
+                    
+                    Text("⌘⇧Space")
+                        .font(NookDesign.Typography.mono)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(NookDesign.Colors.textPrimary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(NookDesign.Colors.backgroundPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
+                        )
+                }
+            }
+            
+            Spacer()
+            
+            Button {
+                withAnimation(NookDesign.Animation.standard) {
+                    firstLaunchDismissed = true
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(NookDesign.Colors.textTertiary)
+                    .padding(5)
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+            .accessibilityLabel("Dismiss welcome introduction")
+        }
+        .padding(.horizontal, NookDesign.Spacing.md)
+        .padding(.vertical, NookDesign.Spacing.sm)
+        .frame(maxWidth: 380)
+        .background(NookDesign.Colors.surface.opacity(0.96))
+        .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous)
+                .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.8)
+        )
+        .nookShadow(NookDesign.Shadow.elevated)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Welcome to your Nook. Capture a thought with Command Shift Space.")
+    }
+    
+    /// Subtle first-time hover hint on physical room objects.
+    private var firstTimeHoverHint: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "hand.tap")
+                .font(.system(size: 11))
+                .foregroundStyle(NookDesign.Colors.olive)
+            
+            Text("Click to open")
+                .font(NookDesign.Typography.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(NookDesign.Colors.textPrimary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(NookDesign.Colors.surface.opacity(0.94))
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5))
+        .nookShadow(NookDesign.Shadow.soft)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Click to open")
     }
     
     /// Contextual inspector panel when an object in the 3D room is selected.
@@ -635,7 +750,23 @@ struct RoomView: View {
                         }
                         .buttonStyle(.plain)
                         .help("Delete this thought (⌘Z to undo)")
+                        .accessibilityLabel("Delete thought")
                     }
+                    
+                    // Keyboard navigation legend
+                    HStack(spacing: 4) {
+                        Text("↵ Open")
+                        Text("•")
+                        Text("e Edit")
+                        Text("•")
+                        Text("⌫ Delete")
+                        Text("•")
+                        Text("Esc Close")
+                    }
+                    .font(NookDesign.Typography.mono)
+                    .font(.system(size: 9))
+                    .foregroundStyle(NookDesign.Colors.textTertiary)
+                    .padding(.top, 2)
                 }
             }
         }
@@ -645,9 +776,11 @@ struct RoomView: View {
         .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: NookDesign.Radius.xl, style: .continuous)
-                .strokeBorder(NookDesign.Colors.surfaceBorder, lineWidth: 0.5)
+                .strokeBorder(NookDesign.Colors.olive.opacity(0.7), lineWidth: 1.2)
         )
         .nookShadow(NookDesign.Shadow.elevated)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Inspector for \(item.title), \(item.objectType.displayName)")
     }
     
     /// Speech bubble when Cookie is petted or clicked in the room.
