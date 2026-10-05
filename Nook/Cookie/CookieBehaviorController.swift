@@ -71,7 +71,7 @@ public final class CookieBehaviorController {
     
     // MARK: - Event Dispatching & Natural Personality Reactions
     
-    public func handleEvent(_ event: RoomEvent) {
+    func handleEvent(_ event: RoomEvent) {
         guard PreferencesManager.shared.cookieReactionsEnabled else { return }
         state.lastInteraction = .now
         
