@@ -61,10 +61,10 @@ struct ThoughtDetailSheet: View {
             // Content Body
             ScrollView {
                 VStack(alignment: .leading, spacing: NookDesign.Spacing.lg) {
-                    // Object Miniature Icon & Title
+                    // Object Miniature Icon & Title (Native Apple typography)
                     VStack(alignment: .leading, spacing: NookDesign.Spacing.sm) {
                         Text(item.title)
-                            .font(.system(size: 22, weight: .semibold, design: .serif))
+                            .font(NookDesign.Typography.title)
                             .foregroundStyle(NookDesign.Colors.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -131,6 +131,9 @@ struct ThoughtDetailSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Edit thought")
+                .accessibilityHint("Opens inline editor for title, content, or object type")
+                .keyboardShortcut("e", modifiers: [])
                 
                 // Move Menu
                 Menu {
@@ -155,6 +158,8 @@ struct ThoughtDetailSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: NookDesign.Radius.sm, style: .continuous))
                 }
                 .menuStyle(.borderlessButton)
+                .accessibilityLabel("Move thought")
+                .accessibilityHint("Select a zone in the room to place this object")
                 
                 Spacer()
                 
@@ -174,6 +179,8 @@ struct ThoughtDetailSheet: View {
                     .padding(.vertical, NookDesign.Spacing.xs)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Archive thought")
+                .accessibilityHint("Removes object from room and safely moves it to Archive")
                 
                 // Delete
                 Button {
@@ -191,6 +198,8 @@ struct ThoughtDetailSheet: View {
                     .padding(.vertical, NookDesign.Spacing.xs)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Delete thought")
+                .accessibilityHint("Deletes thought with ⌘Z undo support")
             }
             .padding(.horizontal, NookDesign.Spacing.xl)
             .padding(.vertical, NookDesign.Spacing.md)

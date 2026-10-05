@@ -168,10 +168,25 @@ struct ItemListView: View {
     
     private var filterTitleEmptyText: String {
         switch filter {
-        case .itemType:
-            return "No \(title.lowercased()) yet"
+        case .itemType(let type):
+            switch type {
+            case .idea:
+                return "Your first idea is waiting for a shelf."
+            case .thought:
+                return "A quiet space for your thoughts."
+            case .note:
+                return "No notes tucked away yet."
+            case .reminder:
+                return "Nothing waiting to be remembered."
+            case .quote:
+                return "Waiting for words worth keeping."
+            case .link:
+                return "No bookmarks saved yet."
+            case .photo:
+                return "No memories captured yet."
+            }
         case .archived:
-            return "No archived thoughts"
+            return "Archive is empty."
         }
     }
 }

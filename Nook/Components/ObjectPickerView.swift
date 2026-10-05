@@ -53,6 +53,11 @@ struct ObjectPickerView: View {
                     }
                     .buttonStyle(.plain)
                     .help(type.subtitle)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(type.displayName)
+                    .accessibilityValue(type.subtitle)
+                    .accessibilityAddTraits(selectedObjectType == type ? [.isSelected, .isButton] : [.isButton])
+                    .accessibilityHint("Selects \(type.displayName) as the physical representation in your room")
                 }
             }
             .padding(NookDesign.Spacing.xs)
