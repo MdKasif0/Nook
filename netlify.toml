@@ -93,3 +93,11 @@
     Content-Type = "application/x-apple-diskimage"
     Content-Disposition = "attachment"
     Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# Sparkle 2 AppCast XML Feed - 5 minute edge cache with revalidation
+[[headers]]
+  for = "/appcast.xml"
+  [headers.values]
+    Content-Type = "application/rss+xml; charset=utf-8"
+    Cache-Control = "public, max-age=300, must-revalidate"
+    Access-Control-Allow-Origin = "*"
