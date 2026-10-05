@@ -199,8 +199,34 @@ Drag and drop the [`web/`](web/) folder into [app.netlify.com/drop](https://app.
 Privacy is foundational to Nook:
 * **Zero Telemetry**: No analytics libraries, crash trackers, or behavioral telemetry.
 * **No Cloud Infrastructure**: No user accounts, logins, or remote servers.
-* **Network Sandbox Restrictions**: The app entitlements ([`Nook.entitlements`](Nook/Nook.entitlements)) omit all network client and server privileges (`com.apple.security.network.client` is disabled). Even if third-party code attempted a network connection, the macOS kernel would physically reject the socket.
-* **On-Disk SQLite Storage**: All content remains inside your user Application Support sandbox.
+* **Zero-Cloud Local Storage**: All your thoughts, notes, and room coordinates remain exclusively on your Mac in local SwiftData SQLite storage.
+* **Strictly Scoped Network Access**: Outbound HTTPS network access (`com.apple.security.network.client`) is strictly restricted to fetching the signed AppCast feed (`appcast.xml`) and downloading verified DMG updates. Zero user data, thoughts, or metadata are ever transmitted.
+
+---
+
+## Sparkle 2 Auto-Update System
+
+Nook features a 100% Sparkle 2 compliant update distribution and verification architecture:
+
+* **Cryptographic Verification**: Every release archive is signed with **Ed25519 (RFC 8032)** digital signatures generated via Apple's native `CryptoKit`.
+* **Standard AppCast Feed**: Releases are cataloged in [`web/appcast.xml`](web/appcast.xml) using RSS 2.0 with the `sparkle:` namespace, providing version metadata, system version compatibility (`macOS 15.0+`), and release highlights.
+* **Native In-App Updater**: Built into Nook using pure Swift and SwiftUI (`NookUpdateManager`), allowing users to check for updates from the application menu (<kbd>Nook > Check for Updates…</kbd>) or Settings, with live download progress and automatic DMG disk image mounting.
+* **Multi-Release History**: The update generator preserves historical release notes while prioritizing the latest compatible build.
+
+### Release & Update Workflow
+
+To package and deploy a new release:
+
+```bash
+# 1. Package the Release DMG (builds, signs, stages, and creates dist/Nook-X.Y.Z-Universal.dmg)
+./scripts/package_dmg.sh
+
+# 2. Or generate/update the Sparkle AppCast feed for an existing DMG:
+VERSION="1.0.1" BUILD_NUMBER="2" ./scripts/generate_appcast.sh dist/Nook-1.0.1-Universal.dmg
+
+# 3. Validate the feed and signature:
+./scripts/validate_appcast.sh web/appcast.xml dist/Nook-1.0.1-Universal.dmg
+```
 
 ---
 

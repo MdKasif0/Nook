@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nook 1.0.0 Release Notes</title>
+  <meta name="description" content="Release notes and updates for Nook version 1.0.0 on macOS.">
+  <link rel="stylesheet" href="../index.css">
+  <style>
+    .release-page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 60px 24px 100px;
+      font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      color: #332B25;
+      background: #FAF7F2;
+      min-height: 100vh;
+    }
+    .release-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7A846E20;
+      color: #7A846E;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .release-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #2D2520;
+    }
+    .release-date {
+      font-size: 14px;
+      color: #7C7267;
+      margin-bottom: 32px;
+    }
+    .release-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(135, 125, 115, 0.15);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(60, 50, 40, 0.04);
+      margin-bottom: 24px;
+    }
+    .release-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 16px;
+      color: #2D2520;
+    }
+    .release-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .release-list li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 14px;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .release-list li::before {
+      content: "✦";
+      position: absolute;
+      left: 6px;
+      color: #7A846E;
+      font-size: 14px;
+    }
+    .release-meta {
+      font-size: 13px;
+      color: #8C8074;
+      line-height: 1.6;
+      border-top: 1px solid rgba(135, 125, 115, 0.12);
+      padding-top: 16px;
+      margin-top: 24px;
+    }
+    .download-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #7A846E;
+      color: #FFFFFF;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-top: 8px;
+    }
+    .download-action:hover {
+      background: #68725C;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="release-page">
+    <a href="../" style="text-decoration: none; color: #7A846E; font-size: 14px; font-weight: 500; display: inline-block; margin-bottom: 24px;">← Back to Nook</a>
+    <div>
+      <span class="release-badge">macOS 15.0+ Compatible</span>
+      <h1 class="release-title">Nook 1.0.0</h1>
+      <div class="release-date">Released on Mon, 05 Oct 2026 13:49:54 +0000 • Build 1</div>
+    </div>
+
+    <div class="release-card">
+      <h2>What's New in this Release</h2>
+      <ul class="release-list">
+        <li><strong>Interactive 3D Miniature Environment:</strong> Direct physical object interaction with RealityKit entities across desk, bed, shelves, audio lounge, and floor.</li>
+        <li><strong>Physical Drag &amp; Drop:</strong> Smooth pick-up elevation, surface height snapping, physical settling, and boundary wall constraints.</li>
+        <li><strong>Movable Prop Controls:</strong> 45° incremental rotation, constrained scaling (0.85x–1.25x), and native Undo/Redo integration.</li>
+        <li><strong>Companion Cat Reactivity:</strong> Cookie looks curiously at moving objects, purrs when petted, and keeps you company.</li>
+        <li><strong>Local-First Guarantee:</strong> SwiftData offline storage with persistent room coordinates and Zero-Cloud privacy.</li>
+        <li><strong>Built-in Sparkle 2 Auto-Updater:</strong> Seamless in-app update checks, Ed25519 cryptographic verification, and one-click DMG mounting.</li>
+      </ul>
+
+      <div style="margin-top: 24px;">
+        <a href="https://nook.app/downloads/Nook-1.0.0-Universal.dmg" class="download-action">
+          <span>Download Nook 1.0.0 DMG</span>
+        </a>
+      </div>
+
+      <div class="release-meta">
+        <div><strong>Package:</strong> Nook-1.0.0-Universal.dmg (9839886 bytes)</div>
+        <div><strong>Ed25519 Signature:</strong> <code style="word-break: break-all; font-size: 11px;">O/vSb+5l1sHgqV3J2fRav5wPEtg9gwl5HvLuc5LYUBev4JjquiD7oCT7brkHfhLl9ixkkZMOSQsn4dqFnW3jBw==</code></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

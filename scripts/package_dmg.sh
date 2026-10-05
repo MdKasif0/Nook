@@ -191,6 +191,10 @@ echo "  ✅ Synced DMG to website downloads."
 echo "📡 Step 6/6: Generating Sparkle 2 AppCast XML Feed..."
 "$SCRIPT_DIR/generate_appcast.sh" "$OUTPUT_DMG"
 
+# Step 7: Validate generated AppCast feed
+echo "🔍 Validating Sparkle 2 AppCast Feed..."
+"$SCRIPT_DIR/validate_appcast.sh" "$PROJECT_ROOT/web/appcast.xml" "$OUTPUT_DMG"
+
 # Optional: Notarization
 if [ "$NOTARIZE" = true ]; then
   if [ -n "$APPLE_ID" ] && [ -n "$TEAM_ID" ] && [ -n "$PASSWORD" ]; then

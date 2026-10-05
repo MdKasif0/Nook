@@ -35,7 +35,7 @@
 	<key>SUFeedURL</key>
 	<string>https://nook.app/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>aM3AnV9XEVA/RgbhM6eLcuz4dtx6/374kYHT0aP03xI</string>
+	<string>aM3AnV9XEVA/RgbhM6eLcuz4dtx6/374kYHT0aP03xI=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>

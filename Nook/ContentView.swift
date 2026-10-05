@@ -28,9 +28,9 @@ struct ContentView: View {
                 openWindow(id: NookWindow.quickCapture.id)
             }
             
-            // Check for updates in the background if enabled
+            // Check for updates in the background if scheduled interval elapsed
             if PreferencesManager.shared.autoCheckUpdates {
-                updateManager.checkForUpdates(userInitiated: false)
+                updateManager.performBackgroundCheckIfNeeded()
             }
         }
     }

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import RealityKit
+import CryptoKit
 
 /// Comprehensive test suite verifying Nook's local-first data reliability:
 /// - Create
@@ -44,7 +45,11 @@ final class NookDataReliabilityTests {
             ("Surface Height Detection & Boundary Clamping", testSurfaceHeightAndBoundaryClamping),
             ("Tactile Prop Drag & Drop Physical Settling", testPropDragAndDropSettling),
             ("Prop Rotation & Native macOS Undo", testPropRotationAndUndo),
-            ("Prop Scaling Constraints & Native macOS Undo", testPropScalingConstraintsAndUndo)
+            ("Prop Scaling Constraints & Native macOS Undo", testPropScalingConstraintsAndUndo),
+            ("Sparkle 2 AppCast Feed XML & RFC 822 Parsing", testSparkleAppCastParsing),
+            ("Sparkle Ed25519 Cryptographic Verification", testSparkleEd25519SignatureVerification),
+            ("Sparkle Semantic Version Comparison", testSparkleSemanticVersionComparison),
+            ("Sparkle Minimum System Version Compatibility", testSparkleSystemCompatibility)
         ]
         
         for (name, testBlock) in tests {
@@ -875,6 +880,173 @@ final class NookDataReliabilityTests {
         interaction.scaleProp(id: "prop_desk", factor: 1.5, undoManager: undoManager)
         guard abs(desk.scale.x - deskInitialScale.x) < 0.001 else {
             throw TestError("Desk structure should not allow scaling.")
+        }
+    }
+    
+    // MARK: - Sparkle 2 Update Feed Tests
+    
+    private static func testSparkleAppCastParsing() throws {
+        let sampleXML = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+          <channel>
+            <title>Nook Test Feed</title>
+            <item>
+              <title>Nook 1.1.0</title>
+              <pubDate>Mon, 05 Oct 2026 13:47:21 +0000</pubDate>
+              <sparkle:version>42</sparkle:version>
+              <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+              <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+              <sparkle:releaseNotesLink>https://nook.app/releases/1.1.0.html</sparkle:releaseNotesLink>
+              <description><![CDATA[<h2>Release Notes</h2><ul><li>Test item 1</li></ul>]]></description>
+              <enclosure url="https://nook.app/downloads/Nook-1.1.0-Universal.dmg"
+                         sparkle:version="42"
+                         sparkle:shortVersionString="1.1.0"
+                         sparkle:edSignature="dummySig=="
+                         length="1048576"
+                         type="application/x-apple-diskimage" />
+            </item>
+          </channel>
+        </rss>
+        """
+        guard let data = sampleXML.data(using: .utf8) else {
+            throw TestError("Failed to convert sample XML to data.")
+        }
+        
+        let parser = AppCastParser(xmlData: data)
+        let items = parser.parse()
+        
+        guard items.count == 1 else {
+            throw TestError("Expected 1 item, found \(items.count).")
+        }
+        let item = items[0]
+        guard item.versionString == "1.1.0" else {
+            throw TestError("Expected version 1.1.0, got \(item.versionString)")
+        }
+        guard item.buildNumber == "42" else {
+            throw TestError("Expected build 42, got \(item.buildNumber)")
+        }
+        guard item.fileSize == 1048576 else {
+            throw TestError("Expected fileSize 1048576, got \(item.fileSize)")
+        }
+        guard item.edSignature == "dummySig==" else {
+            throw TestError("Expected edSignature 'dummySig==', got \(String(describing: item.edSignature))")
+        }
+        guard item.minimumSystemVersion == "15.0" else {
+            throw TestError("Expected min system version 15.0, got \(String(describing: item.minimumSystemVersion))")
+        }
+        guard item.releaseNotesLink?.absoluteString == "https://nook.app/releases/1.1.0.html" else {
+            throw TestError("Expected release notes URL, got \(String(describing: item.releaseNotesLink))")
+        }
+        guard let pubDate = item.publishDate else {
+            throw TestError("Failed to parse RFC 822 pubDate.")
+        }
+        let calendar = Calendar(identifier: .gregorian)
+        guard calendar.component(.year, from: pubDate) == 2026 else {
+            throw TestError("Expected year 2026, got \(calendar.component(.year, from: pubDate))")
+        }
+    }
+    
+    private static func testSparkleEd25519SignatureVerification() throws {
+        // 1. Generate keypair using native CryptoKit
+        let privateKey = Curve25519.Signing.PrivateKey()
+        let publicKey = privateKey.publicKey
+        let pubBase64 = publicKey.rawRepresentation.base64EncodedString()
+        
+        // 2. Sign arbitrary payload data
+        let testPayload = "Nook macOS 15+ Secure Update Payload Verification".data(using: .utf8)!
+        let signature = try privateKey.signature(for: testPayload)
+        let sigBase64 = signature.base64EncodedString()
+        
+        // 3. Test verification with raw signature
+        guard publicKey.isValidSignature(signature, for: testPayload) else {
+            throw TestError("Direct Curve25519 signature verification failed.")
+        }
+        
+        // 4. Test Base64 normalization
+        let trimmedKey = pubBase64.replacingOccurrences(of: "=", with: "")
+        let normalizedKey = NookUpdateManager.normalizeBase64(trimmedKey)
+        guard normalizedKey.count % 4 == 0 else {
+            throw TestError("normalizeBase64 failed to pad key correctly.")
+        }
+        
+        guard let keyData = Data(base64Encoded: normalizedKey),
+              let recoveredPubKey = try? Curve25519.Signing.PublicKey(rawRepresentation: keyData) else {
+            throw TestError("Failed to recover public key from normalized Base64.")
+        }
+        
+        guard let sigData = Data(base64Encoded: sigBase64) else {
+            throw TestError("Failed to decode base64 signature.")
+        }
+        guard recoveredPubKey.isValidSignature(sigData, for: testPayload) else {
+            throw TestError("Verification failed with recovered public key.")
+        }
+        
+        // 5. Corrupted data must fail
+        let tamperedPayload = "Corrupted Payload".data(using: .utf8)!
+        guard !recoveredPubKey.isValidSignature(sigData, for: tamperedPayload) else {
+            throw TestError("Verification should have failed for tampered payload!")
+        }
+    }
+    
+    private static func testSparkleSemanticVersionComparison() throws {
+        // Newer minor
+        guard NookUpdateManager.isVersion("1.1.0", build: "1", newerThan: "1.0.0", currentBuild: "1") else {
+            throw TestError("1.1.0 should be newer than 1.0.0")
+        }
+        // Newer patch
+        guard NookUpdateManager.isVersion("1.0.1", build: "1", newerThan: "1.0.0", currentBuild: "1") else {
+            throw TestError("1.0.1 should be newer than 1.0.0")
+        }
+        // Same version, newer build
+        guard NookUpdateManager.isVersion("1.0.0", build: "2", newerThan: "1.0.0", currentBuild: "1") else {
+            throw TestError("1.0.0 build 2 should be newer than build 1")
+        }
+        // Older version
+        guard !NookUpdateManager.isVersion("0.9.9", build: "99", newerThan: "1.0.0", currentBuild: "1") else {
+            throw TestError("0.9.9 should NOT be newer than 1.0.0")
+        }
+        // Identical version and build
+        guard !NookUpdateManager.isVersion("1.0.0", build: "1", newerThan: "1.0.0", currentBuild: "1") else {
+            throw TestError("Identical version/build should NOT be newer")
+        }
+    }
+    
+    private static func testSparkleSystemCompatibility() throws {
+        let dummyURL = URL(string: "https://nook.app/dmg")!
+        
+        let compatibleItem = AppCastItem(
+            title: "Nook 1.0",
+            versionString: "1.0.0",
+            buildNumber: "1",
+            releaseNotesHTML: "",
+            releaseNotesLink: nil,
+            downloadURL: dummyURL,
+            edSignature: nil,
+            fileSize: 100,
+            publishDate: nil,
+            minimumSystemVersion: "15.0",
+            isCritical: false
+        )
+        guard NookUpdateManager.shared.isSystemCompatible(item: compatibleItem) else {
+            throw TestError("macOS 15.0 requirement should be compatible on macOS 15+ host.")
+        }
+        
+        let futureItem = AppCastItem(
+            title: "Nook 99.0",
+            versionString: "99.0.0",
+            buildNumber: "1",
+            releaseNotesHTML: "",
+            releaseNotesLink: nil,
+            downloadURL: dummyURL,
+            edSignature: nil,
+            fileSize: 100,
+            publishDate: nil,
+            minimumSystemVersion: "99.0",
+            isCritical: false
+        )
+        guard !NookUpdateManager.shared.isSystemCompatible(item: futureItem) else {
+            throw TestError("macOS 99.0 requirement should NOT be compatible.")
         }
     }
     
