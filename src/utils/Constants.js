@@ -16,71 +16,89 @@ export const ROOM_HEIGHT = 5.6;
 
 // Structural Architecture
 export const WALL_THICKNESS = 0.38;
-export const BASE_PLATFORM_THICKNESS = 0.52;
-export const UPPER_TRIM_WIDTH = 0.58;
-export const UPPER_TRIM_HEIGHT = 0.38;
+export const BASE_PLATFORM_THICKNESS = 0.48;
+export const UPPER_TRIM_WIDTH = 0.56;
+export const UPPER_TRIM_HEIGHT = 0.36;
 
 // Stepped Levels
-export const LOWER_FLOOR_Y = 0.0;       // Sunken desk pit / lower floor
-export const UPPER_FLOOR_Y = 0.42;      // Raised bed / entry platform
-export const STEP_HEIGHT = 0.21;        // Intermediate step height
+export const LOWER_FLOOR_Y = 0.0;       // Lower front deck
+export const STEP_HEIGHT = 0.14;        // Subtle riser height
+export const MAIN_FLOOR_Y = 0.28;       // Main room floor (desk & bed level)
+export const UPPER_FLOOR_Y = MAIN_FLOOR_Y;
 
 export const SURFACE_HEIGHTS = {
-  FLOOR_UPPER: UPPER_FLOOR_Y,
+  FLOOR_UPPER: MAIN_FLOOR_Y,
   FLOOR_LOWER: LOWER_FLOOR_Y,
-  DESK_TOP: 1.45,
-  BED_MATTRESS: 0.95,
-  BENCH_TOP: 0.65,
-  WINDOW_SILL: 2.2,
-  POUF_TOP: 0.42
+  DESK_TOP: MAIN_FLOOR_Y + 1.45,
+  BED_MATTRESS: MAIN_FLOOR_Y + 0.95,
+  BENCH_TOP: MAIN_FLOOR_Y + 0.65,
+  WINDOW_SILL: 2.1,
+  POUF_TOP: LOWER_FLOOR_Y + 0.42
 };
 
 // Window Architecture (Right Wall)
 export const WINDOW_CONFIG = {
-  centerZ: -0.2,
-  width: 3.2,
-  sillY: 2.2,
-  height: 2.3,
+  centerZ: -0.1,
+  width: 3.4,
+  sillY: 2.05,
+  height: 2.35,
   frameThickness: 0.14,
   mullionWidth: 0.08
 };
 
 // Built-in Shelving Structure (Back Wall)
 export const SHELF_CONFIG = {
-  leftX: -1.0,
-  rightX: 3.2,
-  bottomY: 2.2,
+  leftX: 0.2,
+  rightX: 2.8,
+  bottomY: 1.8,
   topY: 5.2,
-  depth: 0.55,
-  plankThickness: 0.08
+  depth: 0.52,
+  plankThickness: 0.07
 };
 
 // Warm Ivory / Cream & Natural Honey Wood Palettes
 export const PALETTE = {
   // Walls
-  wallCream: 0xf5eedf,
-  wallCreamLight: 0xf9f4ea,
-  wallCreamShade: 0xede3d2,
+  wallCream: 0xf7f1e6,
+  wallCreamLight: 0xfbf6ed,
+  wallCreamShade: 0xeee4d3,
 
-  // Warm Natural Honey Wood (No dark mahogany, no neon orange)
-  woodHoney: 0xd69c5e,
-  woodHoneyLight: 0xdfab6f,
-  woodHoneyDark: 0xb5783d,
-  woodTrim: 0xa86c35,
-  woodPlanks: 0xd09758,
+  // Warm Natural Honey Wood (No dark mahogany, no neon orange, no glossy plastic)
+  woodHoney: 0xdda362,
+  woodHoneyLight: 0xe6b477,
+  woodHoneyDark: 0xc28642,
+  woodTrim: 0xb97a38,
+  woodPlanks: 0xd89d5a,
 
   // Environment & Backing
-  environmentBg: 0xede3d6,
-  studioPedestal: 0xdfd4c4,
+  environmentBg: 0xeee5d8,
+  studioPedestal: 0xe4d8c7,
   glassWindow: 0xffffff,
-  outdoorSky: 0x8cc4e8,
-  outdoorTrees: 0x6e9f65,
+  outdoorSky: 0x93cbef,
+  outdoorTrees: 0x76a86c,
 
   // Lighting
-  sunlightGolden: 0xffe2b8,
-  ambientSky: 0xfff7ed,
-  ambientGround: 0xdfcbaf,
-  accentGlow: 0xffb568
+  sunlightGolden: 0xffe6c2,
+  ambientSky: 0xfff7ee,
+  ambientGround: 0xe5d2b8,
+  accentGlow: 0xffb86a,
+
+  // Object & Prop Colors (Used by ObjectManager and CookieController)
+  bedBlanketSage: 0x8ea889,
+  bedSheets: 0xfaf5ec,
+  pillowDaisyYellow: 0xf7d057,
+  ceramicWhite: 0xfbf9f5,
+  recordPlayerDustyRose: 0xd8a49c,
+  recordVinyl: 0x222224,
+  skateboardBlack: 0x2c2c2e,
+  plantGreen: 0x487a42,
+
+  // Cookie Calico Colors
+  cookieWhite: 0xfaf7f2,
+  cookieGinger: 0xd68945,
+  cookieDarkBrown: 0x3d2817,
+  cookieEarsPink: 0xf2aeb5,
+  cookieBlush: 0xf9bcc3
 };
 
 // NookMainCamera reference configuration
@@ -89,7 +107,7 @@ export const CAMERA_CONFIG = {
   fov: 32,
   near: 0.1,
   far: 80.0,
-  defaultPosition: [-3.8, 10.6, 14.6],
+  defaultPosition: [-5.2, 9.4, 14.8],
   defaultTarget: [0.2, 1.8, -0.2],
   minDistance: 6.0,
   maxDistance: 24.0,
@@ -101,10 +119,10 @@ export const CAMERA_CONFIG = {
 
 // Photometric lighting intensities
 export const LIGHTING_CONFIG = {
-  sunlightIntensity: 3.2,
-  ambientSkyIntensity: 0.72,
-  ambientGroundIntensity: 0.38,
-  frontFillIntensity: 0.35,
-  shelfAccentIntensity: 0.25,
-  exposure: 1.02
+  sunlightIntensity: 3.0,
+  ambientSkyIntensity: 0.78,
+  ambientGroundIntensity: 0.42,
+  frontFillIntensity: 0.38,
+  shelfAccentIntensity: 0.32,
+  exposure: 1.0
 };
