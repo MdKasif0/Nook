@@ -561,6 +561,10 @@ public final class CookieRealityEntity: Entity {
                     continue
                 }
                 
+                if self.isMoving || self.animationController?.isWalking == true || self.animationController?.isJumping == true || self.animationController?.isDragging == true {
+                    continue
+                }
+                
                 t += 0.06
                 let breathRate: Float = (self.currentMood == .sleepy || self.currentMood == .resting) ? 0.9 : 1.5
                 let breathAmp: Float = (self.currentMood == .sleepy || self.currentMood == .resting) ? 0.015 : 0.022
