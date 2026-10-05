@@ -22,7 +22,7 @@ export class ObjectManager {
    * Spawns initial tactile interactive thoughts.
    */
   spawnFoundationalObjects() {
-    // Smooth River Pebble (Tactile Thought) on Desk
+    // 1. Smooth River Pebble (Tactile Thought) on Desk
     const pebble = this.createPebble({
       id: 'prop_welcome_pebble',
       name: 'Welcome Pebble',
@@ -31,6 +31,50 @@ export class ObjectManager {
       position: new THREE.Vector3(-2.4, 1.72, -1.9)
     });
     this.registerObject(pebble);
+
+    // 2. Sticky Note on Desk
+    const sticky = this.createStickyNote({
+      id: 'prop_sticky_note',
+      name: 'Sticky Note',
+      title: 'Gentle Reminder',
+      content: 'breathe deeply, you are home 🌱',
+      position: new THREE.Vector3(-1.25, 1.72, -2.1),
+      rotation: new THREE.Euler(0, 0.18, 0)
+    });
+    this.registerObject(sticky);
+
+    // 3. Instant Polaroid Photo on Desk
+    const polaroid = this.createPolaroid({
+      id: 'prop_polaroid_thought',
+      name: 'Polaroid Photo',
+      title: 'Sunday Morning',
+      content: 'Sunlight filtering through the curtains.',
+      position: new THREE.Vector3(-3.85, 1.72, -2.0),
+      rotation: new THREE.Euler(0, -0.15, 0)
+    });
+    this.registerObject(polaroid);
+
+    // 4. Woven Ribbon Bookmark resting on Bed Duvet
+    const bookmark = this.createBookmark({
+      id: 'prop_bookmark_thought',
+      name: 'Ribbon Bookmark',
+      title: 'Current Chapter',
+      content: 'Page 142 — "Where the light settles."',
+      position: new THREE.Vector3(1.25, 1.32, -0.75),
+      rotation: new THREE.Euler(0, 0.35, 0)
+    });
+    this.registerObject(bookmark);
+
+    // 5. Paper Note beside keyboard
+    const paperNote = this.createPaperNote({
+      id: 'prop_paper_note',
+      name: 'Paper Note',
+      title: 'Morning Notes',
+      content: 'A quiet morning with coffee and Cookie purring.',
+      position: new THREE.Vector3(-1.42, 1.72, -2.55),
+      rotation: new THREE.Euler(0, -0.22, 0)
+    });
+    this.registerObject(paperNote);
   }
 
   initMovableProps(propsList) {
