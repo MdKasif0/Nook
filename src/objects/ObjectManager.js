@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { InteractiveObject } from './InteractiveObject.js';
 import { PALETTE, UPPER_FLOOR_Y, LOWER_FLOOR_Y } from '../utils/Constants.js';
 import { TextureGenerator } from '../utils/TextureGenerator.js';
+import { thoughtStore } from '../persistence/ThoughtStore.js';
+import { soundManager } from '../audio/SoundManager.js';
 
 export class ObjectManager {
   constructor(roomScene, placementManager) {
@@ -19,62 +21,112 @@ export class ObjectManager {
   }
 
   /**
-   * Spawns initial tactile interactive thoughts.
+   * Spawns or restores tactile interactive thoughts from persistent store.
+   * If store has saved thoughts, restore them exactly where left.
+   * Otherwise, seed the room with beautiful foundational thoughts.
    */
   spawnFoundationalObjects() {
-    // 1. Smooth River Pebble (Tactile Thought) on Desk
-    const pebble = this.createPebble({
-      id: 'prop_welcome_pebble',
-      name: 'Welcome Pebble',
-      title: 'Welcome to your Nook',
-      content: 'Capture a thought anytime. Every thought exists here as a small tactile physical object.',
-      position: new THREE.Vector3(-2.4, 1.72, -1.9)
-    });
-    this.registerObject(pebble);
+    const savedThoughts = thoughtStore.getAll();
 
-    // 2. Sticky Note on Desk
-    const sticky = this.createStickyNote({
-      id: 'prop_sticky_note',
-      name: 'Sticky Note',
-      title: 'Gentle Reminder',
-      content: 'breathe deeply, you are home 🌱',
-      position: new THREE.Vector3(-1.25, 1.72, -2.1),
-      rotation: new THREE.Euler(0, 0.18, 0)
-    });
-    this.registerObject(sticky);
+    if (savedThoughts && savedThoughts.length > 0) {
+      // Restore existing thoughts from room memory
+      for (const item of savedThoughts) {
+        const obj = this.createThoughtObject(item.type, {
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          type: item.type,
+          position: new THREE.Vector3(item.position.x, item.position.y, item.position.z),
+          rotation: new THREE.Euler(item.rotation.x, item.rotation.y, item.rotation.z),
+          scale: new THREE.Vector3(item.scale?.x ?? 1, item.scale?.y ?? 1, item.scale?.z ?? 1),
+          surface: item.surface,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        });
+        this.registerObject(obj);
+      }
+    } else {
+      // First-time seed of initial thoughts
+      const defaults = [
+        {
+          id: 'thought_welcome_pebble',
+          title: 'Welcome to your Nook',
+          content: 'Capture a thought anytime. Every thought exists here as a small tactile physical object.',
+          type: 'thought',
+          position: { x: -2.4, y: 1.70, z: -1.95 },
+          rotation: { x: 0, y: 0.15, z: 0 },
+          surface: 'desk'
+        },
+        {
+          id: 'thought_gentle_reminder',
+          title: 'Gentle Reminder',
+          content: 'breathe deeply, you are home 🌱',
+          type: 'reminder',
+          position: { x: -1.35, y: 1.70, z: -2.15 },
+          rotation: { x: 0, y: 0.22, z: 0 },
+          surface: 'desk'
+        },
+        {
+          id: 'thought_polaroid_photo',
+          title: 'Sunday Morning',
+          content: 'Sunlight filtering through the curtains.',
+          type: 'photo',
+          position: { x: -3.85, y: 1.70, z: -2.0 },
+          rotation: { x: 0, y: -0.15, z: 0 },
+          surface: 'desk'
+        },
+        {
+          id: 'thought_bookmark_link',
+          title: 'Current Chapter',
+          content: 'Page 142 — "Where the light settles."',
+          type: 'link',
+          position: { x: 1.25, y: 1.30, z: -0.75 },
+          rotation: { x: 0, y: 0.35, z: 0 },
+          surface: 'bed'
+        },
+        {
+          id: 'thought_origami_idea',
+          title: 'Origami Idea',
+          content: 'Folding paper thoughts into gentle sculptures.',
+          type: 'idea',
+          position: { x: -1.65, y: 1.70, z: -2.55 },
+          rotation: { x: 0, y: -0.28, z: 0 },
+          surface: 'desk'
+        },
+        {
+          id: 'thought_field_notes',
+          title: 'Field Notes',
+          content: 'Observing morning shadows shift across the honey wood.',
+          type: 'note',
+          position: { x: -2.95, y: 1.70, z: -2.05 },
+          rotation: { x: 0, y: 0.08, z: 0 },
+          surface: 'desk'
+        },
+        {
+          id: 'thought_quote_card',
+          title: 'Invincible Summer',
+          content: '“In the middle of winter, I found there was within me an invincible summer.” — Albert Camus',
+          type: 'quote',
+          position: { x: 1.50, y: 2.22, z: -3.12 },
+          rotation: { x: 0, y: 0, z: 0 },
+          surface: 'shelf_bed_1'
+        }
+      ];
 
-    // 3. Instant Polaroid Photo on Desk
-    const polaroid = this.createPolaroid({
-      id: 'prop_polaroid_thought',
-      name: 'Polaroid Photo',
-      title: 'Sunday Morning',
-      content: 'Sunlight filtering through the curtains.',
-      position: new THREE.Vector3(-3.85, 1.72, -2.0),
-      rotation: new THREE.Euler(0, -0.15, 0)
-    });
-    this.registerObject(polaroid);
-
-    // 4. Woven Ribbon Bookmark resting on Bed Duvet
-    const bookmark = this.createBookmark({
-      id: 'prop_bookmark_thought',
-      name: 'Ribbon Bookmark',
-      title: 'Current Chapter',
-      content: 'Page 142 — "Where the light settles."',
-      position: new THREE.Vector3(1.25, 1.32, -0.75),
-      rotation: new THREE.Euler(0, 0.35, 0)
-    });
-    this.registerObject(bookmark);
-
-    // 5. Paper Note beside keyboard
-    const paperNote = this.createPaperNote({
-      id: 'prop_paper_note',
-      name: 'Paper Note',
-      title: 'Morning Notes',
-      content: 'A quiet morning with coffee and Cookie purring.',
-      position: new THREE.Vector3(-1.42, 1.72, -2.55),
-      rotation: new THREE.Euler(0, -0.22, 0)
-    });
-    this.registerObject(paperNote);
+      for (const d of defaults) {
+        thoughtStore.saveThought(d);
+        const obj = this.createThoughtObject(d.type, {
+          id: d.id,
+          title: d.title,
+          content: d.content,
+          type: d.type,
+          position: new THREE.Vector3(d.position.x, d.position.y, d.position.z),
+          rotation: new THREE.Euler(d.rotation.x, d.rotation.y, d.rotation.z),
+          surface: d.surface
+        });
+        this.registerObject(obj);
+      }
+    }
   }
 
   initMovableProps(propsList) {
