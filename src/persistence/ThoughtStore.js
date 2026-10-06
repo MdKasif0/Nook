@@ -17,6 +17,7 @@ export class ThoughtStore {
   }
 
   load() {
+    if (typeof localStorage === 'undefined') return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -34,6 +35,7 @@ export class ThoughtStore {
   }
 
   save() {
+    if (typeof localStorage === 'undefined') return;
     try {
       const list = Array.from(this.thoughts.values());
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));

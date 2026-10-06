@@ -32,6 +32,7 @@ export class SoundManager {
   }
 
   initUnlockTriggers() {
+    if (typeof window === 'undefined') return;
     const unlock = () => {
       if (!this.unlocked) {
         this.ensureContext();
@@ -49,6 +50,7 @@ export class SoundManager {
   }
 
   ensureContext() {
+    if (typeof window === 'undefined') return null;
     if (!this.audioCtx) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) return null;
