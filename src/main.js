@@ -497,6 +497,40 @@ class NookApplication {
     this.initAmbientControls();
   }
 
+  createNewThought(thoughtData = {}) {
+    const type = thoughtData.type || 'thought';
+    const placement = this.placementManager.findPlacement(
+      type,
+      this.objectManager.getAllObjects()
+    );
+
+    const newRecord = {
+      title: thoughtData.title || 'Untitled Thought',
+      content: thoughtData.content || '',
+      type: type,
+      position: thoughtData.position ? (thoughtData.position.isVector3 ? thoughtData.position : new THREE.Vector3(...thoughtData.position)) : placement.position,
+      rotation: thoughtData.rotation ? (thoughtData.rotation.isEuler ? thoughtData.rotation : new THREE.Euler(...thoughtData.rotation)) : placement.rotation,
+      surface: thoughtData.surface || placement.surfaceId
+    };
+
+    const cmd = new CreateThoughtCommand(this.objectManager, newRecord);
+    undoManager.push(cmd);
+    const obj = cmd.execute();
+
+    // 3D physical appear animation
+    this.objectManager.animateAppear(obj);
+
+    // Cookie notices newly created thought
+    if (this.cookie && typeof this.cookie.noticeNewThought === 'function') {
+      this.cookie.noticeNewThought(obj);
+    }
+
+    // Auto select and save state
+    this.selectionManager.select(obj);
+    this.roomState.saveState();
+    return obj;
+  }
+
   initAmbientControls() {
     const pill = document.createElement('div');
     pill.className = 'nook-ambient-bar';
@@ -514,7 +548,7 @@ class NookApplication {
       <div class="nook-pill-divider"></div>
       <button class="nook-pill-btn" id="btn-time" title="Cycle Daylight: Morning / Evening / Night">☀️ Morning</button>
       <button class="nook-pill-btn active" id="btn-lamp" title="Toggle Desk Lamp Warm Glow">💡 Lamp: On</button>
-      <button class="nook-pill-btn" id="btn-sound" title="Toggle Procedural Audio Immersion">🔊 Sound</button>
+      <button class="nook-pill-btn" id="btn-sound" title="Audio Controls: All / Ambient / SFX / Muted">🔊 Sound</button>
       <div class="nook-pill-divider"></div>
       <button class="nook-pill-btn active" id="btn-arch" title="Toggle Furniture / Architecture Mode">🛋️ Room</button>
       <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Camera</button>
@@ -582,12 +616,40 @@ class NookApplication {
       }
     });
 
-    // 3. Procedural Sound Toggle
+    // 3. Audio Controls (Cycles: All Audio -> Ambient Only -> SFX Only -> Muted)
     const soundBtn = pill.querySelector('#btn-sound');
+    const updateSoundBtn = () => {
+      if (soundManager.isMuted) {
+        soundBtn.textContent = '🔇 Muted';
+        soundBtn.classList.remove('active');
+      } else if (soundManager.sfxEnabled && soundManager.ambientEnabled) {
+        soundBtn.textContent = '🔊 Audio';
+        soundBtn.classList.add('active');
+      } else if (soundManager.ambientEnabled && !soundManager.sfxEnabled) {
+        soundBtn.textContent = '🎶 Ambient';
+        soundBtn.classList.add('active');
+      } else if (soundManager.sfxEnabled && !soundManager.ambientEnabled) {
+        soundBtn.textContent = '🔔 SFX';
+        soundBtn.classList.add('active');
+      }
+    };
+    updateSoundBtn();
+
     soundBtn.addEventListener('click', () => {
-      const isMuted = soundManager.toggleMute();
-      soundBtn.textContent = isMuted ? '🔇 Muted' : '🔊 Sound';
-      soundBtn.classList.toggle('active', !isMuted);
+      if (soundManager.isMuted) {
+        soundManager.setMuted(false);
+        soundManager.setSfxEnabled(true);
+        soundManager.setAmbientEnabled(true);
+      } else if (soundManager.sfxEnabled && soundManager.ambientEnabled) {
+        soundManager.setSfxEnabled(false);
+        soundManager.setAmbientEnabled(true);
+      } else if (!soundManager.sfxEnabled && soundManager.ambientEnabled) {
+        soundManager.setSfxEnabled(true);
+        soundManager.setAmbientEnabled(false);
+      } else {
+        soundManager.setMuted(true);
+      }
+      updateSoundBtn();
     });
 
     // 4. Architecture / Furniture Toggle
@@ -615,6 +677,13 @@ class NookApplication {
     // Global keyboard shortcuts
     window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Esc: Reset Reference Camera & Deselect
+      if (e.key === 'Escape') {
+        this.selectionManager.deselect();
+        this.cameraInstance.resetCamera();
+        return;
+      }
 
       // N or Cmd+N: Create Thought
       if (e.key === 'n' || e.key === 'N') {
@@ -660,21 +729,51 @@ class NookApplication {
   }
 
   initNativeBridge() {
-    // Expose clean JavaScript API for macOS WKWebView and SwiftData bridge
-    window.NookBridge = {
-      resetCamera: () => this.cameraInstance.resetCamera(),
-      setArchitectureOnly: enable => {
-        this.isArchOnly = enable;
-        this.roomScene.interactiveObjects.visible = !enable;
-        this.roomScene.furniture.visible = !enable;
-        this.roomScene.decorations.visible = !enable;
-        this.roomScene.cookieGroup.visible = !enable;
+    // Helper to send messages back to macOS Swift host if embedded in WKWebView
+    const postHost = (type, payload = {}) => {
+      if (typeof window !== 'undefined' && window.webkit?.messageHandlers?.nookHost) {
+        try {
+          window.webkit.messageHandlers.nookHost.postMessage({ type, payload });
+        } catch (e) {
+          console.warn('Bridge host postMessage error:', e);
+        }
+      }
+    };
+
+    const bridge = {
+      // 1. Thought operations
+      createThought: (thoughtData = {}) => {
+        const obj = this.createNewThought(thoughtData);
+        postHost('thoughtCreated', { id: obj.itemId, title: obj.name, type: obj.objectType });
+        return {
+          id: obj.itemId,
+          title: obj.name,
+          type: obj.objectType,
+          position: obj.position.toArray()
+        };
       },
-      exportState: () => this.roomState.state,
-      // SwiftData Bridge Hooks
-      getThoughts: () => thoughtStore.getAll(),
-      createThought: data => this.thoughtCreatorModal.onSave(data),
-      updateThought: (id, data) => thoughtStore.updateThought(id, data),
+
+      updateThought: (id, updates = {}) => {
+        const res = thoughtStore.updateThought(id, updates);
+        const obj = this.objectManager.getObjectById(id);
+        if (obj) {
+          if (updates.title) {
+            obj.metadata.title = updates.title;
+            obj.name = `${obj.objectType.charAt(0).toUpperCase() + obj.objectType.slice(1)}: ${updates.title}`;
+          }
+          if (updates.content) obj.metadata.description = updates.content;
+          if (updates.type && updates.type !== obj.objectType) {
+            this.objectManager.changeThoughtType(id, updates.type);
+          }
+          if (this.selectionManager.selectedObject === obj) {
+            this.inspector.show(obj);
+          }
+        }
+        this.roomState.saveState();
+        postHost('thoughtUpdated', { id, updates });
+        return res;
+      },
+
       deleteThought: id => {
         const obj = this.objectManager.getObjectById(id);
         if (obj) {
@@ -682,10 +781,43 @@ class NookApplication {
           const cmd = new DeleteThoughtCommand(this.objectManager, data);
           undoManager.push(cmd);
           cmd.execute();
+          this.inspector.hide();
+          this.selectionManager.deselect();
           this.roomState.saveState();
+          postHost('thoughtDeleted', { id });
+          return true;
         }
+        return false;
       },
-      openCreateThoughtModal: () => this.thoughtCreatorModal.show(),
+
+      getThoughts: () => thoughtStore.getAll(),
+
+      // 2. Room State & Persistence
+      loadRoomState: state => {
+        if (typeof state === 'string') {
+          try { state = JSON.parse(state); } catch (e) {}
+        }
+        this.roomState.loadState(state);
+      },
+
+      saveRoomState: () => {
+        this.roomState.saveState();
+        postHost('stateSaved', this.roomState.state);
+        return this.roomState.state;
+      },
+
+      exportState: () => this.roomState.state,
+
+      // 3. UI, Modals & Navigation
+      openQuickCapture: () => this.thoughtCreatorModal.show(),
+      openSettings: () => {
+        window.dispatchEvent(new CustomEvent('nook-open-settings'));
+        postHost('openSettings');
+      },
+      resetCamera: () => {
+        this.selectionManager.deselect();
+        this.cameraInstance.resetCamera();
+      },
       openSearch: () => this.thoughtSearch.show(),
       undo: () => {
         undoManager.undo();
@@ -694,8 +826,39 @@ class NookApplication {
       redo: () => {
         undoManager.redo();
         this.roomState.saveState();
+      },
+
+      // 4. Audio Immersion Controls
+      setSoundEnabled: enabled => {
+        soundManager.setMuted(!enabled);
+      },
+      setAmbientSoundEnabled: enabled => {
+        soundManager.setAmbientSoundEnabled(enabled);
+      },
+      setSoundEffectsEnabled: enabled => {
+        soundManager.setSoundEffectsEnabled(enabled);
+      },
+      isSoundEnabled: () => !soundManager.isMuted,
+      isAmbientSoundEnabled: () => soundManager.isAmbientEnabled(),
+      isSoundEffectsEnabled: () => soundManager.isSfxEnabled(),
+
+      // 5. Accessibility Controls
+      setReducedMotion: enabled => {
+        this.cameraInstance.reducedMotion = !!enabled;
+      },
+
+      // 6. View Modes
+      setArchitectureOnly: enable => {
+        this.isArchOnly = !!enable;
+        this.roomScene.interactiveObjects.visible = !enable;
+        this.roomScene.furniture.visible = !enable;
+        this.roomScene.decorations.visible = !enable;
+        this.roomScene.cookieGroup.visible = !enable;
       }
     };
+
+    window.nookBridge = bridge;
+    window.NookBridge = bridge;
   }
 
   onResize() {

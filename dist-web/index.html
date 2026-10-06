@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="description" content="Nook - Interactive 3D Miniature Room Experience built with Three.js" />
     <title>Nook 3D — Miniature Room</title>
-    <script type="module" crossorigin src="/assets/index-CqUjxh5l.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C-QNhuvg.css">
+    <script type="module" crossorigin src="/assets/index-445hxcvr.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BzqEvZnP.css">
   </head>
   <body>
+    <!-- Warm Minimalist Loading Screen -->
+    <div id="nook-loader" class="nook-loader" aria-live="polite">
+      <div class="nook-loader-card">
+        <div class="nook-loader-icon" aria-hidden="true">🌱</div>
+        <div class="nook-loader-title">Nook</div>
+        <div class="nook-loader-subtitle" id="nook-loader-status">Nook is getting your room ready...</div>
+      </div>
+    </div>
+
     <!-- Primary 3D Viewport -->
     <canvas id="nook-canvas" layoutsubtree></canvas>
 
