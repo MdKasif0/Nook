@@ -35,21 +35,43 @@ class NookApplication {
     this.uiContainer = document.getElementById('nook-ui');
     this.lastTime = performance.now();
 
-    this.initRenderer();
-    this.initScene();
-    this.initSubsystems();
-    this.initPostProcessing();
-    this.initUI();
-    this.initNativeBridge();
+    try {
+      this.initRenderer();
+      this.initScene();
+      this.initSubsystems();
+      this.initPostProcessing();
+      this.initUI();
+      this.initNativeBridge();
 
-    this.onResize();
-    window.addEventListener('resize', this.onResize.bind(this));
+      this.onResize();
+      window.addEventListener('resize', this.onResize.bind(this));
 
-    // Start render loop
-    this.animate = this.animate.bind(this);
-    requestAnimationFrame(this.animate);
+      // Start render loop
+      this.animate = this.animate.bind(this);
+      requestAnimationFrame(this.animate);
 
-    console.log('🌿 Nook 3D Interactive Miniature Room Initialized');
+      // Dismiss warm loader on second frame (ensures WebGL frame buffer has drawn)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.dismissLoader();
+        });
+      });
+
+      console.log('🌿 Nook 3D Interactive Miniature Room Initialized');
+    } catch (err) {
+      console.error('Nook initialization error, falling back gracefully:', err);
+      this.dismissLoader();
+    }
+  }
+
+  dismissLoader() {
+    const loader = document.getElementById('nook-loader');
+    if (loader) {
+      loader.classList.add('loaded');
+      setTimeout(() => {
+        try { loader.remove(); } catch (e) {}
+      }, 600);
+    }
   }
 
   initRenderer() {
@@ -194,33 +216,7 @@ class NookApplication {
         }
       } else {
         // Create brand new thought
-        const placement = this.placementManager.findPlacement(
-          thoughtData.type,
-          this.objectManager.getAllObjects()
-        );
-
-        const newRecord = {
-          title: thoughtData.title,
-          content: thoughtData.content,
-          type: thoughtData.type,
-          position: placement.position,
-          rotation: placement.rotation,
-          surface: placement.surfaceId
-        };
-
-        const cmd = new CreateThoughtCommand(this.objectManager, newRecord);
-        undoManager.push(cmd);
-        const obj = cmd.execute();
-
-        // 3D physical appear animation
-        this.objectManager.animateAppear(obj);
-
-        // Cookie notices newly created thought
-        this.cookie.noticeNewThought(obj);
-
-        // Auto select and save state
-        this.selectionManager.select(obj);
-        this.roomState.saveState();
+        this.createNewThought(thoughtData);
       }
     });
 
