@@ -58,7 +58,14 @@ export class ObjectInspector {
 
       <div class="nook-inspector-actions">
         <button class="nook-btn nook-btn-primary" id="btn-focus">Focus Camera</button>
-        ${object.itemId === 'prop_cookie' ? '<button class="nook-btn" id="btn-pet">Pet Cookie 🐾</button>' : ''}
+        ${object.itemId === 'prop_cookie' || object.objectType === 'cat' ? `
+          <button class="nook-btn" id="btn-pet">Pet Cookie 🐾</button>
+          <button class="nook-btn" id="btn-bed">Go to Bed 🛏️</button>
+          <button class="nook-btn" id="btn-desk">Go to Desk 💻</button>
+          <button class="nook-btn" id="btn-window">Window Sill 🪟</button>
+          <button class="nook-btn" id="btn-catbed">Cat Bed 🌸</button>
+          <button class="nook-btn" id="btn-wander">Wander 🐾</button>
+        ` : ''}
       </div>
     `;
 
@@ -81,6 +88,41 @@ export class ObjectInspector {
     if (petBtn) {
       petBtn.addEventListener('click', () => {
         if (this.onAction.onPet) this.onAction.onPet();
+      });
+    }
+
+    const bedBtn = this.cardEl.querySelector('#btn-bed');
+    if (bedBtn) {
+      bedBtn.addEventListener('click', () => {
+        if (this.onAction.onGoToBed) this.onAction.onGoToBed();
+      });
+    }
+
+    const deskBtn = this.cardEl.querySelector('#btn-desk');
+    if (deskBtn) {
+      deskBtn.addEventListener('click', () => {
+        if (this.onAction.onGoToDesk) this.onAction.onGoToDesk();
+      });
+    }
+
+    const windowBtn = this.cardEl.querySelector('#btn-window');
+    if (windowBtn) {
+      windowBtn.addEventListener('click', () => {
+        if (this.onAction.onGoToWindow) this.onAction.onGoToWindow();
+      });
+    }
+
+    const catbedBtn = this.cardEl.querySelector('#btn-catbed');
+    if (catbedBtn) {
+      catbedBtn.addEventListener('click', () => {
+        if (this.onAction.onGoToCatBed) this.onAction.onGoToCatBed();
+      });
+    }
+
+    const wanderBtn = this.cardEl.querySelector('#btn-wander');
+    if (wanderBtn) {
+      wanderBtn.addEventListener('click', () => {
+        if (this.onAction.onWander) this.onAction.onWander();
       });
     }
   }

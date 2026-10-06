@@ -109,6 +109,11 @@ export class RoomState {
         }
       }
     }
+
+    // 3. Restore Cookie state
+    if (this.state.cookie && this.cookieController) {
+      this.cookieController.restoreState(this.state.cookie);
+    }
   }
 
   saveState() {
@@ -128,6 +133,9 @@ export class RoomState {
 
       this.state.objects = objectsRecord;
       this.state.isDeskLampOn = this.lighting ? this.lighting.isDeskLampOn : true;
+      if (this.cookieController && typeof this.cookieController.serializeState === 'function') {
+        this.state.cookie = this.cookieController.serializeState();
+      }
       this.state.updatedAt = new Date().toISOString();
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
