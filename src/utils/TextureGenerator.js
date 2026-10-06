@@ -1161,13 +1161,87 @@ export class TextureGenerator {
   }
 
   /**
-   * Generates subtle chalky plaster normal map for cream walls.
+   * Generates warm linen quote card texture with elegant debossed border and letterpress lines.
    */
-  static createPlasterNormalMap(width = 512, height = 512) {
-    return this.createHeightToNormalMap((x, y, w, h) => {
-      return (Math.sin(x * 0.15) * Math.sin(y * 0.15) * 0.4) +
-             (Math.sin(x * 0.42 + y * 0.38) * 0.3) +
-             (Math.sin(x * 0.95 - y * 0.85) * 0.2);
-    }, width, height, 1.2);
+  static createQuoteCardTexture(width = 512, height = 360) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Warm ivory linen cardstock
+    ctx.fillStyle = '#fcf9f2';
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle paper grain
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle = '#6b543e';
+    for (let i = 0; i < 1800; i++) {
+      ctx.fillRect(Math.random() * width, Math.random() * height, 1.5, 1.5);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Elegant gold/brass debossed border
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(18, 18, width - 36, height - 36);
+
+    ctx.strokeStyle = '#e8d49a';
+    ctx.lineWidth = 1.0;
+    ctx.strokeRect(24, 24, width - 48, height - 48);
+
+    // Decorative quotation mark
+    ctx.fillStyle = '#c99b2c';
+    ctx.font = 'bold 36px "Georgia", serif';
+    ctx.fillText('“', 42, 68);
+
+    // Subtle simulated letterpress lines
+    ctx.fillStyle = '#5c4b3a';
+    ctx.globalAlpha = 0.35;
+    for (let y = 110; y < height - 60; y += 32) {
+      ctx.fillRect(45, y, width - 90, 3);
+    }
+    ctx.globalAlpha = 1.0;
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+
+  /**
+   * Generates folded paper texture with delicate creased shading.
+   */
+  static createFoldedPaperTexture(width = 512, height = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Crisp warm origami paper
+    ctx.fillStyle = '#fbf9f5';
+    ctx.fillRect(0, 0, width, height);
+
+    // Diagonal fold gradients
+    const diagGrad = ctx.createLinearGradient(0, 0, width, height);
+    diagGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.6)');
+    diagGrad.addColorStop(0.48, 'rgba(235, 228, 218, 0.1)');
+    diagGrad.addColorStop(0.50, 'rgba(160, 145, 130, 0.25)'); // Crease
+    diagGrad.addColorStop(0.52, 'rgba(255, 255, 255, 0.4)');
+    diagGrad.addColorStop(1.0, 'rgba(240, 235, 226, 0.2)');
+    ctx.fillStyle = diagGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Opposite diagonal subtle fold
+    ctx.strokeStyle = 'rgba(180, 165, 150, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(width, 0);
+    ctx.lineTo(0, height);
+    ctx.stroke();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
   }
 }
+
