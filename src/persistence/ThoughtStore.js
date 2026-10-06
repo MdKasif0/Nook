@@ -54,6 +54,10 @@ export class ThoughtStore {
     return this.thoughts.get(id) || null;
   }
 
+  createThought(data) {
+    return this.saveThought(data);
+  }
+
   saveThought(data) {
     const now = new Date().toISOString();
     const existing = this.thoughts.get(data.id);
@@ -130,6 +134,16 @@ export class ThoughtStore {
       return existing;
     }
     return null;
+  }
+
+  search(query = '') {
+    const q = query.toLowerCase().trim();
+    if (!q) return this.getAll();
+    return this.getAll().filter(t => 
+      (t.title && t.title.toLowerCase().includes(q)) ||
+      (t.content && t.content.toLowerCase().includes(q)) ||
+      (t.type && t.type.toLowerCase().includes(q))
+    );
   }
 
   // MARK: - SwiftData Bridge Hooks

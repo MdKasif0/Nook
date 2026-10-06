@@ -4,8 +4,8 @@ A calm, native macOS application where your thoughts, notes, ideas, and memories
 
 [![Platform](https://img.shields.io/badge/Platform-macOS%2015+-F4F0EA?style=flat-square&logo=apple&logoColor=3A3835)](https://apple.com)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F4F0EA?style=flat-square&logo=swift&logoColor=F05138)](https://swift.org)
-[![SwiftUI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20SceneKit-F4F0EA?style=flat-square)](https://developer.apple.com/xcode/swiftui/)
-[![SwiftData](https://img.shields.io/badge/Storage-SwiftData-F4F0EA?style=flat-square)](https://developer.apple.com/documentation/swiftdata)
+[![Three.js](https://img.shields.io/badge/Three.js-0.186-F4F0EA?style=flat-square&logo=threedotjs&logoColor=000000)](https://threejs.org/)
+[![Storage](https://img.shields.io/badge/Storage-Local--First-F4F0EA?style=flat-square)](https://developer.apple.com/documentation/swiftdata)
 [![License](https://img.shields.io/badge/License-MIT-F4F0EA?style=flat-square)](LICENSE)
 
 ---
@@ -15,18 +15,206 @@ A calm, native macOS application where your thoughts, notes, ideas, and memories
 Nook is not a conventional productivity app. It rejects infinite databases, nested folder hierarchies, and noisy SaaS dashboards. Instead, it feels like opening a quiet, tactile miniature room on your desk:
 
 * **Thoughts Become Physical Objects**: A thought can manifest as a smooth grounding river stone, a folded cream paper note, a buttery sticky note, a linen index card, a vintage Polaroid print, or a ribbon bookmark.
-* **Warm, Apple-Inspired Aesthetic**: Natural materials, oak wood, linen textiles, matte ceramics, muted sage, and warm terracotta. Zero blue, zero purple, and zero artificial neon gradients.
-* **Cookie the Cat Companion**: A tiny companion cat who lives in your room, taking peaceful naps on the linen bed, perking up when you capture an idea, and purring softly when pet.
-* **100% Local-First & Private**: Powered purely by native SwiftData (SQLite) on your Mac. Zero accounts, zero cloud databases, and zero network calls.
-* **True macOS Citizen**: Native keyboard shortcuts (<kbd>⌘⇧Space</kbd> for Quick Thought, <kbd>⌘K</kbd> for instant in-memory search), menu bar companion utility, and SceneKit Metal rendering throttled to preserve battery life.
+* **Warm, Miniature Diorama Aesthetic**: Warm neutrals, cream plaster, honey wood, muted sage, soft terracotta, and warm gray. Zero purple, blue, cyan, neon, or cold futuristic gradients.
+* **Cookie the Companion Cat**: An articulated 3D calico companion cat who lives in your room, curling up in sunspots on the bed, perking up when you leave thoughts, and purring softly when pet.
+* **100% Local-First & Offline**: Zero network requests, zero telemetry, zero CDNs, and zero cloud dependencies. Works completely offline.
+* **macOS Citizen**: Packaged as a native Mac app through `SwiftUI -> WKWebView -> Nook Three.js World` with bidirectional JavaScript bridge (`window.nookBridge`).
 
 ---
 
-## System Requirements
+## Developer Guide: 3D Miniature Room
 
-* **Operating System**: macOS 15.0 Sequoia or later
-* **Development Toolchain**: Xcode 16.0+ (Swift 6.0)
-* **Hardware Architecture**: Universal binary supporting Apple Silicon (M1/M2/M3/M4) and Intel Macs
+### 1. Running the Three.js Room Locally
+
+The web diorama is built with modern ES modules, Vite, and Three.js:
+
+```bash
+# Install dependencies
+npm install
+
+# Start local development server with Hot Module Reloading (HMR)
+npm run dev
+
+# Run automated validation test suite
+npm test
+
+# Build production bundle for macOS WKWebView bundling (outputs to dist-web/ & dist/)
+npm run build
+```
+
+The application runs at `http://localhost:3000` with high-DPI retina clamping (`devicePixelRatio <= 2`), warm PCF soft shadows, and ACES Filmic tone mapping.
+
+---
+
+### 2. How to Add GLB / GLTF 3D Assets
+
+All external models are bundled locally in `models/` or generated procedurally to guarantee offline operation:
+
+```javascript
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+export class AssetLoader {
+  static loadGLB(path, onLoad, onError) {
+    const loader = new GLTFLoader();
+    loader.load(
+      path,
+      gltf => {
+        gltf.scene.traverse(child => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        onLoad(gltf.scene);
+      },
+      undefined,
+      error => {
+        // Robust Fallback: Never crash the entire room on a failed asset
+        console.warn(`[Nook] Failed to load ${path}, deploying procedural fallback:`, error);
+        if (onError) onError(error);
+      }
+    );
+  }
+}
+```
+
+---
+
+### 3. How to Add Interactive Objects
+
+Interactive physical props subclass `InteractiveObject` in `src/objects/InteractiveObject.js`:
+
+```javascript
+import { InteractiveObject } from './InteractiveObject.js';
+import * as THREE from 'three';
+
+export class CustomDeskLamp extends InteractiveObject {
+  constructor() {
+    super({
+      id: 'prop_desk_lamp',
+      name: 'Anglepoise Lamp',
+      category: 'lighting',
+      objectType: 'lamp',
+      isMovable: true,
+      isDraggable: true,
+      isRotatable: true,
+      collisionRadius: 0.24,
+      accessibilityLabel: 'Warm brass desk lamp'
+    });
+
+    // Build physical meshes and attach to visualRoot
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    this.visualRoot.add(mesh);
+  }
+
+  // Override triggerSpecialAction for contextual interaction
+  triggerSpecialAction() {
+    this.toggleGlow();
+  }
+}
+```
+
+Interactive objects automatically participate in raycast hovering, elevation on drag, surface snapping, shadow casting, and undo/redo stacks.
+
+---
+
+### 4. How to Add Cookie Cat Animations
+
+Cookie's articulated skeleton is driven by a single central `THREE.AnimationMixer` inside `src/cookie/CookieAnimationController.js`:
+
+```javascript
+// Register a new animation clip
+registerCustomClip(name, duration, keyframes) {
+  const tracks = [
+    new THREE.VectorKeyframeTrack('.bones[Head].rotation', [0, duration * 0.5, duration], [...]),
+    new THREE.VectorKeyframeTrack('.bones[Tail].rotation', [0, duration], [...])
+  ];
+  const clip = new THREE.AnimationClip(name, duration, tracks);
+  this.clips.set(name, clip);
+  this.actions.set(name, this.mixer.clipAction(clip));
+}
+
+// Play clip with cross-fading
+playAnimation(name, crossFadeDuration = 0.3) {
+  const currentAction = this.currentAction;
+  const nextAction = this.actions.get(name);
+  if (nextAction && currentAction !== nextAction) {
+    nextAction.reset().fadeIn(crossFadeDuration).play();
+    currentAction.fadeOut(crossFadeDuration);
+    this.currentAction = nextAction;
+  }
+}
+```
+
+Cookie supports 17 expressive procedural animations including `SLEEP_LOAF`, `WALK`, `JUMP_UP`, `POUNCE`, `STRETCH`, `HEAD_TILT`, and `PURR`.
+
+---
+
+### 5. How to Create New Thought Object Types
+
+Nook maps 7 thought types to distinct physical 3D geometry via `src/objects/ThoughtEntityBuilder.js`:
+
+| Type | Physical Representation | Default Surface |
+| :--- | :--- | :--- |
+| **Thought** | Smooth rounded river stone / pebble | Desk |
+| **Idea** | Folded cream origami paper object | Desk / Shelf |
+| **Reminder** | Tactile butter-yellow sticky note | Desk |
+| **Quote** | Linen card with brass stand | Shelf / Wall |
+| **Photo** | Miniature Polaroid photo print | Shelf / Wall |
+| **Link** | Ribbon bookmark | Bookshelf |
+| **Note** | Hardcover notebook with ribbon | Desk |
+
+To add a new thought representation:
+1. Add type definition to `PALETTE` and `ThoughtEntityBuilder.createGeometry(type)`.
+2. Add preferred surface mapping in `PlacementManager.preferredSurfaces`.
+3. Register the type icon and display name in `ObjectInspector.js` and `ThoughtCreatorModal.js`.
+
+---
+
+### 6. Swift / WKWebView Bidirectional Bridge
+
+Nook prepares a clean JavaScript bridge interface for native macOS embedding via `window.nookBridge`:
+
+```swift
+// Swift side: Calling Nook JavaScript API
+webView.evaluateJavaScript("window.nookBridge.createThought({ title: 'Idea', type: 'idea' })")
+webView.evaluateJavaScript("window.nookBridge.resetCamera()")
+webView.evaluateJavaScript("window.nookBridge.setReducedMotion(true)")
+```
+
+```javascript
+// JavaScript side: Sending events to macOS Swift host
+if (window.webkit?.messageHandlers?.nookHost) {
+  window.webkit.messageHandlers.nookHost.postMessage({
+    type: 'thoughtCreated',
+    payload: { id: 'thought_123', title: 'Idea', type: 'idea' }
+  });
+}
+```
+
+#### Supported `window.nookBridge` Methods:
+* `createThought(data)`: Spawns new 3D thought object with placement finding and Cookie notification.
+* `updateThought(id, updates)`: Updates metadata, pin state, or geometric type.
+* `deleteThought(id)`: Removes thought with undo support.
+* `getThoughts()`: Returns all stored thoughts.
+* `loadRoomState(state)`: Restores room furniture, lighting, and camera transforms.
+* `saveRoomState()`: Persists current room transforms to `localStorage` and returns state.
+* `resetCamera()`: Restores elevated isometric reference composition.
+* `openQuickCapture()`: Opens the thought capture modal.
+* `openSettings()`: Opens the settings menu.
+* `setSoundEnabled(bool)` / `setAmbientSoundEnabled(bool)` / `setSoundEffectsEnabled(bool)`: Independent audio toggles.
+* `setReducedMotion(bool)`: Toggles accessibility motion damping.
+
+---
+
+### 7. Room State & Thought Persistence
+
+Persistence is 100% local-first:
+* **Thoughts**: Managed by `ThoughtStore.js`, stored in browser `localStorage` (`nook_thoughts_v2`) and synchronized bidirectionally with macOS SwiftData SQLite.
+* **Room Layout & Furniture**: Managed by `RoomState.js`, storing object positions, rotations, lamp state, time of day, and Cookie's position.
+* **Audio Settings**: Managed by `SoundManager.js`, storing master mute, SFX enabled, and ambient sound enabled in `nook_audio_settings`.
+* **Zero Telemetry / Offline**: No remote servers, analytics, or external CDNs are required.
 
 ---
 
@@ -34,28 +222,32 @@ Nook is not a conventional productivity app. It rejects infinite databases, nest
 
 ```
 Nook
-├── App Entry & Windowing
-│   ├── NookApp.swift                # App lifecycle, multi-window scenes, menu bar extra
-│   ├── ContentView.swift            # Primary split layout & room host
-│   └── Info.plist                   # App metadata, bundle display name, categories
-├── Room & 3D SceneKit Engine
-│   ├── RoomSceneView.swift          # NSViewRepresentable with 60 FPS cap & occlusion throttling
-│   ├── RoomSceneController.swift    # Scene graph state, camera orbit, lighting modes
-│   ├── RoomDioramaBuilder.swift     # Procedural physical geometry & PBR materials
-│   └── RoomItemNode.swift           # Physical representations of thoughts (pebbles, notes, etc.)
-├── Companion (Cookie)
-│   ├── CookieNode.swift             # Procedural 3D cat character (fur, paws, tail, ears)
-│   └── CookieBehaviorController.swift # State machine: sleeping, curious, happy, resting
-├── Data & Persistence (Local-First)
-│   ├── PersistenceController.swift  # SwiftData ModelContainer initialization & error handling
-│   ├── Models/                      # NookItem, RoomState, NookObjectType models
-│   └── NookDataReliabilityTests.swift # 10-point test suite validating persistence & recovery
-├── Quick Capture & Search
-│   ├── QuickCaptureView.swift       # Floating paper window (⌘⇧Space)
-│   └── Search/                      # Inverted index, tokenization, spotlight command palette
-└── Distribution & Marketing
-    ├── scripts/package_dmg.sh       # Automated, clean DMG packaging script
-    └── web/                         # Official marketing & download website
+├── Web 3D Diorama (Three.js)
+│   ├── src/main.js                  # Central render loop, subsystems & window.nookBridge
+│   ├── src/scene/
+│   │   ├── RoomScene.js             # Room diorama box, window, walls, plaster materials
+│   │   ├── Camera.js                # NookMainCamera isometric rig & resetCamera()
+│   │   └── Lighting.js              # Photometric sunlight, ambient fill, and desk lamp
+│   ├── src/objects/
+│   │   ├── ObjectManager.js         # Interactive object registry, selection & raycast
+│   │   ├── PlacementManager.js      # Surface-aware thought placement finder
+│   │   └── ThoughtEntityBuilder.js  # 3D procedural meshes (pebbles, notes, polaroids)
+│   ├── src/cookie/
+│   │   ├── CookieController.js      # Articulated calico companion cat controller
+│   │   ├── CookieAnimationController.js # THREE.AnimationMixer with 17 feline clips
+│   │   └── CookieNavigationController.js # Surface pathfinding & waypoint locomotion
+│   ├── src/audio/SoundManager.js    # Procedural Web Audio synthesizer (lamp clicks, purr, vinyl)
+│   ├── src/persistence/
+│   │   ├── ThoughtStore.js          # Local thought persistence & SwiftData sync
+│   │   └── RoomState.js             # 3D layout, undo/redo history & transforms
+│   └── src/style.css                # Apple-inspired warm diorama styling & reduced motion
+├── macOS Native Host (SwiftUI / Swift 6)
+│   ├── NookApp.swift                # App lifecycle & menu bar extras
+│   ├── ContentView.swift            # WKWebView host container & bridge coordinator
+│   └── Persistence/                 # SwiftData container & schema definitions
+└── scripts/
+    ├── test_validation.js           # Automated 36-point validation suite
+    └── package_dmg.sh               # macOS DMG release builder
 ```
 
 ---
