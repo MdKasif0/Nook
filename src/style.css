@@ -289,3 +289,408 @@ html, body {
   background: rgba(140, 110, 80, 0.14);
   margin: 4px 6px;
 }
+
+/* Modal Overlay & Card (Thought Creation & Edit) */
+.nook-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 22, 16, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  pointer-events: auto;
+  animation: nookFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nook-modal-card {
+  width: 90%;
+  max-width: 440px;
+  background: rgba(255, 252, 247, 0.94);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 60px rgba(50, 32, 18, 0.22), 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: nookPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nook-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(140, 110, 80, 0.12);
+}
+
+.nook-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #3b2c20;
+}
+
+.nook-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #8c7664;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.nook-modal-close:hover {
+  background: rgba(140, 110, 80, 0.12);
+  color: #2b1f15;
+}
+
+.nook-modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nook-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nook-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #826e5d;
+}
+
+.nook-type-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nook-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: rgba(235, 222, 206, 0.5);
+  border: 1px solid rgba(160, 130, 100, 0.2);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #49392b;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.nook-type-btn:hover {
+  background: rgba(225, 205, 180, 0.8);
+}
+
+.nook-type-btn.active {
+  background: #c8914b;
+  border-color: #b37937;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(200, 145, 75, 0.3);
+}
+
+.nook-input, .nook-textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  color: #2b1f16;
+  background: rgba(248, 243, 235, 0.85);
+  border: 1px solid rgba(150, 120, 90, 0.22);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition: all 0.18s ease;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.nook-input:focus, .nook-textarea:focus {
+  background: #ffffff;
+  border-color: #c8914b;
+  box-shadow: 0 0 0 3px rgba(200, 145, 75, 0.18);
+}
+
+.nook-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  background: rgba(245, 238, 228, 0.5);
+  border-top: 1px solid rgba(140, 110, 80, 0.1);
+}
+
+.nook-btn-ghost {
+  background: transparent;
+  border: none;
+  color: #756252;
+}
+
+.nook-btn-ghost:hover {
+  background: rgba(140, 110, 80, 0.1);
+  color: #2b1f16;
+}
+
+.nook-btn-danger {
+  background: rgba(220, 80, 60, 0.12);
+  border-color: rgba(220, 80, 60, 0.3);
+  color: #b52e1e;
+}
+
+.nook-btn-danger:hover {
+  background: rgba(220, 80, 60, 0.22);
+  color: #8c1a0c;
+}
+
+/* Spotlight-Style Search Overlay */
+.nook-search-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 22, 16, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 80px;
+  z-index: 2000;
+  pointer-events: auto;
+  animation: nookFadeIn 0.18s ease;
+}
+
+.nook-search-panel {
+  width: 90%;
+  max-width: 520px;
+  background: rgba(255, 253, 248, 0.94);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 70px rgba(50, 32, 18, 0.24), 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: nookPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nook-search-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(140, 110, 80, 0.14);
+}
+
+.nook-search-icon {
+  font-size: 16px;
+  margin-right: 10px;
+  opacity: 0.7;
+}
+
+.nook-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  color: #2b1f16;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.nook-search-close {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #8c7664;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.nook-search-results {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.nook-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.nook-search-item:hover, .nook-search-item.active {
+  background: rgba(200, 145, 75, 0.16);
+}
+
+.nook-search-item-icon {
+  font-size: 20px;
+  width: 28px;
+  text-align: center;
+}
+
+.nook-search-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.nook-search-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #31241a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nook-search-item-snippet {
+  font-size: 11px;
+  color: #7a6655;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nook-search-item-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 6px;
+  background: rgba(140, 110, 80, 0.12);
+  border-radius: 6px;
+  color: #695342;
+}
+
+.nook-search-empty {
+  padding: 30px;
+  text-align: center;
+  font-size: 13px;
+  color: #8c7664;
+}
+
+.nook-search-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 8px 16px;
+  background: rgba(245, 238, 228, 0.6);
+  border-top: 1px solid rgba(140, 110, 80, 0.1);
+  font-size: 11px;
+  color: #8a7565;
+}
+
+.nook-search-footer kbd {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(140, 110, 80, 0.25);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 10px;
+  font-family: inherit;
+}
+
+/* Extended Inspector Metadata Styles */
+.nook-inspector-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.nook-inspector-surface {
+  font-size: 11px;
+  color: #826e5d;
+}
+
+.nook-inspector-timestamps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(240, 230, 218, 0.4);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.nook-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #736050;
+}
+
+.nook-time-row strong {
+  color: #3b2c20;
+}
+
+/* Inline Change Type Popup */
+.nook-change-type-popup {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(245, 238, 228, 0.8);
+  border-radius: 10px;
+  border: 1px solid rgba(140, 110, 80, 0.15);
+}
+
+.change-type-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #695444;
+  margin-bottom: 6px;
+}
+
+.change-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.change-type-btn {
+  padding: 5px 8px;
+  background: #ffffff;
+  border: 1px solid rgba(140, 110, 80, 0.2);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  color: #3b2c20;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.change-type-btn:hover {
+  background: #c8914b;
+  color: #ffffff;
+}
+
+@keyframes nookFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes nookPopIn {
+  from { opacity: 0; transform: scale(0.95) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+

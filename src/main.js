@@ -21,9 +21,13 @@ import { ObjectInspector } from './ui/ObjectInspector.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { VerticalTiltShiftShader } from 'three/addons/shaders/VerticalTiltShiftShader.js';
 import { soundManager } from './audio/SoundManager.js';
+import { PlacementManager } from './objects/PlacementManager.js';
+import { thoughtStore } from './persistence/ThoughtStore.js';
+import { undoManager, CreateThoughtCommand, MoveObjectCommand, RotateObjectCommand, DeleteThoughtCommand } from './interaction/UndoManager.js';
+import { ThoughtCreatorModal } from './ui/ThoughtCreatorModal.js';
+import { ThoughtSearch } from './ui/ThoughtSearch.js';
 
 class NookApplication {
   constructor() {
@@ -101,11 +105,12 @@ class NookApplication {
     // 2. Room Scene & Architecture
     this.roomScene = new RoomScene();
 
-    // 3. Surface Manager (Physical surface bounds, snap heights, allowed object types)
+    // 3. Surface & Placement Managers
     this.surfaceManager = new SurfaceManager(this.roomScene);
+    this.placementManager = new PlacementManager(this.roomScene);
 
     // 4. Object Manager (Tactile interactive props and miniature thoughts)
-    this.objectManager = new ObjectManager(this.roomScene, this.surfaceManager);
+    this.objectManager = new ObjectManager(this.roomScene, this.placementManager);
 
     // Register all movable and special props created by FurnitureBuilder
     if (this.roomScene.furnitureBuilder && this.roomScene.furnitureBuilder.movableProps) {
@@ -152,19 +157,123 @@ class NookApplication {
       this.roomState
     );
 
-    // Auto-save on drag completion
+    // Auto-save & sync ThoughtStore on drag completion
     this.dragManager.onDragEndCallback = (draggedObj, surfaceResult, isValid) => {
-      if (isValid) {
+      if (isValid && surfaceResult) {
+        if (thoughtStore.getById(draggedObj.itemId)) {
+          thoughtStore.updateThought(draggedObj.itemId, {
+            position: draggedObj.position,
+            rotation: draggedObj.rotation,
+            surface: surfaceResult.surface?.id || 'desk'
+          });
+        }
         this.roomState.saveState();
       }
     };
   }
 
   initUI() {
-    // 1. Object Inspector
+    // 1. Thought Creation & Edit Modal
+    this.thoughtCreatorModal = new ThoughtCreatorModal(this.uiContainer, thoughtData => {
+      if (thoughtData.id) {
+        // Edit existing thought
+        thoughtStore.updateThought(thoughtData.id, {
+          title: thoughtData.title,
+          content: thoughtData.content,
+          type: thoughtData.type
+        });
+        const obj = this.objectManager.getObjectById(thoughtData.id);
+        if (obj) {
+          obj.name = `${thoughtData.type.charAt(0).toUpperCase() + thoughtData.type.slice(1)}: ${thoughtData.title}`;
+          obj.metadata.title = thoughtData.title;
+          obj.metadata.description = thoughtData.content;
+          if (obj.objectType !== thoughtData.type) {
+            this.objectManager.changeThoughtType(thoughtData.id, thoughtData.type);
+          }
+          this.inspector.show(obj);
+        }
+      } else {
+        // Create brand new thought
+        const placement = this.placementManager.findPlacement(
+          thoughtData.type,
+          this.objectManager.getAllObjects()
+        );
+
+        const newRecord = {
+          title: thoughtData.title,
+          content: thoughtData.content,
+          type: thoughtData.type,
+          position: placement.position,
+          rotation: placement.rotation,
+          surface: placement.surfaceId
+        };
+
+        const cmd = new CreateThoughtCommand(this.objectManager, newRecord);
+        undoManager.push(cmd);
+        const obj = cmd.execute();
+
+        // 3D physical appear animation
+        this.objectManager.animateAppear(obj);
+
+        // Cookie notices newly created thought
+        this.cookie.noticeNewThought(obj);
+
+        // Auto select and save state
+        this.selectionManager.select(obj);
+        this.roomState.saveState();
+      }
+    });
+
+    // 2. Spotlight-Style In-Room Thought Search
+    this.thoughtSearch = new ThoughtSearch(this.uiContainer, id => {
+      const obj = this.objectManager.getObjectById(id);
+      if (obj) {
+        this.selectionManager.select(obj);
+        this.cameraInstance.focusOn(obj.position);
+        obj.applyWarmHighlight(0x4a3518);
+        this.inspector.show(obj);
+      }
+    });
+
+    // 3. Object Inspector
     this.inspector = new ObjectInspector(this.uiContainer, {
       onDeselect: () => this.selectionManager.deselect(),
       onFocus: obj => this.cameraInstance.focusOn(obj.position),
+      onEditThought: obj => {
+        const data = thoughtStore.getById(obj.itemId) || {
+          id: obj.itemId,
+          title: obj.name,
+          content: obj.metadata?.description || '',
+          type: obj.objectType
+        };
+        this.thoughtCreatorModal.show(data);
+      },
+      onMoveThought: obj => {
+        this.selectionManager.select(obj);
+        this.cameraInstance.focusOn(obj.position);
+      },
+      onChangeObjectType: (obj, newType) => {
+        this.objectManager.changeThoughtType(obj.itemId, newType);
+        this.inspector.show(obj);
+        this.roomState.saveState();
+      },
+      onDeleteThought: obj => {
+        const data = thoughtStore.getById(obj.itemId) || {
+          id: obj.itemId,
+          title: obj.name,
+          content: obj.metadata?.description || '',
+          type: obj.objectType,
+          position: obj.position,
+          rotation: obj.rotation,
+          surface: 'desk'
+        };
+        const cmd = new DeleteThoughtCommand(this.objectManager, data);
+        undoManager.push(cmd);
+        cmd.execute();
+        this.inspector.hide();
+        this.selectionManager.deselect();
+        this.roomState.saveState();
+      },
       onPet: () => this.cookie.handleUserClick(),
       onGoToBed: () => this.cookie.goToBed(),
       onGoToDesk: () => this.cookie.goToDesk(),
