@@ -59,6 +59,7 @@ export class ObjectInspector {
 
     const isThought = object.category === 'thought' || thoughtStore.getById(object.itemId);
     const thoughtData = isThought ? thoughtStore.getById(object.itemId) : null;
+    const isPinned = Boolean(thoughtData?.isPinned || object.isPinned);
 
     const normType = (thoughtData?.type || object.objectType || 'prop').toLowerCase();
     const icon = typeIcons[normType] || '✦';
@@ -80,6 +81,7 @@ export class ObjectInspector {
 
       <div class="nook-inspector-meta">
         <span class="nook-inspector-badge">${normType.toUpperCase()}</span>
+        ${isPinned ? `<span class="nook-inspector-badge nook-badge-pinned">📌 PINNED</span>` : ''}
         ${thoughtData?.surface ? `<span class="nook-inspector-surface">Surface: ${thoughtData.surface}</span>` : ''}
       </div>
 
@@ -98,6 +100,7 @@ export class ObjectInspector {
         <!-- Thought Actions -->
         ${isThought ? `
           <button class="nook-btn nook-btn-primary" id="btn-edit-thought">✏️ Edit</button>
+          <button class="nook-btn ${isPinned ? 'active' : ''}" id="btn-pin-thought">${isPinned ? '📌 Pinned' : '📍 Pin'}</button>
           <button class="nook-btn" id="btn-change-type">🔄 Change Object</button>
           <button class="nook-btn" id="btn-move-thought">✋ Move</button>
           <button class="nook-btn nook-btn-danger" id="btn-delete-thought">🗑️ Delete</button>

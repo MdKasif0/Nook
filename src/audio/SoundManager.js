@@ -475,6 +475,33 @@ export class SoundManager {
     whiteNoise.start(t);
     whiteNoise.stop(t + duration);
   }
+
+  // MARK: - 9. Brass Pin / Thought Favorite Chime
+  playPinSound(isPinned = true) {
+    if (this.isMuted) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    const startFreq = isPinned ? 1760 : 2349;
+    const endFreq = isPinned ? 2637 : 1760;
+
+    osc.frequency.setValueAtTime(startFreq, t);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.08);
+
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(t);
+    osc.stop(t + 0.24);
+  }
 }
 
 // Global Sound Instance

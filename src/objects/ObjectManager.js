@@ -43,6 +43,9 @@ export class ObjectManager {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt
         });
+        if (item.isPinned) {
+          this.setThoughtPinnedVisual(obj, true);
+        }
         this.registerObject(obj);
       }
     } else {
@@ -589,6 +592,10 @@ export class ObjectManager {
       updatedAt: saved.updatedAt
     });
 
+    if (saved.isPinned) {
+      this.setThoughtPinnedVisual(obj, true);
+    }
+
     this.registerObject(obj);
 
     if (animate) {
@@ -596,6 +603,80 @@ export class ObjectManager {
     }
 
     return obj;
+  }
+
+  /**
+   * Attaches or removes a physical 3D indicator (polished brass pin with warm amber pearl cap & glowing micro-light).
+   */
+  setThoughtPinnedVisual(obj, isPinned) {
+    if (!obj || !obj.visualRoot) return;
+
+    obj.isPinned = isPinned;
+
+    // Remove existing pin if present
+    const existingPin = obj.visualRoot.getObjectByName('pinIndicator');
+    if (existingPin) {
+      obj.visualRoot.remove(existingPin);
+    }
+
+    if (isPinned) {
+      const pinGroup = new THREE.Group();
+      pinGroup.name = 'pinIndicator';
+
+      // 1. Polished Brass Pin Needle
+      const needleGeo = new THREE.CylinderGeometry(0.003, 0.001, 0.038, 8);
+      const needleMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.92,
+        roughness: 0.18
+      });
+      const needle = new THREE.Mesh(needleGeo, needleMat);
+      needle.position.y = 0.016;
+      needle.castShadow = true;
+      pinGroup.add(needle);
+
+      // 2. Warm Amber Jewel / Pearl Cap
+      const capGeo = new THREE.SphereGeometry(0.014, 12, 10);
+      const capMat = new THREE.MeshStandardMaterial({
+        color: 0xffa726,
+        emissive: 0xff9800,
+        emissiveIntensity: 0.85,
+        roughness: 0.15,
+        metalness: 0.25
+      });
+      const cap = new THREE.Mesh(capGeo, capMat);
+      cap.position.y = 0.034;
+      cap.castShadow = true;
+      pinGroup.add(cap);
+
+      // 3. Subtle Warm Radiant Micro PointLight (illuminates the thought object)
+      const pinGlow = new THREE.PointLight(0xffb347, 0.45, 0.6, 2.0);
+      pinGlow.position.y = 0.038;
+      pinGroup.add(pinGlow);
+
+      // Slight natural angle
+      pinGroup.rotation.z = 0.20;
+      pinGroup.rotation.x = -0.14;
+
+      // Position relative to object size (top right corner)
+      pinGroup.position.set(0.04, 0.035, -0.04);
+      obj.visualRoot.add(pinGroup);
+    }
+  }
+
+  /**
+   * Toggles the pinned/favorite status of a thought.
+   */
+  togglePinThought(id) {
+    const obj = this.getObjectById(id);
+    const data = thoughtStore.getById(id);
+    if (!obj || !data) return false;
+
+    const newPinned = !Boolean(data.isPinned);
+    thoughtStore.updateThought(id, { isPinned: newPinned });
+    this.setThoughtPinnedVisual(obj, newPinned);
+    soundManager.playPinSound(newPinned);
+    return newPinned;
   }
 
   /**
@@ -634,6 +715,11 @@ export class ObjectManager {
     oldObj.objectType = data.type;
     oldObj.metadata.type = data.type;
     oldObj.cacheMaterials();
+
+    // Reattach pin if pinned
+    if (data.isPinned) {
+      this.setThoughtPinnedVisual(oldObj, true);
+    }
 
     this.animateAppear(oldObj);
     return oldObj;
