@@ -183,6 +183,14 @@ html, body {
   margin-bottom: 10px;
 }
 
+.nook-inspector-badge.nook-badge-pinned {
+  color: #92580c;
+  background: rgba(245, 185, 80, 0.3);
+  border: 1px solid rgba(215, 155, 45, 0.4);
+  font-weight: 700;
+  margin-left: 6px;
+}
+
 .nook-inspector-content-title {
   font-size: 13px;
   font-weight: 600;
