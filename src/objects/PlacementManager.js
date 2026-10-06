@@ -1,123 +1,162 @@
 /**
  * Nook 3D - PlacementManager
- * Determines valid droppable surfaces (floor levels, desk, bed, ottoman, pouf, window sill),
- * clamps coordinates, and computes natural tactile drop heights.
+ * Maps thought types to preferred physical surfaces (Desk, Shelf, Wall, Bed)
+ * and computes organic, collision-free 3D coordinates.
+ * 
+ * Rules:
+ * - Thought (Pebble): Desk
+ * - Idea (Folded Paper): Desk / Shelf
+ * - Reminder (Sticky Note): Desk / Wall
+ * - Quote (Card): Shelf / Wall
+ * - Photo (Polaroid): Shelf / Wall
+ * - Link (Bookmark): Shelf / Bed
+ * - Note (Notebook): Desk
  */
 
 import * as THREE from 'three';
-import {
-  ROOM_WIDTH,
-  ROOM_DEPTH,
-  UPPER_FLOOR_Y,
-  LOWER_FLOOR_Y,
-  SURFACE_HEIGHTS
-} from '../utils/Constants.js';
-import { MathUtils } from '../utils/MathUtils.js';
+import { MAIN_FLOOR_Y } from '../utils/Constants.js';
+
+export const SURFACE_DEFINITIONS = {
+  desk: {
+    id: 'desk',
+    name: 'Oak Workstation Desk',
+    height: 1.70,
+    bounds: { minX: -3.85, maxX: -1.25, minZ: -2.65, maxZ: -1.85 },
+    defaultRotation: new THREE.Euler(0, 0, 0),
+    isWall: false
+  },
+  shelf_bed_1: {
+    id: 'shelf_bed_1',
+    name: 'Bedside Bookshelf (Lower)',
+    height: 2.22,
+    bounds: { minX: 0.5, maxX: 2.5, minZ: -3.22, maxZ: -3.02 },
+    defaultRotation: new THREE.Euler(0, 0, 0),
+    isWall: false
+  },
+  shelf_desk: {
+    id: 'shelf_desk',
+    name: 'Desk Upper Shelf',
+    height: 3.90,
+    bounds: { minX: -3.8, maxX: -1.4, minZ: -3.22, maxZ: -3.02 },
+    defaultRotation: new THREE.Euler(0, 0, 0),
+    isWall: false
+  },
+  wall_pegboard: {
+    id: 'wall_pegboard',
+    name: 'Desk Pegboard Wall',
+    height: 2.65,
+    bounds: { minX: -3.5, maxX: -1.4, minZ: -3.31, maxZ: -3.31 },
+    heightBounds: { minY: 2.25, maxY: 3.25 },
+    defaultRotation: new THREE.Euler(0, 0, 0),
+    isWall: true
+  },
+  bed: {
+    id: 'bed',
+    name: 'Sage Blanket Duvet',
+    height: 1.30,
+    bounds: { minX: 0.9, maxX: 2.4, minZ: -1.8, maxZ: -0.6 },
+    defaultRotation: new THREE.Euler(0, 0, 0),
+    isWall: false
+  }
+};
+
+// Map each thought type to prioritized surfaces
+export const TYPE_SURFACE_PRIORITIES = {
+  thought: ['desk'],
+  idea: ['desk', 'shelf_desk', 'shelf_bed_1'],
+  reminder: ['desk', 'wall_pegboard'],
+  quote: ['shelf_bed_1', 'shelf_desk', 'wall_pegboard'],
+  photo: ['wall_pegboard', 'shelf_bed_1', 'shelf_desk'],
+  link: ['shelf_bed_1', 'shelf_desk', 'bed'],
+  note: ['desk']
+};
 
 export class PlacementManager {
   constructor(roomScene) {
     this.roomScene = roomScene;
-    this.surfaces = [];
-
-    this.initSurfaces();
-  }
-
-  initSurfaces() {
-    // 1. Desk Surface Bounds
-    this.surfaces.push({
-      id: 'desk',
-      name: 'Desk Top',
-      minX: -4.9,
-      maxX: -0.8,
-      minZ: -3.4,
-      maxZ: -1.6,
-      height: 1.70
-    });
-
-    // 2. Bed Mattress Bounds
-    this.surfaces.push({
-      id: 'bed',
-      name: 'Bed Mattress',
-      minX: 0.22,
-      maxX: 3.48,
-      minZ: -3.3,
-      maxZ: 0.42,
-      height: 1.42
-    });
-
-    // 3. Foot Bench / Ottoman Bounds
-    this.surfaces.push({
-      id: 'bench',
-      name: 'Ottoman Cushion',
-      minX: 2.2,
-      maxX: 3.7,
-      minZ: 0.45,
-      maxZ: 1.85,
-      height: 0.78
-    });
-
-    // 4. Cat Bed / Pouf Cushion Bounds
-    this.surfaces.push({
-      id: 'pouf',
-      name: 'Cat Bed Pouf',
-      minX: 2.6,
-      maxX: 4.3,
-      minZ: 2.4,
-      maxZ: 4.1,
-      height: 0.46
-    });
-
-    // 5. Window Sill Bounds
-    this.surfaces.push({
-      id: 'window_sill',
-      name: 'Window Sill',
-      minX: 4.6,
-      maxX: 5.3,
-      minZ: -1.8,
-      maxZ: 1.6,
-      height: 2.15
-    });
+    this.surfaces = SURFACE_DEFINITIONS;
   }
 
   /**
-   * Evaluates a world (X, Z) coordinate and returns the appropriate resting Y height
-   * by checking elevated furniture surfaces first, then falling back to stepped floors.
+   * Finds a natural, collision-free placement position and rotation for a thought object.
+   * @param {string} type - 'thought' | 'idea' | 'reminder' | 'quote' | 'photo' | 'link' | 'note'
+   * @param {Array<InteractiveObject>} existingObjects - Current room objects to test collisions against
+   * @param {string|null} preferredSurfaceId - Optional requested surface
+   * @returns {{ position: THREE.Vector3, rotation: THREE.Euler, surfaceId: string }}
    */
-  getSurfaceElevation(x, z) {
-    // Check specific elevated furniture surfaces first
-    for (const s of this.surfaces) {
-      if (x >= s.minX && x <= s.maxX && z >= s.minZ && z <= s.maxZ) {
+  findPlacement(type, existingObjects = [], preferredSurfaceId = null) {
+    const normType = (type || 'thought').toLowerCase();
+    const candidateSurfaceIds = preferredSurfaceId 
+      ? [preferredSurfaceId, ...(TYPE_SURFACE_PRIORITIES[normType] || ['desk'])]
+      : (TYPE_SURFACE_PRIORITIES[normType] || ['desk']);
+
+    for (const surfaceId of candidateSurfaceIds) {
+      const surface = this.surfaces[surfaceId];
+      if (!surface) continue;
+
+      const spot = this.findFreeSpotOnSurface(surface, existingObjects, normType);
+      if (spot) {
         return {
-          height: s.height,
-          surfaceId: s.id,
-          surfaceName: s.name
+          position: spot.position,
+          rotation: spot.rotation,
+          surfaceId: surface.id
         };
       }
     }
 
-    // Stepped floor fallback (sunken vs upper platform)
-    const floorY = MathUtils.getNaturalFloorHeight(x, z);
+    // Ultimate fallback: desk default with safe offset
+    const desk = this.surfaces.desk;
     return {
-      height: floorY,
-      surfaceId: floorY === UPPER_FLOOR_Y ? 'floor_upper' : 'floor_lower',
-      surfaceName: floorY === UPPER_FLOOR_Y ? 'Upper Floor Platform' : 'Sunken Floor Pit'
+      position: new THREE.Vector3(-2.2 + (Math.random() - 0.5) * 0.8, desk.height, -2.1 + (Math.random() - 0.5) * 0.4),
+      rotation: new THREE.Euler(0, (Math.random() - 0.5) * 0.4, 0),
+      surfaceId: 'desk'
     };
   }
 
   /**
-   * Clamps and projects a ray intersection point to a safe resting coordinate inside the room.
+   * Attempts multiple candidate positions on a surface to find one with no physical collision.
    */
-  clampAndSnapPosition(rawPosition, objectBoundingRadius = 0.08) {
-    // Clamp within room walls
-    const clamped = MathUtils.clampToRoom(rawPosition, objectBoundingRadius + 0.12);
+  findFreeSpotOnSurface(surface, existingObjects, thoughtType) {
+    const maxAttempts = 24;
+    const clearanceRadius = 0.18; // Minimum distance between thought objects
 
-    // Compute proper height for the clamped X/Z position
-    const surfaceInfo = this.getSurfaceElevation(clamped.x, clamped.z);
-    clamped.y = surfaceInfo.height;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      let x, y, z;
+      const rot = new THREE.Euler();
 
-    return {
-      position: clamped,
-      surfaceInfo
-    };
+      if (surface.isWall) {
+        // Wall placement (pegboard / wall art)
+        x = THREE.MathUtils.lerp(surface.bounds.minX, surface.bounds.maxX, 0.15 + Math.random() * 0.7);
+        y = THREE.MathUtils.lerp(surface.heightBounds.minY, surface.heightBounds.maxY, 0.15 + Math.random() * 0.7);
+        z = surface.bounds.minZ;
+        rot.set(0, 0, (Math.random() - 0.5) * 0.08); // Slight natural tilt on pegboard
+      } else {
+        // Horizontal surface placement
+        x = THREE.MathUtils.lerp(surface.bounds.minX, surface.bounds.maxX, 0.1 + Math.random() * 0.8);
+        y = surface.height;
+        z = THREE.MathUtils.lerp(surface.bounds.minZ, surface.bounds.maxZ, 0.1 + Math.random() * 0.8);
+        rot.set(0, (Math.random() - 0.5) * 0.35, 0); // Gentle random yaw angle
+      }
+
+      const candidatePos = new THREE.Vector3(x, y, z);
+
+      // Check collision against all existing objects
+      let hasCollision = false;
+      for (const obj of existingObjects) {
+        if (!obj || !obj.position) continue;
+        const dist = candidatePos.distanceTo(obj.position);
+        const combinedRadius = (obj.collisionRadius || 0.14) + clearanceRadius;
+        if (dist < combinedRadius) {
+          hasCollision = true;
+          break;
+        }
+      }
+
+      if (!hasCollision) {
+        return { position: candidatePos, rotation: rot };
+      }
+    }
+
+    return null;
   }
 }
