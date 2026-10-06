@@ -135,7 +135,7 @@ export class ThoughtStore {
   // MARK: - SwiftData Bridge Hooks
 
   notifyNativeBridge(action, payload) {
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nookBridge) {
+    if (typeof window !== 'undefined' && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nookBridge) {
       window.webkit.messageHandlers.nookBridge.postMessage({
         action,
         payload
