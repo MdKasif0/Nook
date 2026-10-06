@@ -165,7 +165,12 @@ class NookApplication {
     this.inspector = new ObjectInspector(this.uiContainer, {
       onDeselect: () => this.selectionManager.deselect(),
       onFocus: obj => this.cameraInstance.focusOn(obj.position),
-      onPet: () => this.cookie.behavior.pet()
+      onPet: () => this.cookie.handleUserClick(),
+      onGoToBed: () => this.cookie.goToBed(),
+      onGoToDesk: () => this.cookie.goToDesk(),
+      onGoToWindow: () => this.cookie.goToWindow(),
+      onGoToCatBed: () => this.cookie.goToCatBed(),
+      onWander: () => this.cookie.wander()
     });
 
     this.selectionManager.onSelectionChange = obj => {
@@ -187,11 +192,38 @@ class NookApplication {
 
         // Special Actions first if available
         if (obj.itemId === 'prop_cookie') {
-          menuItems.push({
-            label: 'Pet Cookie 🐾',
-            icon: '❤️',
-            action: () => this.cookie.behavior.pet()
-          });
+          menuItems.push(
+            {
+              label: 'Pet Cookie 🐾',
+              icon: '❤️',
+              action: () => this.cookie.handleUserClick()
+            },
+            {
+              label: 'Go to Bed 🛏️',
+              icon: '🛌',
+              action: () => this.cookie.goToBed()
+            },
+            {
+              label: 'Go to Desk 💻',
+              icon: '💻',
+              action: () => this.cookie.goToDesk()
+            },
+            {
+              label: 'Window Sill 🪟',
+              icon: '🪟',
+              action: () => this.cookie.goToWindow()
+            },
+            {
+              label: 'Cat Bed 🌸',
+              icon: '🌸',
+              action: () => this.cookie.goToCatBed()
+            },
+            {
+              label: 'Wander Room 🐾',
+              icon: '🐾',
+              action: () => this.cookie.wander()
+            }
+          );
         } else if (obj.objectType === 'lamp') {
           const isLampOn = this.roomScene.lighting && this.roomScene.lighting.isDeskLampOn;
           menuItems.push({
