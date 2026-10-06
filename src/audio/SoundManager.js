@@ -17,18 +17,49 @@ export class SoundManager {
   constructor() {
     this.audioCtx = null;
     this.isMuted = false;
+    this.sfxEnabled = true;
+    this.ambientEnabled = true;
     this.vinylNode = null;
     this.vinylGain = null;
     this.purrNode = null;
     this.purrGain = null;
 
     // Master volume (gentle, warm, non-intrusive)
-    this.masterVolume = 0.40;
+    this.masterVolume = 0.32;
     this.masterGain = null;
+
+    // Load persisted audio settings
+    this.loadSettings();
 
     // Audio unlock listener on first user interaction
     this.unlocked = false;
     this.initUnlockTriggers();
+  }
+
+  loadSettings() {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      const saved = localStorage.getItem('nook_audio_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.isMuted === 'boolean') this.isMuted = parsed.isMuted;
+        if (typeof parsed.sfxEnabled === 'boolean') this.sfxEnabled = parsed.sfxEnabled;
+        if (typeof parsed.ambientEnabled === 'boolean') this.ambientEnabled = parsed.ambientEnabled;
+      }
+    } catch (e) {
+      console.warn('Could not read audio settings from localStorage', e);
+    }
+  }
+
+  saveSettings() {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      localStorage.setItem('nook_audio_settings', JSON.stringify({
+        isMuted: this.isMuted,
+        sfxEnabled: this.sfxEnabled,
+        ambientEnabled: this.ambientEnabled
+      }));
+    } catch (e) {}
   }
 
   initUnlockTriggers() {
@@ -69,15 +100,66 @@ export class SoundManager {
   }
 
   setMuted(muted) {
-    this.isMuted = muted;
+    this.isMuted = !!muted;
     if (this.masterGain && this.audioCtx) {
       this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.masterVolume, this.audioCtx.currentTime);
     }
+    if (this.isMuted) {
+      this.stopVinyl();
+    }
+    this.saveSettings();
   }
 
   toggleMute() {
     this.setMuted(!this.isMuted);
     return this.isMuted;
+  }
+
+  setSfxEnabled(enabled) {
+    this.sfxEnabled = !!enabled;
+    this.saveSettings();
+  }
+
+  setSoundEffectsEnabled(enabled) {
+    this.setSfxEnabled(enabled);
+  }
+
+  isSfxEnabled() {
+    return !this.isMuted && this.sfxEnabled;
+  }
+
+  isSoundEffectsEnabled() {
+    return this.isSfxEnabled();
+  }
+
+  toggleSfx() {
+    this.setSfxEnabled(!this.sfxEnabled);
+    return this.sfxEnabled;
+  }
+
+  setAmbientEnabled(enabled) {
+    this.ambientEnabled = !!enabled;
+    if (!this.ambientEnabled) {
+      this.stopVinyl();
+    }
+    this.saveSettings();
+  }
+
+  setAmbientSoundEnabled(enabled) {
+    this.setAmbientEnabled(enabled);
+  }
+
+  isAmbientEnabled() {
+    return !this.isMuted && this.ambientEnabled;
+  }
+
+  isAmbientSoundEnabled() {
+    return this.isAmbientEnabled();
+  }
+
+  toggleAmbient() {
+    this.setAmbientEnabled(!this.ambientEnabled);
+    return this.ambientEnabled;
   }
 
   // MARK: - 1. Desk Lamp Toggle Click
