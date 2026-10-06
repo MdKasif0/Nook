@@ -702,3 +702,82 @@ html, body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Warm Minimalist Loader */
+.nook-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f6f0e8;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.55s ease;
+  pointer-events: auto;
+}
+
+.nook-loader.loaded {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nook-loader-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.nook-loader-icon {
+  font-size: 38px;
+  animation: nookLoaderBreathing 2.4s ease-in-out infinite;
+}
+
+.nook-loader-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: #3e3228;
+}
+
+.nook-loader-subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8c7866;
+  letter-spacing: -0.1px;
+}
+
+@keyframes nookLoaderBreathing {
+  0%, 100% {
+    transform: scale(1.0);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.10);
+    opacity: 1;
+  }
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .nook-loader-icon {
+    animation: none !important;
+  }
+  .nook-inspector-card,
+  .nook-ambient-bar,
+  .nook-context-menu {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+

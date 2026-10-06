@@ -164,7 +164,7 @@ export class SoundManager {
 
   // MARK: - 1. Desk Lamp Toggle Click
   playLampClick() {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -184,7 +184,7 @@ export class SoundManager {
     osc1.frequency.setValueAtTime(1400, t);
     osc1.frequency.exponentialRampToValueAtTime(320, t + 0.025);
 
-    gain1.gain.setValueAtTime(0.5, t);
+    gain1.gain.setValueAtTime(0.35, t);
     gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
 
     osc1.connect(filter1);
@@ -202,7 +202,7 @@ export class SoundManager {
     osc2.frequency.exponentialRampToValueAtTime(80, t + 0.075);
 
     gain2.gain.setValueAtTime(0.0, t);
-    gain2.gain.setValueAtTime(0.4, t + 0.03);
+    gain2.gain.setValueAtTime(0.25, t + 0.03);
     gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
 
     osc2.connect(gain2);
@@ -214,7 +214,7 @@ export class SoundManager {
 
   // MARK: - 2. Record Player Vinyl Crackle & Hum
   startVinyl() {
-    if (this.isMuted || this.vinylNode) return;
+    if (!this.isAmbientEnabled() || this.vinylNode) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -254,12 +254,12 @@ export class SoundManager {
     humOsc.frequency.setValueAtTime(58, t);
 
     const humGain = ctx.createGain();
-    humGain.gain.setValueAtTime(0.08, t);
+    humGain.gain.setValueAtTime(0.05, t);
     humOsc.connect(humGain);
 
     // Gentle lo-fi warm Rhodes-like chord drone (Cmaj7: C3, G3, B3, E4)
     const chordGain = ctx.createGain();
-    chordGain.gain.setValueAtTime(0.045, t);
+    chordGain.gain.setValueAtTime(0.03, t);
 
     const chordFreqs = [130.81, 196.00, 246.94, 329.63];
     const chordOscs = chordFreqs.map(f => {
@@ -270,11 +270,11 @@ export class SoundManager {
       return osc;
     });
 
-    // Master vinyl sub-mix gain
+    // Master vinyl sub-mix gain (gentle ambient background)
     this.vinylGain = ctx.createGain();
     this.vinylGain.gain.setValueAtTime(0.0001, t);
     // Smooth 1.2s fade-in
-    this.vinylGain.gain.linearRampToValueAtTime(0.28, t + 1.2);
+    this.vinylGain.gain.linearRampToValueAtTime(0.18, t + 1.2);
 
     noiseSource.connect(bandpass);
     bandpass.connect(this.vinylGain);
@@ -317,7 +317,7 @@ export class SoundManager {
 
   // MARK: - 3. Skateboard Deck Rock
   playSkateboardRock() {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -335,7 +335,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(180, t);
     osc.frequency.exponentialRampToValueAtTime(65, t + 0.05);
 
-    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.setValueAtTime(0.24, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
 
     osc.connect(filter);
@@ -353,7 +353,7 @@ export class SoundManager {
     osc2.frequency.exponentialRampToValueAtTime(50, t + 0.12);
 
     gain2.gain.setValueAtTime(0.0, t);
-    gain2.gain.setValueAtTime(0.18, t + 0.075);
+    gain2.gain.setValueAtTime(0.12, t + 0.075);
     gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
 
     osc2.connect(gain2);
@@ -365,7 +365,7 @@ export class SoundManager {
 
   // MARK: - 4. Physical Drop / Placement Settle Sound
   playPlacementSound(objectType = 'prop') {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -377,7 +377,7 @@ export class SoundManager {
       case 'bookmark':
       case 'sticky_note': {
         // Soft matte paper tap / book page settle
-        const noise = this.createNoiseBurst(ctx, 0.045, 650, 0.22);
+        this.createNoiseBurst(ctx, 0.045, 650, 0.16);
         break;
       }
       case 'pebble':
@@ -389,7 +389,7 @@ export class SoundManager {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(540, t);
         osc.frequency.exponentialRampToValueAtTime(220, t + 0.04);
-        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.setValueAtTime(0.18, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
         osc.connect(gain);
         gain.connect(this.masterGain);
@@ -408,7 +408,7 @@ export class SoundManager {
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(260, t);
         osc.frequency.exponentialRampToValueAtTime(95, t + 0.06);
-        gain.gain.setValueAtTime(0.28, t);
+        gain.gain.setValueAtTime(0.20, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
         osc.connect(gain);
         gain.connect(this.masterGain);
@@ -423,7 +423,7 @@ export class SoundManager {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(220, t);
         osc.frequency.exponentialRampToValueAtTime(70, t + 0.05);
-        gain.gain.setValueAtTime(0.22, t);
+        gain.gain.setValueAtTime(0.16, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
         osc.connect(gain);
         gain.connect(this.masterGain);
@@ -435,7 +435,7 @@ export class SoundManager {
 
   // MARK: - 5. Laptop / Tech Miniature Tap
   playLaptopTap() {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -447,7 +447,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(1100, t);
     osc.frequency.exponentialRampToValueAtTime(400, t + 0.025);
 
-    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.setValueAtTime(0.14, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
 
     osc.connect(gain);
@@ -457,9 +457,9 @@ export class SoundManager {
     osc.stop(t + 0.035);
   }
 
-  // MARK: - 6. Cookie Calico Cat Meow
+  // MARK: - 6. Cookie Calico Cat Meow (Quiet and natural)
   playCatMeow() {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -479,7 +479,7 @@ export class SoundManager {
     osc.frequency.exponentialRampToValueAtTime(460, t + 0.32);
 
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.linearRampToValueAtTime(0.22, t + 0.06);
+    gain.gain.linearRampToValueAtTime(0.12, t + 0.06);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
 
     osc.connect(filter);
@@ -490,9 +490,9 @@ export class SoundManager {
     osc.stop(t + 0.36);
   }
 
-  // MARK: - 7. Cookie Purr (Warm rhythmic rumble)
+  // MARK: - 7. Cookie Purr (Gentle, quiet rhythmic rumble)
   playPurr(duration = 2.4) {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -508,7 +508,7 @@ export class SoundManager {
     lfo.frequency.setValueAtTime(22, t);
 
     const lfoGain = ctx.createGain();
-    lfoGain.gain.setValueAtTime(14, t);
+    lfoGain.gain.setValueAtTime(12, t);
     lfo.connect(carrier.frequency);
 
     const filter = ctx.createBiquadFilter();
@@ -517,8 +517,8 @@ export class SoundManager {
 
     const purrGain = ctx.createGain();
     purrGain.gain.setValueAtTime(0.0001, t);
-    purrGain.gain.linearRampToValueAtTime(0.35, t + 0.4);
-    purrGain.gain.setValueAtTime(0.35, t + duration - 0.4);
+    purrGain.gain.linearRampToValueAtTime(0.18, t + 0.4);
+    purrGain.gain.setValueAtTime(0.18, t + duration - 0.4);
     purrGain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
     carrier.connect(filter);
@@ -562,7 +562,7 @@ export class SoundManager {
 
   // MARK: - 9. Brass Pin / Thought Favorite Chime
   playPinSound(isPinned = true) {
-    if (this.isMuted) return;
+    if (!this.isSfxEnabled()) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -577,7 +577,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(startFreq, t);
     osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.08);
 
-    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.setValueAtTime(0.12, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
 
     osc.connect(gain);
