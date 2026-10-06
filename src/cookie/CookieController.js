@@ -250,6 +250,68 @@ export class CookieController extends InteractiveObject {
     });
   }
 
+  /**
+   * Cookie notices a newly created thought object:
+   * Uses cooldown to prevent dramatic reactions every time.
+   * May look toward it, walk toward it, or inspect it.
+   */
+  noticeNewThought(thoughtObj) {
+    if (!thoughtObj) return;
+
+    const now = performance.now() * 0.001; // seconds
+    if (!this.lastNoticeTime) this.lastNoticeTime = 0;
+    if (now - this.lastNoticeTime < 16.0) {
+      // On cooldown: gentle ear flick only
+      if (this.rig.earLGroup) {
+        this.rig.earLGroup.rotation.z = 0.55;
+        setTimeout(() => { if (this.rig.earLGroup) this.rig.earLGroup.rotation.z = 0.35; }, 400);
+      }
+      return;
+    }
+
+    this.lastNoticeTime = now;
+
+    // 1. Turn head toward the newly arrived object
+    const dx = thoughtObj.position.x - this.position.x;
+    const dz = thoughtObj.position.z - this.position.z;
+    const targetAngle = Math.atan2(dx, dz) - this.rotation.y;
+
+    if (this.rig.headGroup) {
+      this.rig.headGroup.rotation.y = THREE.MathUtils.clamp(targetAngle, -0.65, 0.65);
+      setTimeout(() => {
+        if (this.rig.headGroup) this.rig.headGroup.rotation.y = 0;
+      }, 3500);
+    }
+
+    // 2. Decide action: 40% walk to inspect, 60% curious tilt from place
+    const roll = Math.random();
+    if (roll < 0.40 && this.stateMachine.currentState !== COOKIE_STATES.BEING_DRAGGED) {
+      // Find nearest navigation node to the thought
+      const targetSurface = this.navController.getSurfaceForPosition(thoughtObj.position);
+      const targetNode = this.navController.getNearestNode(thoughtObj.position, targetSurface);
+
+      if (targetNode) {
+        this.stateMachine.transitionTo(COOKIE_STATES.WALKING);
+        this.navController.navigateToNode(targetNode.id, () => {
+          // Inspect the thought
+          this.stateMachine.transitionTo(COOKIE_STATES.CURIOUS);
+          this.animController.play(COOKIE_ANIM_STATES.CURIOUS, 0.25);
+          soundManager.playCatMeow();
+          setTimeout(() => {
+            this.stateMachine.transitionTo(COOKIE_STATES.SITTING);
+          }, 3200);
+        });
+      }
+    } else {
+      // Inquisitive head tilt and soft chirp
+      this.stateMachine.transitionTo(COOKIE_STATES.CURIOUS);
+      this.animController.playOnce(COOKIE_ANIM_STATES.HEAD_TILT, () => {
+        this.stateMachine.transitionTo(COOKIE_STATES.SITTING);
+      });
+      soundManager.playCatMeow();
+    }
+  }
+
   // MARK: - Persistence Serialization
 
   serializeState() {

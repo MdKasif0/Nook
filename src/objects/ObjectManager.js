@@ -217,93 +217,239 @@ export class ObjectManager {
     }
   }
 
-  // MARK: - Object Factories
+  // MARK: - Thought Object Factories (7 Core Physical Representations)
 
+  /**
+   * 1. Thought: Small rounded tactile river pebble
+   */
   createPebble(options) {
     const obj = new InteractiveObject({
       ...options,
-      objectType: 'pebble',
-      category: 'thought'
+      objectType: 'thought',
+      category: 'thought',
+      collisionRadius: 0.14
     });
 
-    const geo = new THREE.DodecahedronGeometry(0.045, 2);
-    // Squash slightly along Y to give natural pebble curvature
-    geo.scale(1.2, 0.65, 1.0);
+    const geo = new THREE.DodecahedronGeometry(0.048, 2);
+    geo.scale(1.22, 0.65, 1.05); // Natural smooth river stone flattening
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x98a2a8,
-      roughness: 0.35,
+      color: 0x929ba0,
+      roughness: 0.38,
+      metalness: 0.04
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
+    return obj;
+  }
+
+  /**
+   * 2. Idea: Small folded origami paper object
+   */
+  createFoldedPaperIdea(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'idea',
+      category: 'thought',
+      collisionRadius: 0.15
+    });
+
+    const group = new THREE.Group();
+
+    // Folded Origami Paper Geometry (Angled facets with sharp paper creases)
+    const paperMat = new THREE.MeshStandardMaterial({
+      color: 0xfcfbf8,
+      roughness: 0.82,
+      side: THREE.DoubleSide
+    });
+
+    // Keel / Body fold (front & back facets)
+    const keelGeo = new THREE.ConeGeometry(0.065, 0.055, 4);
+    keelGeo.scale(1.4, 1.0, 0.7);
+    keelGeo.rotateX(Math.PI);
+    const keelMesh = new THREE.Mesh(keelGeo, paperMat);
+    keelMesh.position.set(0, 0.028, 0);
+    keelMesh.castShadow = true;
+    keelMesh.receiveShadow = true;
+    group.add(keelMesh);
+
+    // Left and Right Origami Wing folds
+    const wingGeo = new THREE.ConeGeometry(0.052, 0.048, 3);
+    wingGeo.scale(0.8, 1.0, 1.2);
+
+    const wingL = new THREE.Mesh(wingGeo, paperMat);
+    wingL.position.set(-0.042, 0.035, 0);
+    wingL.rotation.z = -0.35;
+    wingL.castShadow = true;
+    group.add(wingL);
+
+    const wingR = new THREE.Mesh(wingGeo, paperMat);
+    wingR.position.set(0.042, 0.035, 0);
+    wingR.rotation.z = 0.35;
+    wingR.castShadow = true;
+    group.add(wingR);
+
+    obj.visualRoot.add(group);
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
+    return obj;
+  }
+
+  /**
+   * 3. Reminder: Small sticky note with realistic curved corner peel
+   */
+  createStickyNote(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'reminder',
+      category: 'thought',
+      collisionRadius: 0.14
+    });
+
+    const stickyTex = TextureGenerator.createStickyNoteTexture(512, 512);
+
+    // 3D paper plane with curled corner
+    const w = 0.18;
+    const h = 0.18;
+    const geo = new THREE.PlaneGeometry(w, h, 8, 8);
+    const posAttr = geo.attributes.position;
+
+    // Curl bottom corner upwards
+    for (let i = 0; i < posAttr.count; i++) {
+      const px = posAttr.getX(i);
+      const py = posAttr.getY(i);
+      if (px > 0.02 && py < -0.02) {
+        const factor = Math.hypot(px - 0.02, py + 0.02);
+        posAttr.setZ(i, Math.pow(factor * 1.5, 2) * 0.035);
+      }
+    }
+    geo.computeVertexNormals();
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: stickyTex,
+      roughness: 0.85,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI * 0.5;
+    mesh.position.y = 0.003;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    obj.visualRoot.add(mesh);
+
+    obj.position.copy(options.position);
+    if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
+    return obj;
+  }
+
+  /**
+   * 4. Quote: Small cardstock with debossed gold line border and letterpress lines
+   */
+  createQuoteCard(options) {
+    const obj = new InteractiveObject({
+      ...options,
+      objectType: 'quote',
+      category: 'thought',
+      collisionRadius: 0.15
+    });
+
+    const cardTex = TextureGenerator.createQuoteCardTexture(512, 360);
+    const geo = new THREE.BoxGeometry(0.22, 0.005, 0.15);
+    const mat = new THREE.MeshStandardMaterial({
+      map: cardTex,
+      roughness: 0.78,
       metalness: 0.05
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     obj.visualRoot.add(mesh);
-    obj.position.copy(options.position);
-    if (options.rotation) obj.rotation.copy(options.rotation);
-    return obj;
-  }
 
-  createPaperNote(options) {
-    const obj = new InteractiveObject({
-      ...options,
-      objectType: 'paper_note',
-      category: 'thought',
-      collisionRadius: 0.16
-    });
-
-    const noteTex = TextureGenerator.createPaperNoteTexture(512, 512);
-    const geo = new THREE.BoxGeometry(0.24, 0.005, 0.28);
-    const mat = new THREE.MeshStandardMaterial({
-      map: noteTex,
-      roughness: 0.88,
-      color: 0xffffff
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    obj.visualRoot.add(mesh);
+    // If attached to wall, add delicate brass clip at top
+    if (options.surface === 'wall_pegboard' || Math.abs(options.position?.z - (-3.31)) < 0.08) {
+      const clipGeo = new THREE.BoxGeometry(0.024, 0.015, 0.008);
+      const clipMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.85,
+        roughness: 0.2
+      });
+      const clip = new THREE.Mesh(clipGeo, clipMat);
+      clip.position.set(0, 0.08, 0.005);
+      obj.visualRoot.add(clip);
+      mesh.rotation.x = Math.PI * 0.5; // Mount upright against wall
+    }
 
     obj.position.copy(options.position);
     if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
     return obj;
   }
 
+  /**
+   * 5. Photo: Miniature Polaroid print
+   */
   createPolaroid(options) {
     const obj = new InteractiveObject({
       ...options,
-      objectType: 'polaroid',
+      objectType: 'photo',
       category: 'thought',
       collisionRadius: 0.16
     });
 
-    const polTex = TextureGenerator.createPolaroidTexture(512, 600);
-    const geo = new THREE.BoxGeometry(0.22, 0.006, 0.26);
+    const polTex = TextureGenerator.createPolaroidTexture(0, 512, 600);
+    const geo = new THREE.BoxGeometry(0.20, 0.005, 0.24);
     const mat = new THREE.MeshPhysicalMaterial({
       map: polTex,
       roughness: 0.45,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.15
+      clearcoat: 0.4,
+      clearcoatRoughness: 0.12
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     obj.visualRoot.add(mesh);
 
+    // Wall mounting pin if on pegboard
+    if (options.surface === 'wall_pegboard' || Math.abs(options.position?.z - (-3.31)) < 0.08) {
+      const pinGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.012, 12);
+      const pinMat = new THREE.MeshStandardMaterial({
+        color: 0xc89848,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+      const pin = new THREE.Mesh(pinGeo, pinMat);
+      pin.position.set(0, 0.11, 0.006);
+      pin.rotation.x = Math.PI * 0.5;
+      obj.visualRoot.add(pin);
+      mesh.rotation.x = Math.PI * 0.5;
+    }
+
     obj.position.copy(options.position);
     if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
     return obj;
   }
 
+  /**
+   * 6. Link: Woven bookmark with brass charm loop
+   */
   createBookmark(options) {
     const obj = new InteractiveObject({
       ...options,
-      objectType: 'bookmark',
+      objectType: 'link',
       category: 'thought',
       collisionRadius: 0.12
     });
 
     const bmTex = TextureGenerator.createBookmarkTexture(256, 512);
-    const geo = new THREE.BoxGeometry(0.08, 0.004, 0.28);
+    const geo = new THREE.BoxGeometry(0.075, 0.004, 0.26);
     const mat = new THREE.MeshStandardMaterial({
       map: bmTex,
       roughness: 0.82
@@ -314,61 +460,226 @@ export class ObjectManager {
     obj.visualRoot.add(mesh);
 
     // Tiny brass charm ring at top
-    const charmGeo = new THREE.TorusGeometry(0.016, 0.004, 8, 16);
+    const charmGeo = new THREE.TorusGeometry(0.015, 0.0035, 8, 16);
     const charmMat = new THREE.MeshStandardMaterial({
       color: 0xd9b362,
-      metalness: 0.8,
+      metalness: 0.85,
       roughness: 0.25
     });
     const charm = new THREE.Mesh(charmGeo, charmMat);
-    charm.position.set(0, 0.003, -0.15);
+    charm.position.set(0, 0.003, -0.14);
     charm.rotation.x = Math.PI * 0.5;
     obj.visualRoot.add(charm);
 
     obj.position.copy(options.position);
     if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
     return obj;
   }
 
-  createStickyNote(options) {
+  /**
+   * 7. Note: Small pocket notebook
+   */
+  createNotebook(options) {
     const obj = new InteractiveObject({
       ...options,
-      objectType: 'sticky_note',
+      objectType: 'note',
       category: 'thought',
-      collisionRadius: 0.14
+      collisionRadius: 0.16
     });
 
-    const stickyTex = TextureGenerator.createStickyNoteTexture(512, 512);
-    const geo = new THREE.BoxGeometry(0.20, 0.004, 0.20);
-    const mat = new THREE.MeshStandardMaterial({
-      map: stickyTex,
-      roughness: 0.85
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    obj.visualRoot.add(mesh);
+    const group = new THREE.Group();
 
+    // Notebook Hardcover (Forest Sage or Warm Cognac)
+    const coverGeo = new THREE.BoxGeometry(0.16, 0.022, 0.22);
+    const coverMat = new THREE.MeshStandardMaterial({
+      color: 0x3d4e41, // Elegant muted moss green
+      roughness: 0.72
+    });
+    const cover = new THREE.Mesh(coverGeo, coverMat);
+    cover.castShadow = true;
+    cover.receiveShadow = true;
+    group.add(cover);
+
+    // Paper Pages Block inside
+    const pagesGeo = new THREE.BoxGeometry(0.15, 0.018, 0.21);
+    const pagesMat = new THREE.MeshStandardMaterial({
+      color: 0xfffcf2,
+      roughness: 0.92
+    });
+    const pages = new THREE.Mesh(pagesGeo, pagesMat);
+    pages.position.set(0.004, 0, 0);
+    group.add(pages);
+
+    // Elastic band closure
+    const bandGeo = new THREE.BoxGeometry(0.012, 0.024, 0.225);
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: 0x222623,
+      roughness: 0.8
+    });
+    const band = new THREE.Mesh(bandGeo, bandMat);
+    band.position.set(0.05, 0, 0);
+    group.add(band);
+
+    // Satin ribbon marker tail
+    const ribbonGeo = new THREE.BoxGeometry(0.008, 0.003, 0.06);
+    const ribbonMat = new THREE.MeshStandardMaterial({
+      color: 0xd98845,
+      roughness: 0.6
+    });
+    const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+    ribbon.position.set(-0.02, -0.009, 0.13);
+    group.add(ribbon);
+
+    obj.visualRoot.add(group);
     obj.position.copy(options.position);
     if (options.rotation) obj.rotation.copy(options.rotation);
+    if (options.scale) obj.scale.copy(options.scale);
     return obj;
   }
 
+  // MARK: - Factory Dispatcher
+
   createThoughtObject(type, options) {
-    switch (type) {
+    const norm = (type || 'thought').toLowerCase();
+    switch (norm) {
+      case 'thought':
       case 'pebble':
         return this.createPebble(options);
-      case 'paper_note':
-        return this.createPaperNote(options);
-      case 'polaroid':
-        return this.createPolaroid(options);
-      case 'bookmark':
-        return this.createBookmark(options);
+      case 'idea':
+      case 'folded_paper':
+        return this.createFoldedPaperIdea(options);
+      case 'reminder':
       case 'sticky_note':
         return this.createStickyNote(options);
+      case 'quote':
+      case 'card':
+        return this.createQuoteCard(options);
+      case 'photo':
+      case 'polaroid':
+        return this.createPolaroid(options);
+      case 'link':
+      case 'bookmark':
+        return this.createBookmark(options);
+      case 'note':
+      case 'notebook':
+      case 'journal':
+      case 'paper_note':
+        return this.createNotebook(options);
       default:
         return this.createPebble(options);
     }
+  }
+
+  /**
+   * Spawns a new thought into the diorama room with physical appear animation.
+   */
+  spawnThought(data, animate = true) {
+    const saved = thoughtStore.saveThought(data);
+    const obj = this.createThoughtObject(saved.type, {
+      id: saved.id,
+      title: saved.title,
+      content: saved.content,
+      type: saved.type,
+      position: new THREE.Vector3(saved.position.x, saved.position.y, saved.position.z),
+      rotation: new THREE.Euler(saved.rotation.x, saved.rotation.y, saved.rotation.z),
+      scale: new THREE.Vector3(saved.scale?.x ?? 1, saved.scale?.y ?? 1, saved.scale?.z ?? 1),
+      surface: saved.surface,
+      createdAt: saved.createdAt,
+      updatedAt: saved.updatedAt
+    });
+
+    this.registerObject(obj);
+
+    if (animate) {
+      this.animateAppear(obj);
+    }
+
+    return obj;
+  }
+
+  /**
+   * Transforms a thought object into a different 3D representation while preserving content.
+   */
+  changeThoughtType(id, newType) {
+    const oldObj = this.getObjectById(id);
+    if (!oldObj) return null;
+
+    const data = thoughtStore.getById(id);
+    if (!data) return null;
+
+    data.type = newType.toLowerCase();
+    thoughtStore.updateThought(id, { type: data.type });
+
+    // Clear old visual meshes
+    while (oldObj.visualRoot.children.length > 0) {
+      oldObj.visualRoot.remove(oldObj.visualRoot.children[0]);
+    }
+
+    // Generate new visual geometry
+    const tempObj = this.createThoughtObject(data.type, {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      position: oldObj.position,
+      rotation: oldObj.rotation,
+      surface: data.surface
+    });
+
+    for (const child of tempObj.visualRoot.children) {
+      oldObj.visualRoot.add(child.clone(true));
+    }
+
+    oldObj.name = `${data.type.charAt(0).toUpperCase() + data.type.slice(1)}: ${data.title}`;
+    oldObj.objectType = data.type;
+    oldObj.metadata.type = data.type;
+    oldObj.cacheMaterials();
+
+    this.animateAppear(oldObj);
+    return oldObj;
+  }
+
+  /**
+   * Physical appear animation:
+   * 1. Small scale
+   * 2. Slight elevation
+   * 3. Gentle movement downward
+   * 4. Settles on surface with soft bounce
+   * 5. Shadow appears
+   */
+  animateAppear(obj, onComplete = null) {
+    const targetY = obj.position.y;
+    const startY = targetY + 0.22;
+    obj.position.y = startY;
+    obj.scale.set(0.05, 0.05, 0.05);
+
+    let elapsed = 0;
+    const duration = 0.52;
+
+    const animStep = () => {
+      elapsed += 0.016;
+      const t = Math.min(elapsed / duration, 1.0);
+
+      // Overshoot scale spring: 0.05 -> 1.06 -> 1.0
+      const scaleEase = 1.0 + Math.sin(t * Math.PI) * 0.12 * (1.0 - t) - (1.0 - t) * 0.95;
+      obj.scale.setScalar(Math.max(0.05, Math.min(scaleEase, 1.1)));
+
+      // Height downward drop with soft bounce
+      const dropEase = 1.0 - Math.pow(1.0 - t, 2.5);
+      const bounce = Math.sin(t * Math.PI * 2) * 0.012 * Math.exp(-t * 4);
+      obj.position.y = THREE.MathUtils.lerp(startY, targetY, dropEase) + bounce;
+
+      if (t < 1.0) {
+        requestAnimationFrame(animStep);
+      } else {
+        obj.position.y = targetY;
+        obj.scale.set(1, 1, 1);
+        soundManager.playPlacementSound(obj.objectType);
+        if (onComplete) onComplete();
+      }
+    };
+
+    requestAnimationFrame(animStep);
   }
 
   createJournal(options) {
