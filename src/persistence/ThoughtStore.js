@@ -77,6 +77,7 @@ export class ThoughtStore {
         z: Number((data.scale?.z ?? 1.0).toFixed(3))
       },
       surface: data.surface || 'desk',
+      isPinned: Boolean(data.isPinned !== undefined ? data.isPinned : (existing?.isPinned || false)),
       createdAt: existing?.createdAt || data.createdAt || now,
       updatedAt: now
     };

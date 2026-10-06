@@ -270,10 +270,10 @@ export class InteractiveObject extends THREE.Group {
   adaptOrientationToSurface(surfaceId) {
     if (this.objectType === 'book') {
       const targetRot = this.rotation.clone();
-      if (surfaceId === 'shelf') {
-        // Shelf: Settle upright
+      if (surfaceId && (surfaceId === 'shelf' || surfaceId.includes('shelf'))) {
+        // Shelf: Settle upright on spine/bottom edge
         targetRot.x = 0;
-        targetRot.z = 0;
+        targetRot.z = Math.PI * 0.5;
       } else {
         // Desk, Bed, Ottoman, Floor: Lie flat
         targetRot.x = 0;

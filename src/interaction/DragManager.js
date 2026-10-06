@@ -137,16 +137,21 @@ export class DragManager {
           ? this.draggedObject.adaptOrientationToSurface(surfaceResult.surface.id)
           : this.draggedObject.rotation.clone();
 
-        this.draggedObject.onDragEnd(surfaceResult.position, true, targetRot);
+        const settlePos = surfaceResult.position.clone();
+        if (this.draggedObject.objectType === 'book' && (surfaceResult.surface.id === 'shelf' || surfaceResult.surface.id.includes('shelf'))) {
+          settlePos.y += 0.12;
+        }
+
+        this.draggedObject.onDragEnd(settlePos, true, targetRot);
 
         // Record undo action if position moved
-        if (this.roomState && (this.initialObjectPos.distanceTo(surfaceResult.position) > 0.04 || !this.initialObjectRot.equals(targetRot))) {
+        if (this.roomState && (this.initialObjectPos.distanceTo(settlePos) > 0.04 || !this.initialObjectRot.equals(targetRot))) {
           this.roomState.pushUndo({
             type: 'move',
             objectId: this.draggedObject.itemId,
             previousPosition: this.initialObjectPos.clone(),
             previousRotation: this.initialObjectRot.clone(),
-            newPosition: surfaceResult.position.clone(),
+            newPosition: settlePos.clone(),
             newRotation: targetRot.clone()
           });
         }
