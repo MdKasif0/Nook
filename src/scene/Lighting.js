@@ -43,11 +43,11 @@ export class Lighting {
       PALETTE.sunlightGolden,
       LIGHTING_CONFIG.sunlightIntensity
     );
-    this.sunlight.position.set(9.2, 7.2, -0.4);
-    this.sunlight.target.position.set(-0.5, 1.2, 0.4);
+    this.sunlight.position.set(7.8, 9.5, 3.2);
+    this.sunlight.target.position.set(-0.8, 1.4, -0.6);
     this.scene.add(this.sunlight.target);
 
-    // High quality soft shadow map
+    // High quality soft shadow map matching soft morning light in reference
     this.sunlight.castShadow = true;
     this.sunlight.shadow.mapSize.width = 2048;
     this.sunlight.shadow.mapSize.height = 2048;
@@ -59,9 +59,9 @@ export class Lighting {
     this.sunlight.shadow.camera.right = shadowExtent;
     this.sunlight.shadow.camera.top = shadowExtent;
     this.sunlight.shadow.camera.bottom = -shadowExtent;
-    this.sunlight.shadow.bias = -0.0001;
-    this.sunlight.shadow.normalBias = 0.015;
-    this.sunlight.shadow.radius = 3.6;
+    this.sunlight.shadow.bias = -0.0002;
+    this.sunlight.shadow.normalBias = 0.02;
+    this.sunlight.shadow.radius = 4.2;
 
     this.group.add(this.sunlight);
 
@@ -149,22 +149,22 @@ export class Lighting {
 
     switch (timeOfDay) {
       case 'morning':
-        // Crisp, warm, cheerful morning daylight
+        // Crisp, warm, cheerful morning daylight matching reference artwork
         cfg = {
           sunColor: 0xfff4e2,
-          sunIntensity: 2.1,
-          sunPos: new THREE.Vector3(9.2, 7.2, -0.4),
-          ambientSkyColor: 0xfff7ee,
-          ambientGroundColor: 0xead0b0,
+          sunIntensity: 2.6,
+          sunPos: new THREE.Vector3(7.8, 9.5, 3.2),
+          ambientSkyColor: 0xfff8ee,
+          ambientGroundColor: 0xf0d6b5,
           ambientIntensity: 1.15,
           frontFillColor: 0xfff5ea,
-          frontFillIntensity: 0.28,
+          frontFillIntensity: 0.85,
           shelfColor: 0xffcaa0,
           shelfIntensity: 0.35,
           sconceColor: 0xffd990,
           sconceIntensity: 0.35,
           deskLampColor: 0xffc87a,
-          deskLampIntensity: this.isDeskLampOn ? 0.50 : 0.0 // Soft accent, does not fight morning sun
+          deskLampIntensity: this.isDeskLampOn ? 0.45 : 0.0 // Soft accent, does not fight morning sun
         };
         break;
 
@@ -172,13 +172,13 @@ export class Lighting {
         // Deep golden sunset with warm long shadows
         cfg = {
           sunColor: 0xff9c36,
-          sunIntensity: 2.45,
-          sunPos: new THREE.Vector3(9.8, 4.8, -0.2),
+          sunIntensity: 2.5,
+          sunPos: new THREE.Vector3(8.5, 5.2, 2.5),
           ambientSkyColor: 0xffd4a8,
           ambientGroundColor: 0xc89062,
-          ambientIntensity: 0.95,
+          ambientIntensity: 1.05,
           frontFillColor: 0xffdfc4,
-          frontFillIntensity: 0.24,
+          frontFillIntensity: 0.70,
           shelfColor: 0xffaa44,
           shelfIntensity: 0.60,
           sconceColor: 0xffab46,

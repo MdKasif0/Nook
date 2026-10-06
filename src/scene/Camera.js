@@ -50,25 +50,43 @@ export class Camera {
     this.transitionStartTarget = new THREE.Vector3();
     this.transitionEndTarget = new THREE.Vector3();
     this.transitionProgress = 0;
-    this.transitionDuration = 0.6;
+    this.transitionDuration = 0.55;
+
+    // Accessibility motion preference
+    this.reducedMotion = typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
   }
 
   resize(width, height) {
     this.camera.aspect = width / height;
+    // Scale FOV gracefully if aspect ratio narrows to keep diorama fully framed
+    const standardAspect = 1.6;
+    if (this.camera.aspect < standardAspect) {
+      this.camera.fov = CAMERA_CONFIG.fov * (standardAspect / Math.max(0.75, this.camera.aspect));
+    } else {
+      this.camera.fov = CAMERA_CONFIG.fov;
+    }
     this.camera.updateProjectionMatrix();
   }
 
   update(delta) {
     if (this.isTransitioning) {
-      this.transitionProgress += delta / this.transitionDuration;
-      const t = Math.min(1.0, this.transitionProgress);
-      const ease = 1 - Math.pow(1 - t, 3); // Cubic ease out
-
-      this.camera.position.lerpVectors(this.transitionStartPos, this.transitionEndPos, ease);
-      this.controls.target.lerpVectors(this.transitionStartTarget, this.transitionEndTarget, ease);
-
-      if (t >= 1.0) {
+      if (this.reducedMotion) {
+        this.camera.position.copy(this.transitionEndPos);
+        this.controls.target.copy(this.transitionEndTarget);
         this.isTransitioning = false;
+      } else {
+        this.transitionProgress += delta / this.transitionDuration;
+        const t = Math.min(1.0, this.transitionProgress);
+        const ease = 1 - Math.pow(1 - t, 3); // Cubic ease out
+
+        this.camera.position.lerpVectors(this.transitionStartPos, this.transitionEndPos, ease);
+        this.controls.target.lerpVectors(this.transitionStartTarget, this.transitionEndTarget, ease);
+
+        if (t >= 1.0) {
+          this.isTransitioning = false;
+        }
       }
     }
 
@@ -84,6 +102,13 @@ export class Camera {
 
     this.transitionStartTarget.copy(this.controls.target);
     this.transitionEndTarget.set(...CAMERA_CONFIG.defaultTarget);
+
+    if (this.reducedMotion) {
+      this.camera.position.set(...CAMERA_CONFIG.defaultPosition);
+      this.controls.target.set(...CAMERA_CONFIG.defaultTarget);
+      this.isTransitioning = false;
+      return;
+    }
 
     this.transitionProgress = 0;
     this.isTransitioning = true;

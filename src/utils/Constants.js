@@ -70,18 +70,18 @@ export const PALETTE = {
   woodTrim: 0xb97a38,
   woodPlanks: 0xd89d5a,
 
-  // Environment & Backing
-  environmentBg: 0xeee5d8,
-  studioPedestal: 0xe4d8c7,
+  // Environment & Backing (Clean warm studio ivory)
+  environmentBg: 0xf6f0e8,
+  studioPedestal: 0xedd8c0,
   glassWindow: 0xffffff,
   outdoorSky: 0x93cbef,
   outdoorTrees: 0x76a86c,
 
-  // Lighting
-  sunlightGolden: 0xffdfb3,
-  ambientSky: 0xfff7ee,
-  ambientGround: 0xe8cca8,
-  accentGlow: 0xffb86a,
+  // Lighting (Warm golden morning sunlight & luminous ambient bounce)
+  sunlightGolden: 0xffe6c2,
+  ambientSky: 0xfff8ee,
+  ambientGround: 0xf0d6b5,
+  accentGlow: 0xffbf75,
 
   // Object & Prop Colors (Used by ObjectManager and CookieController)
   bedBlanketSage: 0x8ea889,
@@ -101,28 +101,28 @@ export const PALETTE = {
   cookieBlush: 0xf9bcc3
 };
 
-// NookMainCamera reference configuration
+// NookMainCamera reference configuration (Subtle elevated 3/4 isometric perspective)
 export const CAMERA_CONFIG = {
   name: 'NookMainCamera',
-  fov: 33,
+  fov: 30,
   near: 0.1,
   far: 80.0,
-  defaultPosition: [-4.9, 7.5, 14.8],
-  defaultTarget: [0.1, 1.75, -0.2],
-  minDistance: 6.0,
-  maxDistance: 24.0,
-  minPolarAngle: Math.PI * 0.18,
-  maxPolarAngle: Math.PI * 0.42,
-  minAzimuthAngle: -Math.PI * 0.45,
-  maxAzimuthAngle: Math.PI * 0.25
+  defaultPosition: [-2.6, 9.2, 16.2],
+  defaultTarget: [0.15, 1.85, 0.0],
+  minDistance: 7.0,
+  maxDistance: 22.0,
+  minPolarAngle: Math.PI * 0.22,
+  maxPolarAngle: Math.PI * 0.38,
+  minAzimuthAngle: -Math.PI * 0.30,
+  maxAzimuthAngle: Math.PI * 0.18
 };
 
-// Photometric lighting intensities
+// Photometric lighting intensities matching soft morning sunlight in nook-room.jpeg
 export const LIGHTING_CONFIG = {
-  sunlightIntensity: 3.0,
-  ambientSkyIntensity: 0.78,
-  ambientGroundIntensity: 0.42,
-  frontFillIntensity: 0.38,
-  shelfAccentIntensity: 0.32,
-  exposure: 1.0
+  sunlightIntensity: 2.8,
+  ambientSkyIntensity: 1.15,
+  ambientGroundIntensity: 0.72,
+  frontFillIntensity: 0.85,
+  shelfAccentIntensity: 0.35,
+  exposure: 1.15
 };

@@ -55,9 +55,12 @@ export class CookieController extends InteractiveObject {
     this.recentReactions = [];
     this.possibleReactions = ['head_tilt', 'blink', 'happy_face', 'sweet_meow', 'playful_pounce'];
 
-    // 6. Initial position: Bed sun spot (matching reference painting)
-    this.position.set(2.0, 1.30, -0.42);
-    this.rotation.y = -0.7;
+    // 6. Initial position: Bed sun spot (matching reference painting in nook-room.jpeg)
+    const bedSunPos = new THREE.Vector3(1.85, 1.30, -0.45);
+    const bedSunRot = new THREE.Euler(0, -0.85, 0);
+    this.setDefaultTransform(bedSunPos, bedSunRot);
+    this.position.copy(bedSunPos);
+    this.rotation.copy(bedSunRot);
     this.currentArea = 'Bed';
 
     // Start in peaceful sleep loaf

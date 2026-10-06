@@ -453,38 +453,36 @@ export class RoomScene {
     this.architecture.add(rightWallGroup);
   }
 
-  // MARK: - 6. Thick Wooden Upper Wall Trim
+  // MARK: - 6. Upper Wall Trim & Wall Caps
   buildThickUpperWallTrim() {
     const halfW = ROOM_WIDTH * 0.5;
     const halfD = ROOM_DEPTH * 0.5;
 
-    const trimW = UPPER_TRIM_WIDTH;
-    const trimH = UPPER_TRIM_HEIGHT;
-    const trimY = ROOM_HEIGHT + trimH * 0.5;
+    // Clean, minimalist plaster wall cap matching the open diorama edges in nook-room.jpeg
+    const capThickness = 0.06;
+    const capWidth = WALL_THICKNESS + 0.02;
+    const capY = ROOM_HEIGHT + capThickness * 0.5;
 
-    // A. Left Wall Top Header Trim
-    const leftTrimGeo = new THREE.BoxGeometry(trimW, trimH, ROOM_DEPTH + trimW);
-    const leftTrim = new THREE.Mesh(leftTrimGeo, this.materials.woodTrim);
-    leftTrim.position.set(-halfW - WALL_THICKNESS * 0.5, trimY, 0);
-    leftTrim.castShadow = true;
-    leftTrim.receiveShadow = true;
-    this.architecture.add(leftTrim);
+    // A. Left Wall Top Cap (Clean stucco finish)
+    const leftCapGeo = new THREE.BoxGeometry(capWidth, capThickness, ROOM_DEPTH + capWidth);
+    const leftCap = new THREE.Mesh(leftCapGeo, this.materials.wallCream);
+    leftCap.position.set(-halfW - WALL_THICKNESS * 0.5, capY, 0);
+    leftCap.receiveShadow = true;
+    this.architecture.add(leftCap);
 
-    // B. Back Wall Top Header Trim
-    const backTrimGeo = new THREE.BoxGeometry(ROOM_WIDTH + WALL_THICKNESS * 2 + trimW * 2, trimH, trimW);
-    const backTrim = new THREE.Mesh(backTrimGeo, this.materials.woodTrim);
-    backTrim.position.set(0, trimY, -halfD - WALL_THICKNESS * 0.5);
-    backTrim.castShadow = true;
-    backTrim.receiveShadow = true;
-    this.architecture.add(backTrim);
+    // B. Back Wall Top Cap
+    const backCapGeo = new THREE.BoxGeometry(ROOM_WIDTH + WALL_THICKNESS * 2, capThickness, capWidth);
+    const backCap = new THREE.Mesh(backCapGeo, this.materials.wallCream);
+    backCap.position.set(0, capY, -halfD - WALL_THICKNESS * 0.5);
+    backCap.receiveShadow = true;
+    this.architecture.add(backCap);
 
-    // C. Right Wall Top Header Trim (Continuous across the entire right wall top)
-    const rightTrimGeo = new THREE.BoxGeometry(trimW, trimH, ROOM_DEPTH + trimW);
-    const rightTrim = new THREE.Mesh(rightTrimGeo, this.materials.woodTrim);
-    rightTrim.position.set(halfW + WALL_THICKNESS * 0.5, trimY, 0);
-    rightTrim.castShadow = true;
-    rightTrim.receiveShadow = true;
-    this.architecture.add(rightTrim);
+    // C. Right Wall Top Cap
+    const rightCapGeo = new THREE.BoxGeometry(capWidth, capThickness, ROOM_DEPTH + capWidth);
+    const rightCap = new THREE.Mesh(rightCapGeo, this.materials.wallCream);
+    rightCap.position.set(halfW + WALL_THICKNESS * 0.5, capY, 0);
+    rightCap.receiveShadow = true;
+    this.architecture.add(rightCap);
   }
 
   // MARK: - 7. Built-in Shelf Structure (Back Wall)
