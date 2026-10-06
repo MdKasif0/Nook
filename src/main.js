@@ -502,6 +502,12 @@ class NookApplication {
         <span class="nook-brand-name">Nook</span>
       </div>
       <div class="nook-pill-divider"></div>
+      <button class="nook-pill-btn active" id="btn-new-thought" title="Leave a Thought in Nook (N)">✨ + Thought</button>
+      <button class="nook-pill-btn" id="btn-search" title="Search Thoughts in Room (Cmd+F / /)">🔍 Search</button>
+      <div class="nook-pill-divider"></div>
+      <button class="nook-pill-btn" id="btn-undo" title="Undo Last Action (Cmd+Z)">↶</button>
+      <button class="nook-pill-btn" id="btn-redo" title="Redo Action (Shift+Cmd+Z)">↷</button>
+      <div class="nook-pill-divider"></div>
       <button class="nook-pill-btn" id="btn-time" title="Cycle Daylight: Morning / Evening / Night">☀️ Morning</button>
       <button class="nook-pill-btn active" id="btn-lamp" title="Toggle Desk Lamp Warm Glow">💡 Lamp: On</button>
       <button class="nook-pill-btn" id="btn-sound" title="Toggle Procedural Audio Immersion">🔊 Sound</button>
@@ -510,6 +516,27 @@ class NookApplication {
       <button class="nook-pill-btn" id="btn-reset" title="Reset Reference Camera (Esc)">🎥 Camera</button>
     `;
     this.uiContainer.appendChild(pill);
+
+    // Thought Creation Button
+    pill.querySelector('#btn-new-thought').addEventListener('click', () => {
+      this.thoughtCreatorModal.show();
+    });
+
+    // Search Button
+    pill.querySelector('#btn-search').addEventListener('click', () => {
+      this.thoughtSearch.toggle();
+    });
+
+    // Undo / Redo Buttons
+    pill.querySelector('#btn-undo').addEventListener('click', () => {
+      undoManager.undo();
+      this.roomState.saveState();
+    });
+
+    pill.querySelector('#btn-redo').addEventListener('click', () => {
+      undoManager.redo();
+      this.roomState.saveState();
+    });
 
     // 1. Time of Day Cycle (Morning -> Evening -> Night -> Morning)
     const timeBtn = pill.querySelector('#btn-time');
@@ -580,10 +607,56 @@ class NookApplication {
       this.selectionManager.deselect();
       this.cameraInstance.resetCamera();
     });
+
+    // Global keyboard shortcuts
+    window.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // N or Cmd+N: Create Thought
+      if (e.key === 'n' || e.key === 'N') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          this.thoughtCreatorModal.show();
+          return;
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        this.thoughtCreatorModal.show();
+        return;
+      }
+
+      // / or Cmd+F: Search Thoughts
+      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f')) {
+        e.preventDefault();
+        this.thoughtSearch.toggle();
+        return;
+      }
+
+      // Cmd+Z or Ctrl+Z: Undo / Redo
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          undoManager.redo();
+        } else {
+          undoManager.undo();
+        }
+        this.roomState.saveState();
+        return;
+      }
+
+      // Cmd+Y or Ctrl+Y: Redo
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        undoManager.redo();
+        this.roomState.saveState();
+        return;
+      }
+    });
   }
 
   initNativeBridge() {
-    // Expose clean JavaScript API for macOS WKWebView
+    // Expose clean JavaScript API for macOS WKWebView and SwiftData bridge
     window.NookBridge = {
       resetCamera: () => this.cameraInstance.resetCamera(),
       setArchitectureOnly: enable => {
@@ -593,7 +666,31 @@ class NookApplication {
         this.roomScene.decorations.visible = !enable;
         this.roomScene.cookieGroup.visible = !enable;
       },
-      exportState: () => this.roomState.state
+      exportState: () => this.roomState.state,
+      // SwiftData Bridge Hooks
+      getThoughts: () => thoughtStore.getAll(),
+      createThought: data => this.thoughtCreatorModal.onSave(data),
+      updateThought: (id, data) => thoughtStore.updateThought(id, data),
+      deleteThought: id => {
+        const obj = this.objectManager.getObjectById(id);
+        if (obj) {
+          const data = thoughtStore.getById(id) || { id, title: obj.name, type: obj.objectType, position: obj.position, rotation: obj.rotation };
+          const cmd = new DeleteThoughtCommand(this.objectManager, data);
+          undoManager.push(cmd);
+          cmd.execute();
+          this.roomState.saveState();
+        }
+      },
+      openCreateThoughtModal: () => this.thoughtCreatorModal.show(),
+      openSearch: () => this.thoughtSearch.show(),
+      undo: () => {
+        undoManager.undo();
+        this.roomState.saveState();
+      },
+      redo: () => {
+        undoManager.redo();
+        this.roomState.saveState();
+      }
     };
   }
 
