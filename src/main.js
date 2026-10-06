@@ -248,6 +248,14 @@ class NookApplication {
         };
         this.thoughtCreatorModal.show(data);
       },
+      onTogglePin: obj => {
+        const isPinned = this.objectManager.togglePinThought(obj.itemId);
+        this.inspector.show(obj);
+        this.roomState.saveState();
+        if (isPinned && typeof this.cookie.noticeFavoriteThought === 'function') {
+          this.cookie.noticeFavoriteThought(obj);
+        }
+      },
       onMoveThought: obj => {
         this.selectionManager.select(obj);
         this.cameraInstance.focusOn(obj.position);

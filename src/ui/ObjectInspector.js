@@ -152,6 +152,13 @@ export class ObjectInspector {
         });
       }
 
+      const pinBtn = this.cardEl.querySelector('#btn-pin-thought');
+      if (pinBtn) {
+        pinBtn.addEventListener('click', () => {
+          if (this.onAction.onTogglePin) this.onAction.onTogglePin(this.currentObject);
+        });
+      }
+
       const moveBtn = this.cardEl.querySelector('#btn-move-thought');
       if (moveBtn) {
         moveBtn.addEventListener('click', () => {
