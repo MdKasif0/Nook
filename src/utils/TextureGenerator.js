@@ -1161,6 +1161,18 @@ export class TextureGenerator {
   }
 
   /**
+   * Generates subtle tactile plaster/stucco wall normal map.
+   */
+  static createPlasterNormalMap(width = 512, height = 512) {
+    return this.createHeightToNormalMap((x, y, w, h) => {
+      const nx = (x / w) * 60;
+      const ny = (y / h) * 60;
+      const fineNoise = Math.sin(nx * 3.1) * Math.cos(ny * 2.7) * 0.4 + (Math.random() - 0.5) * 0.35;
+      return fineNoise * 0.08;
+    }, width, height, 1.2);
+  }
+
+  /**
    * Generates warm linen quote card texture with elegant debossed border and letterpress lines.
    */
   static createQuoteCardTexture(width = 512, height = 360) {
