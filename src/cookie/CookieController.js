@@ -312,6 +312,48 @@ export class CookieController extends InteractiveObject {
     }
   }
 
+  /**
+   * Cookie reacts enthusiastically to a pinned/favorited thought,
+   * walks over to it, sniffs it, and sits down next to it.
+   */
+  noticeFavoriteThought(thoughtObj) {
+    if (!thoughtObj) return;
+
+    // Look towards the favorite thought
+    const dx = thoughtObj.position.x - this.position.x;
+    const dz = thoughtObj.position.z - this.position.z;
+    const targetAngle = Math.atan2(dx, dz) - this.rotation.y;
+
+    if (this.rig.headGroup) {
+      this.rig.headGroup.rotation.y = THREE.MathUtils.clamp(targetAngle, -0.65, 0.65);
+      setTimeout(() => {
+        if (this.rig.headGroup) this.rig.headGroup.rotation.y = 0;
+      }, 2800);
+    }
+
+    if (this.stateMachine.currentState === COOKIE_STATES.BEING_DRAGGED) return;
+
+    // Happy reaction
+    this.stateMachine.transitionTo(COOKIE_STATES.HAPPY);
+    soundManager.playPurr(3.0);
+
+    // Walk over and sit next to favorite thought
+    setTimeout(() => {
+      if (this.stateMachine.currentState === COOKIE_STATES.BEING_DRAGGED) return;
+      const targetSurface = this.navController.getSurfaceForPosition(thoughtObj.position);
+      const targetNode = this.navController.getNearestNode(thoughtObj.position, targetSurface);
+
+      if (targetNode) {
+        this.stateMachine.transitionTo(COOKIE_STATES.WALKING);
+        this.navController.navigateToNode(targetNode.id, () => {
+          this.stateMachine.transitionTo(COOKIE_STATES.SITTING);
+          this.animController.play(COOKIE_ANIM_STATES.SIT, 0.3);
+          soundManager.playCatMeow();
+        });
+      }
+    }, 1800);
+  }
+
   // MARK: - Persistence Serialization
 
   serializeState() {
